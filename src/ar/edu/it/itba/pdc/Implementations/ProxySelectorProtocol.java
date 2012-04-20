@@ -55,10 +55,11 @@ public class ProxySelectorProtocol implements TCPProtocol {
 			HTTPHeaders headers = decoder.getHeaders();
 			SocketChannel dest;
 			SocketChannel src = clntChan;
-			URL url = new URL(decoder.getHeader("Host"));
 			if (headers.isResponse()) {
 				dest = relations.get(clntChan);
 			} else {
+				URL url = new URL(decoder.getHeader("Host"));
+				System.out.println("Getting " + url.getHost() + url.getPath());
 				if (relations.get(clntChan) != null)
 					dest = relations.get(clntChan);
 				else {
@@ -74,15 +75,16 @@ public class ProxySelectorProtocol implements TCPProtocol {
 
 					relations.put(dest, src);
 					relations.put(src, dest);
+					decoders.put(dest, new DecoderImpl(bufSize));
 				}
 			}
 //			Si pongo esta linea y comento todo lo que esta por debajo al nc le llega el request
-//			dest.write(ByteBuffer.wrap(write));
+			dest.write(ByteBuffer.wrap(write));
 
 			// register
 			// Register selector with channel. The returned key is ignored
-			dest.register(key.selector(), SelectionKey.OP_WRITE,
-					ByteBuffer.wrap(write));
+			dest.register(key.selector(), SelectionKey.OP_READ,
+					ByteBuffer.allocate(bufSize));
 			src.register(key.selector(), SelectionKey.OP_READ, buf.clear());
 
 		}
