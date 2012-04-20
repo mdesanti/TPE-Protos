@@ -1,27 +1,27 @@
 package ar.edu.it.itba.pdc.Implementations;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
+import java.util.HashMap;
+import java.util.Map;
 
+import ar.edu.it.itba.pdc.Interfaces.Decoder;
+import ar.edu.it.itba.pdc.Interfaces.HTTPHeaders;
 import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;
 
 public class ProxySelectorProtocol implements TCPProtocol {
 
 	private int bufSize;
 	public static Charset charset = Charset.forName("UTF-8");
-	public static CharsetEncoder encoder = charset.newEncoder();
-	public static CharsetDecoder decoder = charset.newDecoder();
+	private Map<SocketChannel, Decoder> decoders = new HashMap<SocketChannel, Decoder>();
+	private Map<SocketChannel, SocketChannel> relations = new HashMap<SocketChannel, SocketChannel>();
 
 	public ProxySelectorProtocol(int bufSize) {
 		this.bufSize = bufSize;
@@ -33,6 +33,7 @@ public class ProxySelectorProtocol implements TCPProtocol {
 		clntChan.configureBlocking(false); // Must be nonblocking to register
 		// Register the selector with new channel for read and attach byte
 		// buffer
+		decoders.put(clntChan, new DecoderImpl(bufSize));
 		clntChan.register(key.selector(), SelectionKey.OP_READ,
 				ByteBuffer.allocate(bufSize));
 	}
@@ -42,18 +43,48 @@ public class ProxySelectorProtocol implements TCPProtocol {
 		// Client socket channel has pending data
 		SocketChannel clntChan = (SocketChannel) key.channel();
 		ByteBuffer buf = (ByteBuffer) key.attachment();
+
+		Decoder decoder = decoders.get(clntChan);
 		long bytesRead = clntChan.read(buf);
+
 		if (bytesRead == -1) { // Did the other end close?
 			clntChan.close();
 		} else if (bytesRead > 0) {
-			String s = new String(buf.array());
-			System.out.println("String: " + s);
-			byte[] write = new byte[bufSize];
-			write = writeToServer("localhost", 9091, s.getBytes());
-			buf.clear();
-			buf.put(write);
-			// Indicate via key that reading/writing are both of interest now.
-			key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+			decoder.decode(buf.array());
+			byte[] write = buf.array();
+			HTTPHeaders headers = decoder.getHeaders();
+			SocketChannel dest;
+			SocketChannel src = clntChan;
+			URL url = new URL(decoder.getHeader("Host"));
+			if (headers.isResponse()) {
+				dest = relations.get(clntChan);
+			} else {
+				if (relations.get(clntChan) != null)
+					dest = relations.get(clntChan);
+				else {
+					dest = SocketChannel.open(new InetSocketAddress(InetAddress
+							.getByName(url.getHost()),
+							url.getPort() == -1 ? url.getDefaultPort() : url
+									.getPort()));
+					dest.configureBlocking(false);
+
+					while (!dest.finishConnect()) {
+						System.out.print("."); // Do something else
+					}
+
+					relations.put(dest, src);
+					relations.put(src, dest);
+				}
+			}
+//			Si pongo esta linea y comento todo lo que esta por debajo al nc le llega el request
+//			dest.write(ByteBuffer.wrap(write));
+
+			// register
+			// Register selector with channel. The returned key is ignored
+			dest.register(key.selector(), SelectionKey.OP_WRITE,
+					ByteBuffer.wrap(write));
+			src.register(key.selector(), SelectionKey.OP_READ, buf.clear());
+
 		}
 	}
 
@@ -62,7 +93,8 @@ public class ProxySelectorProtocol implements TCPProtocol {
 		ByteBuffer buf = (ByteBuffer) key.attachment();
 		buf.flip(); // Prepare buffer for writing
 		SocketChannel clntChan = (SocketChannel) key.channel();
-		System.out.println("Escribo al cliente: " + new String(buf.array()));
+		// System.out.println("Escribo al cliente: " + new String(buf.array()));
+		System.out.println("Escribo: " + new String(buf.array()));
 		clntChan.write(buf);
 		if (!buf.hasRemaining()) { // Buffer completely written?
 			// Nothing left, so no longer interested in writes
@@ -71,40 +103,4 @@ public class ProxySelectorProtocol implements TCPProtocol {
 		buf.compact(); // Make room for more data to be read in
 		buf.clear();
 	}
-
-	private byte[] writeToServer(String server, int port, byte[] data)
-			throws UnknownHostException, IOException {
-
-		// Convert argument String to bytes using the default character encoding
-		int servPort = port;
-
-		// Create socket that is connected to server on specified port
-		Socket socket = new Socket(server, servPort);
-		System.out.println("Connected to server...sending echo string");
-
-		InputStream in = socket.getInputStream();
-		OutputStream out = socket.getOutputStream();
-
-		System.out.println("Envio: " + new String(data));
-		// Send the encoded string to the server
-		out.write(data);
-
-		// Receive the same string back from the server
-		int totalBytesRcvd = 0; // Total bytes received so far
-		int bytesRcvd;
-		// Bytes received in last read
-		while (totalBytesRcvd < data.length) {
-			if ((bytesRcvd = in.read(data, totalBytesRcvd, data.length
-					- totalBytesRcvd)) == -1)
-				throw new SocketException("Connection closed prematurely");
-			totalBytesRcvd += bytesRcvd;
-		}
-		// data array is full
-		System.out.println("Received: " + new String(data));
-		// Close the socket and its streams
-		socket.close();
-
-		return data;
-	}
-
 }
