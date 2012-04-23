@@ -63,7 +63,7 @@ public class TCPClientSelector extends TCPSelector {
 					DataEvent change = changes.next();
 					Decoder decoder = decoders.get(change.getFrom());
 					HTTPHeaders headers;
-					if(decoder == null) {
+					if (decoder == null) {
 						decoder = new DecoderImpl(BUFSIZE);
 						decoders.put(change.getFrom(), decoder);
 					}
@@ -71,7 +71,7 @@ public class TCPClientSelector extends TCPSelector {
 					headers = decoder.getHeaders();
 					// not the first
 					SocketChannel chan = relations.get(change.getFrom());
-					//first packet from server
+					// first packet from server
 					if (headers.getHeader("Host") != null) {
 						URL url = null;
 						try {
@@ -81,11 +81,11 @@ public class TCPClientSelector extends TCPSelector {
 											.getPort() == -1 ? url
 											.getDefaultPort() : url.getPort()));
 							chan.configureBlocking(false);
-
 							while (!chan.finishConnect()) {
 								System.out.print("."); // Do something else
 							}
-							chan.register(selector, SelectionKey.OP_WRITE);
+
+							SelectionKey k = chan.register(selector, SelectionKey.OP_WRITE);
 
 						} catch (MalformedURLException e) {
 							// TODO Auto-generated catch block
@@ -98,14 +98,14 @@ public class TCPClientSelector extends TCPSelector {
 							e.printStackTrace();
 						}
 					} else {
-						
+
 					}
 
 					SelectionKey key = chan.keyFor(selector);
 					if (!map.containsKey(chan))
 						map.put(chan, new LinkedList<ByteBuffer>());
-					map.get(chan).add(
-							ByteBuffer.wrap(change.getData()));
+					ByteBuffer buf = ByteBuffer.wrap(change.getData());
+					map.get(chan).add(buf);
 					key.interestOps(SelectionKey.OP_WRITE);
 					changes.remove();
 				}
@@ -114,7 +114,7 @@ public class TCPClientSelector extends TCPSelector {
 			// Wait for some channel to be ready (or timeout)
 			try {
 				if (selector.select(TIMEOUT) == 0) { // returns # of ready chans
-//					 System.out.print(".");
+				// System.out.print(".");
 					continue;
 				}
 				// Get iterator on set of keys with I/O to process

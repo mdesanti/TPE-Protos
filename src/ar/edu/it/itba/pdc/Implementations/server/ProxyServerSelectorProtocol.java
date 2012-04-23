@@ -66,18 +66,27 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 
 	@Override
 	public void handleWrite(SelectionKey key, Map<SocketChannel, Queue<ByteBuffer>> map) throws IOException {
-		ByteBuffer buf = map.get(key.channel()).remove();
-		buf.flip(); // Prepare buffer for writing
+		//TODO: peek, do not remove. In case the buffer can not be completely written
+		ByteBuffer buf = map.get(key.channel()).peek();
+//		buf.flip(); // Prepare buffer for writing
+		System.out.println(buf.hasRemaining());
 		SocketChannel clntChan = (SocketChannel) key.channel();
-		// System.out.println("Escribo al cliente: " + new String(buf.array()));
-		System.out.println("Escribo: " + new String(buf.array()));
-		clntChan.write(buf);
+		System.out.println("Escribo al cliente: " + new String(buf.array()));
+//		System.out.println("Escribo: " + new String(buf.array()));
+		System.out.println("Escribo " + clntChan.write(buf) + "bytes");
+		if(buf.hasRemaining()) {
+			System.out.println("tiene remaining");
+		}
+		//TODO: change condition. Shouldn't write any more if queue is empty
 		if (!buf.hasRemaining()) { // Buffer completely written?
 			// Nothing left, so no longer interested in writes
 			key.interestOps(SelectionKey.OP_READ);
+			map.get(key.channel()).remove();
+			buf.compact(); // Make room for more data to be read in
+			buf.clear();
+		} else {
+			key.interestOps(SelectionKey.OP_WRITE);
 		}
-		buf.compact(); // Make room for more data to be read in
-		buf.clear();
 	}
 	
 	public void setWorker(ProxyWorker worker) {

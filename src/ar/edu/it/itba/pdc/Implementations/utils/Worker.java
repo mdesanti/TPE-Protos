@@ -43,7 +43,7 @@ public class Worker implements ProxyWorker{
 		byte[] copy = new byte[(int) count];
 		System.arraycopy(data, 0, copy, 0, (int) count);
 		synchronized (queue) {
-			queue.add(new DataEvent(sender, from, data));
+			queue.add(new DataEvent(sender, from, copy));
 			queue.notify();
 		}
 
