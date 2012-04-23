@@ -36,6 +36,8 @@ public class TCPClientSelector extends TCPSelector {
 	@Override
 	public void run() {
 
+		protocol.setCaller(this);
+		
 		// Create a selector to multiplex listening sockets and connections
 		Selector selector = null;
 		ServerSocketChannel listnChannel = null;

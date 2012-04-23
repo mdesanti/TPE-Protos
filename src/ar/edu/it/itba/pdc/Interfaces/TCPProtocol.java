@@ -7,7 +7,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Map;
 import java.util.Queue;
 
-import ar.edu.it.itba.pdc.Implementations.server.TCPServerSelector;
+import ar.edu.it.itba.pdc.Implementations.TCPSelector;
 
 public interface TCPProtocol {
 	
@@ -19,5 +19,5 @@ public interface TCPProtocol {
       
       public void setWorker(ProxyWorker worker);
       
-      public void setCaller(TCPServerSelector caller);
+      public void setCaller(TCPSelector caller);
 }

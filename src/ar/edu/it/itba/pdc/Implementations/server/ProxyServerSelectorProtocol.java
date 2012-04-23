@@ -1,9 +1,6 @@
 package ar.edu.it.itba.pdc.Implementations.server;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
@@ -13,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 
+import ar.edu.it.itba.pdc.Implementations.TCPSelector;
 import ar.edu.it.itba.pdc.Implementations.utils.DecoderImpl;
 import ar.edu.it.itba.pdc.Interfaces.Decoder;
 import ar.edu.it.itba.pdc.Interfaces.HTTPHeaders;
@@ -26,7 +24,7 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 	
 	private Map<SocketChannel, Decoder> decoders = new HashMap<SocketChannel, Decoder>();
 	private ProxyWorker worker;
-	private TCPServerSelector caller;
+	private TCPSelector caller;
 
 	public ProxyServerSelectorProtocol() {
 	}
@@ -93,7 +91,8 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		this.worker = worker;
 	}
 	
-	public void setCaller(TCPServerSelector caller) {
+	@Override
+	public void setCaller(TCPSelector caller) {
 		this.caller = caller;
 	}
 }

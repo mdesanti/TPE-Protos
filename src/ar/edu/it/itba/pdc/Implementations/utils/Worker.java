@@ -38,7 +38,7 @@ public class Worker implements ProxyWorker{
 	}
 
 	@Override
-	public void sendData(TCPServerSelector sender, SocketChannel from,
+	public void sendData(TCPSelector sender, SocketChannel from,
 			byte[] data, long count) {
 		byte[] copy = new byte[(int) count];
 		System.arraycopy(data, 0, copy, 0, (int) count);

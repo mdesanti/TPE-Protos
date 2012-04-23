@@ -7,7 +7,7 @@ import ar.edu.it.itba.pdc.Implementations.server.TCPServerSelector;
 
 public interface ProxyWorker extends Runnable {
 
-	public void sendData(TCPServerSelector sender, SocketChannel from, byte[] data, long count);
+	public void sendData(TCPSelector sender, SocketChannel from, byte[] data, long count);
 	
 	public void setServer(TCPSelector serverSelector);
 	

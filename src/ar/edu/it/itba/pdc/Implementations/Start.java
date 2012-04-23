@@ -1,5 +1,6 @@
 package ar.edu.it.itba.pdc.Implementations;
 
+import ar.edu.it.itba.pdc.Implementations.client.ProxyClientSelectorProtocol;
 import ar.edu.it.itba.pdc.Implementations.client.TCPClientSelector;
 import ar.edu.it.itba.pdc.Implementations.server.ProxyServerSelectorProtocol;
 import ar.edu.it.itba.pdc.Implementations.server.TCPServerSelector;
@@ -11,7 +12,7 @@ public class Start {
 	public static void main(String[] args) throws InterruptedException {
 		ProxyWorker work = new Worker();
 		TCPSelector serverSelector = new TCPServerSelector(work, 9090, new ProxyServerSelectorProtocol());
-		TCPSelector clientSelector = new TCPClientSelector(work, 9091, new ProxyServerSelectorProtocol());
+		TCPSelector clientSelector = new TCPClientSelector(work, 9091, new ProxyClientSelectorProtocol());
 		
 		work.setServer(serverSelector);
 		work.setClient(clientSelector);
