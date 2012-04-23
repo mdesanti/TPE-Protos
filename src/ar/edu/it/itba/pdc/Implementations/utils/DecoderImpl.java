@@ -17,7 +17,7 @@ public class DecoderImpl implements Decoder {
 	}
 
 	@Override
-	public void decode(byte[] bytes) {
+	public void decode(byte[] bytes, int count) {
 
 		if (headers == null)
 			headers = new HTTPHeadersImpl(bytes);
@@ -26,10 +26,10 @@ public class DecoderImpl implements Decoder {
 		if (length != null)
 			length = length.replaceAll(" ", "");
 		// TODO: chequear que no me pase del largo del buffer
-		for (index = 0; index < bytes.length; index++) {
+		for (index = 0; index < count; index++) {
 			buffer[index] = bytes[index];
 		}
-		if (length != null && (Integer.parseInt(length) - index) > 0) {
+		if (length != null && (Integer.parseInt(length) - count) > 0) {
 			read = true;
 			return;
 		}

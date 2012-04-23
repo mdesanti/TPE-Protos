@@ -53,6 +53,7 @@ public class TCPServerSelector extends TCPSelector {
 				while (changes.hasNext()) {
 					DataEvent change = changes.next();
 					SelectionKey key = change.getFrom().keyFor(selector);
+					System.out.println(new String(change.getData()));
 					if(!map.containsKey(change.getFrom()))
 						map.put(change.getFrom(), new LinkedList<ByteBuffer>());
 					map.get(change.getFrom()).add(ByteBuffer.wrap(change.getData()));

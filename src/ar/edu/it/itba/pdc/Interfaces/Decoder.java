@@ -2,7 +2,7 @@ package ar.edu.it.itba.pdc.Interfaces;
 
 public interface Decoder {
 
-	public void decode(byte[] bytes);
+	public void decode(byte[] bytes, int count);
 	
 	public boolean keepReading();
 	

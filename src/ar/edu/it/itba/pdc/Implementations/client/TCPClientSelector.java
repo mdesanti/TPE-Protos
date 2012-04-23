@@ -61,7 +61,6 @@ public class TCPClientSelector extends TCPSelector {
 			synchronized (this.queue) {
 				Iterator<DataEvent> changes = this.queue.iterator();
 				while (changes.hasNext()) {
-					System.out.println("Levanto data de la queue");
 					DataEvent change = changes.next();
 					Decoder decoder = decoders.get(change.getFrom());
 					HTTPHeaders headers;
@@ -69,7 +68,7 @@ public class TCPClientSelector extends TCPSelector {
 						decoder = new DecoderImpl(BUFSIZE);
 						decoders.put(change.getFrom(), decoder);
 					}
-					decoder.decode(change.getData());
+					decoder.decode(change.getData(), change.getData().length);
 					headers = decoder.getHeaders();
 					// not the first
 					SocketChannel chan = relations.get(change.getFrom());

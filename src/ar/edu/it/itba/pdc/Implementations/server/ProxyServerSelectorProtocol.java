@@ -52,7 +52,7 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		if (bytesRead == -1) { // Did the other end close?
 			clntChan.close();
 		} else if (bytesRead > 0) {
-			decoder.decode(buf.array());
+			decoder.decode(buf.array(), (int)bytesRead);
 			byte[] write = buf.array();
 			HTTPHeaders headers = decoder.getHeaders();
 			//TODO: here we should analyze if the request is accepted by the proxy
