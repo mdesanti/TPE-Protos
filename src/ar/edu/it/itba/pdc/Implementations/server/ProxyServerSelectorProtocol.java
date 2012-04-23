@@ -57,7 +57,6 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 			HTTPHeaders headers = decoder.getHeaders();
 			//TODO: here we should analyze if the request is accepted by the proxy
 			worker.sendData(caller, clntChan, write, bytesRead);
-			System.out.println("Mande data al worker");
 			key.interestOps(SelectionKey.OP_READ);
 		}
 	}
@@ -67,14 +66,8 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		//TODO: peek, do not remove. In case the buffer can not be completely written
 		ByteBuffer buf = map.get(key.channel()).peek();
 //		buf.flip(); // Prepare buffer for writing
-		System.out.println(buf.hasRemaining());
 		SocketChannel clntChan = (SocketChannel) key.channel();
-		System.out.println("Escribo al cliente: " + new String(buf.array()));
-//		System.out.println("Escribo: " + new String(buf.array()));
-		System.out.println("Escribo " + clntChan.write(buf) + "bytes");
-		if(buf.hasRemaining()) {
-			System.out.println("tiene remaining");
-		}
+		clntChan.write(buf);
 		//TODO: change condition. Shouldn't write any more if queue is empty
 		if (!buf.hasRemaining()) { // Buffer completely written?
 			// Nothing left, so no longer interested in writes

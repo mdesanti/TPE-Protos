@@ -88,6 +88,7 @@ public class TCPClientSelector extends TCPSelector {
 							}
 
 							SelectionKey k = chan.register(selector, SelectionKey.OP_WRITE);
+							k.attach(change.getFrom());
 
 						} catch (MalformedURLException e) {
 							// TODO Auto-generated catch block
