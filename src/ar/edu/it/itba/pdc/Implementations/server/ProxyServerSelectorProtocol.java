@@ -1,5 +1,7 @@
 package ar.edu.it.itba.pdc.Implementations.server;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -25,8 +27,16 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 	private Map<SocketChannel, Decoder> decoders = new HashMap<SocketChannel, Decoder>();
 	private ProxyWorker worker;
 	private TCPSelector caller;
+	private BufferedWriter logger;
 
 	public ProxyServerSelectorProtocol() {
+		try {
+			FileWriter logger = new FileWriter("/tmp/" + this.getClass().getName());
+			this.logger = new BufferedWriter(logger);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -56,6 +66,9 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 			byte[] write = buf.array();
 			HTTPHeaders headers = decoder.getHeaders();
 			//TODO: here we should analyze if the request is accepted by the proxy
+			byte[] copy = new byte[(int) bytesRead];
+			System.arraycopy(write, 0, copy, 0, (int) bytesRead);
+			logger.write("Server le manda al worker\n\n\n" + new String(copy) + "\n\n\n");
 			worker.sendData(caller, clntChan, write, bytesRead);
 			key.interestOps(SelectionKey.OP_READ);
 		}
@@ -67,15 +80,21 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		ByteBuffer buf = map.get(key.channel()).peek();
 //		buf.flip(); // Prepare buffer for writing
 		SocketChannel clntChan = (SocketChannel) key.channel();
+		logger.write("Server writing \n " + new String(buf.array()) + "\n\n\n");
 		clntChan.write(buf);
 		//TODO: change condition. Shouldn't write any more if queue is empty
 		if (!buf.hasRemaining()) { // Buffer completely written?
-			// Nothing left, so no longer interested in writes
-			key.interestOps(SelectionKey.OP_READ);
 			map.get(key.channel()).remove();
+			if (map.get(key.channel()).isEmpty()) {
+				// Nothing left, so no longer interested in writes
+				key.interestOps(SelectionKey.OP_READ);
+			} else {
+				key.interestOps(SelectionKey.OP_WRITE);
+				buf.clear();
+			}
 			buf.compact(); // Make room for more data to be read in
-			buf.clear();
 		} else {
+			buf.compact();
 			key.interestOps(SelectionKey.OP_WRITE);
 		}
 	}

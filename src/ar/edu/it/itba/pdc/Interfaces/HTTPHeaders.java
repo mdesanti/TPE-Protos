@@ -6,4 +6,6 @@ public interface HTTPHeaders {
 	
 	public boolean isResponse();
 	
+	public int getHeaderSize();
+	
 }

@@ -1,11 +1,13 @@
 package ar.edu.it.itba.pdc.Implementations.utils;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.LinkedList;
 import java.util.Queue;
 
 import ar.edu.it.itba.pdc.Implementations.TCPSelector;
-import ar.edu.it.itba.pdc.Implementations.server.TCPServerSelector;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
 
 public class Worker implements ProxyWorker{
@@ -13,7 +15,19 @@ public class Worker implements ProxyWorker{
 	private Queue<DataEvent> queue = new LinkedList<DataEvent>();
 	private TCPSelector server;
 	private TCPSelector client;
+	private BufferedWriter logger;
 
+	public Worker() {
+		FileWriter logger = null;
+		try {
+			logger = new FileWriter("/tmp/" + this.getClass().getName());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		this.logger = new BufferedWriter(logger);
+	}
+	
 	@Override
 	public void run() {
 		if(server == null || client == null)

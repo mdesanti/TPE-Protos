@@ -73,10 +73,10 @@ public class TCPClientSelector extends TCPSelector {
 					// not the first
 					SocketChannel chan = relations.get(change.getFrom());
 					// first packet from server
-					if (headers.getHeader("Host") != null) {
+					if (headers.getHeader("RequestedURI") != null) {
 						URL url = null;
 						try {
-							url = new URL(decoder.getHeader("Host"));
+							url = new URL(decoder.getHeader("RequestedURI"));
 							chan = SocketChannel.open(new InetSocketAddress(
 									InetAddress.getByName(url.getHost()), url
 											.getPort() == -1 ? url

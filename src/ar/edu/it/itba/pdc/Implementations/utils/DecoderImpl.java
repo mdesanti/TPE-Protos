@@ -10,6 +10,7 @@ public class DecoderImpl implements Decoder {
 	private byte[] buffer;
 	private int index = 0;
 	private HTTPHeaders headers = null;
+	private int readSize = 0;
 
 	public DecoderImpl(int buffSize) {
 		this.buffsize = buffSize;
@@ -26,10 +27,14 @@ public class DecoderImpl implements Decoder {
 		if (length != null)
 			length = length.replaceAll(" ", "");
 		// TODO: chequear que no me pase del largo del buffer
+		//first time
+		if(!keepReading()) {
+			readSize = count-headers.getHeaderSize();
+		}
 		for (index = 0; index < count; index++) {
 			buffer[index] = bytes[index];
 		}
-		if (length != null && (Integer.parseInt(length) - count) > 0) {
+		if (length != null && Integer.parseInt(length) > readSize) {
 			read = true;
 			return;
 		}

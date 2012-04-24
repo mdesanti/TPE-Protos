@@ -6,12 +6,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Map;
-import java.util.Queue;
 
 import ar.edu.it.itba.pdc.Implementations.TCPSelector;
 import ar.edu.it.itba.pdc.Implementations.utils.DataEvent;
@@ -53,7 +49,6 @@ public class TCPServerSelector extends TCPSelector {
 				while (changes.hasNext()) {
 					DataEvent change = changes.next();
 					SelectionKey key = change.getFrom().keyFor(selector);
-					System.out.println(new String(change.getData()));
 					if(!map.containsKey(change.getFrom()))
 						map.put(change.getFrom(), new LinkedList<ByteBuffer>());
 					map.get(change.getFrom()).add(ByteBuffer.wrap(change.getData()));
