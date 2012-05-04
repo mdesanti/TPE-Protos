@@ -31,7 +31,7 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 
 	public ProxyClientSelectorProtocol() {
 		try {
-			FileWriter logger = new FileWriter("/tmp/"
+			FileWriter logger = new FileWriter("/Users/mdesanti90/log/"
 					+ this.getClass().getName());
 			this.logger = new BufferedWriter(logger);
 		} catch (IOException e) {
@@ -57,29 +57,30 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 		SocketChannel clntChan = (SocketChannel) key.channel();
 		ByteBuffer buf = ByteBuffer.allocate(bufSize);
 
-		Decoder decoder = decoders.get(clntChan);
-		if (decoder == null) {
-			decoder = new DecoderImpl(bufSize);
-			decoders.put(clntChan, decoder);
-		}
+//		Decoder decoder = decoders.get(clntChan);
+//		if (decoder == null) {
+//			decoder = new DecoderImpl(bufSize);
+//			decoders.put(clntChan, decoder);
+//		}
 		long bytesRead = clntChan.read(buf);
 		logger.write(new String(buf.array()));
 
 		if (bytesRead == -1) { // Did the other end close?
 			clntChan.close();
 		} else if (bytesRead > 0) {
-			decoder.decode(buf.array(), (int) bytesRead);
+//			decoder.decode(buf.array(), (int) bytesRead);
 			byte[] write = buf.array();
-			HTTPHeaders headers = decoder.getHeaders();
+//			HTTPHeaders headers = decoder.getHeaders();
 			// TODO: here we should analyze if the request is accepted by the
 			// proxy
+			String s = new String(buf.array());
 			logger.write("Client sending to worker \n "
-					+ new String(buf.array()) + "\n\n\n");
+					+ s + "\n\n\n");
 			worker.sendData(caller, (SocketChannel) key.attachment(), write,
 					bytesRead);
-			if (decoder.keepReading()) {
+//			if (decoder.keepReading()) {
 				key.interestOps(SelectionKey.OP_READ);
-			}
+//			}
 		}
 	}
 
@@ -92,7 +93,8 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 		// buf.flip(); // Prepare buffer for writing
 		SocketChannel clntChan = (SocketChannel) key.channel();
 		clntChan.write(buf);
-		logger.write("Client writing \n " + new String(buf.array()) + "\n\n\n");
+		String log = new String(buf.array());
+		logger.write("Client writing \n " + log + "\n\n\n");
 		// TODO: change condition. Shouldn't write any more if queue is empty
 		if (!buf.hasRemaining()) { // Buffer completely written?
 			map.get(key.channel()).remove();

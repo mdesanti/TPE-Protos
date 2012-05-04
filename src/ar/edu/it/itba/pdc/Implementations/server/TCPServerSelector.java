@@ -15,7 +15,7 @@ import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
 import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;
 
 public class TCPServerSelector extends TCPSelector {
-	
+
 	public TCPServerSelector(ProxyWorker worker, int port, TCPProtocol protocol) {
 		super(worker, port, protocol);
 	}
@@ -23,7 +23,7 @@ public class TCPServerSelector extends TCPSelector {
 	public void run() {
 
 		protocol.setCaller(this);
-		
+
 		// Create a selector to multiplex listening sockets and connections
 		Selector selector = null;
 		ServerSocketChannel listnChannel = null;
@@ -49,10 +49,14 @@ public class TCPServerSelector extends TCPSelector {
 				while (changes.hasNext()) {
 					DataEvent change = changes.next();
 					SelectionKey key = change.getFrom().keyFor(selector);
-					if(!map.containsKey(change.getFrom()))
-						map.put(change.getFrom(), new LinkedList<ByteBuffer>());
-					map.get(change.getFrom()).add(ByteBuffer.wrap(change.getData()));
-					key.interestOps(SelectionKey.OP_WRITE);
+					if (key != null) {
+						if (!map.containsKey(change.getFrom()))
+							map.put(change.getFrom(),
+									new LinkedList<ByteBuffer>());
+						map.get(change.getFrom()).add(
+								ByteBuffer.wrap(change.getData()));
+						key.interestOps(SelectionKey.OP_WRITE);
+					}
 					changes.remove();
 				}
 			}

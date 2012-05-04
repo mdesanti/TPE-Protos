@@ -1,12 +1,7 @@
 package ar.edu.it.itba.pdc.Implementations.utils;
 
-import http_parser.HTTPParser;
-import http_parser.lolevel.ParserSettings;
-
 import java.util.HashMap;
 import java.util.Map;
-
-import quicktime.streaming.SettingsDialog;
 
 import ar.edu.it.itba.pdc.Interfaces.HTTPHeaders;
 
@@ -88,7 +83,7 @@ public class HTTPHeadersImpl implements HTTPHeaders {
 		String statusCode = args[0];
 		headers.put("StatusCode", statusCode);
 		String reason = args[1];
-		headers.put("Resaon", reason);
+		headers.put("Reason", reason);
 		String httpVersion = args[0];
 		headers.put("HTTPVersion", httpVersion);
 		headerBytes += firstLine.getBytes().length;
@@ -98,12 +93,14 @@ public class HTTPHeadersImpl implements HTTPHeaders {
 	private void parseHeaders(String[] lines) {
 		// will read until an empty line appears
 		boolean emptyLine = false;
-		for (int i = 1; i < lines.length || !emptyLine; i++) {
+		int length = lines.length;
+		for (int i = 1; i < length && !emptyLine; i++) {
 			headerBytes += lines[i].getBytes().length;
 			if (lines[i].isEmpty()) {
 				emptyLine = true;
 			} else {
 				String[] headerValue = lines[i].split(":");
+				headerValue[1] = headerValue[1].replaceAll(" ", "");
 				if (headerValue.length != 2) {
 					return;
 				}

@@ -66,7 +66,7 @@ public class TCPClientSelector extends TCPSelector {
 					HTTPHeaders headers;
 					if (decoder == null) {
 						decoder = new DecoderImpl(BUFSIZE);
-						decoders.put(change.getFrom(), decoder);
+//						decoders.put(change.getFrom(), decoder);
 					}
 					decoder.decode(change.getData(), change.getData().length);
 					headers = decoder.getHeaders();
@@ -76,9 +76,9 @@ public class TCPClientSelector extends TCPSelector {
 					if (headers.getHeader("RequestedURI") != null) {
 						URL url = null;
 						try {
-							url = new URL(decoder.getHeader("RequestedURI"));
+							url = new URL("http://" + decoder.getHeader("Host"));
 							chan = SocketChannel.open(new InetSocketAddress(
-									InetAddress.getByName(url.getHost()), url
+									InetAddress.getByName(decoder.getHeader("Host")), url
 											.getPort() == -1 ? url
 											.getDefaultPort() : url.getPort()));
 							chan.configureBlocking(false);
