@@ -32,7 +32,7 @@ public abstract class TCPSelector implements Runnable {
 	}
 	
 	public void processEvent(DataEvent event) {
-		synchronized (event) {
+		synchronized (queue) {
 			queue.add(event);
 			
 		}

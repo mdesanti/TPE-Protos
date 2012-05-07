@@ -98,6 +98,7 @@ public class HTTPHeadersImpl implements HTTPHeaders {
 			headerBytes += lines[i].getBytes().length;
 			if (lines[i].isEmpty()) {
 				emptyLine = true;
+				completeHeaders = true;
 			} else {
 				String[] headerValue = lines[i].split(":");
 				headerValue[1] = headerValue[1].replaceAll(" ", "");

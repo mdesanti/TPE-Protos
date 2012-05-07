@@ -47,6 +47,7 @@ public class TCPServerSelector extends TCPSelector {
 			// Wait for some channel to be ready (or timeout)
 			try {
 				if (selector.select(TIMEOUT) == 0) { // returns # of ready chans
+//					System.out.println(".....Server.....\n");
 					synchronized (this.queue) {
 						Iterator<DataEvent> changes = this.queue.iterator();
 						while (changes.hasNext()) {

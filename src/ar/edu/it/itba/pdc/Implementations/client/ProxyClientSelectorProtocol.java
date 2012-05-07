@@ -8,6 +8,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
@@ -15,13 +16,12 @@ import java.util.Queue;
 import ar.edu.it.itba.pdc.Implementations.TCPSelector;
 import ar.edu.it.itba.pdc.Implementations.utils.DecoderImpl;
 import ar.edu.it.itba.pdc.Interfaces.Decoder;
-import ar.edu.it.itba.pdc.Interfaces.HTTPHeaders;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
 import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;
 
 public class ProxyClientSelectorProtocol implements TCPProtocol {
 
-	private static int bufSize = 10 * 1024;
+	private static int bufSize = 40 * 1024;
 	public static Charset charset = Charset.forName("UTF-8");
 
 	private Map<SocketChannel, Decoder> decoders = new HashMap<SocketChannel, Decoder>();
@@ -31,8 +31,7 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 
 	public ProxyClientSelectorProtocol() {
 		try {
-			FileWriter logger = new FileWriter("/Users/mdesanti90/log/"
-					+ this.getClass().getName());
+			FileWriter logger = new FileWriter("/Users/mdesanti90/log/clientLog");
 			this.logger = new BufferedWriter(logger);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -63,8 +62,6 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 //			decoders.put(clntChan, decoder);
 //		}
 		long bytesRead = clntChan.read(buf);
-		logger.write(new String(buf.array()));
-
 		if (bytesRead == -1) { // Did the other end close?
 			clntChan.close();
 		} else if (bytesRead > 0) {
@@ -73,9 +70,9 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 //			HTTPHeaders headers = decoder.getHeaders();
 			// TODO: here we should analyze if the request is accepted by the
 			// proxy
-			String s = new String(buf.array());
-			logger.write("Client sending to worker \n "
-					+ s + "\n\n\n");
+			System.out.println(Calendar.getInstance().getTime().toString()
+					+ "-> Response from external server to proxy. Server address: "
+					+ clntChan.socket().getInetAddress());
 			worker.sendData(caller, (SocketChannel) key.attachment(), write,
 					bytesRead);
 //			if (decoder.keepReading()) {
@@ -93,8 +90,9 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 		// buf.flip(); // Prepare buffer for writing
 		SocketChannel clntChan = (SocketChannel) key.channel();
 		clntChan.write(buf);
-		String log = new String(buf.array());
-		logger.write("Client writing \n " + log + "\n\n\n");
+		System.out.println(Calendar.getInstance().getTime().toString()
+				+ "-> Request from proxy server to external server. Server address: "
+				+ clntChan.socket().getInetAddress());
 		// TODO: change condition. Shouldn't write any more if queue is empty
 		if (!buf.hasRemaining()) { // Buffer completely written?
 			map.get(key.channel()).remove();

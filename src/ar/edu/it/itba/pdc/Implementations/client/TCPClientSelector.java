@@ -28,7 +28,8 @@ import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;
 public class TCPClientSelector extends TCPSelector {
 
 	private Map<SocketChannel, Decoder> decoders = new HashMap<SocketChannel, Decoder>();
-//	private Map<SocketChannel, SocketChannel> relations = new HashMap<SocketChannel, SocketChannel>();
+	// private Map<SocketChannel, SocketChannel> relations = new
+	// HashMap<SocketChannel, SocketChannel>();
 	private List<Event> newEvents;
 
 	public TCPClientSelector(ProxyWorker worker, int port, TCPProtocol protocol) {
@@ -61,16 +62,15 @@ public class TCPClientSelector extends TCPSelector {
 		System.out.println("Proxy client listening on port " + port);
 		while (true) { // Run forever, processing available I/O operations
 
-			getNewEvents(selector);
-			for(Event e: newEvents) {
-				e.process(selector);
-			}
-			newEvents.clear();
-			
 			// Wait for some channel to be ready (or timeout)
 			try {
 				if (selector.select(TIMEOUT) == 0) { // returns # of ready chans
-					// System.out.print(".");
+//					System.out.println(".....Client.....\n");
+					getNewEvents(selector);
+					for (Event e : newEvents) {
+						e.process(selector);
+					}
+					newEvents.clear();
 					continue;
 				}
 				// Get iterator on set of keys with I/O to process
@@ -114,7 +114,8 @@ public class TCPClientSelector extends TCPSelector {
 				decoder.decode(change.getData(), change.getData().length);
 				headers = decoder.getHeaders();
 				SocketChannel chan;
-				newEvents.add(new Event(decoder, change.getData(), change.getFrom()));
+				newEvents.add(new Event(decoder, change.getData(), change
+						.getFrom()));
 				changes.remove();
 			}
 		}
