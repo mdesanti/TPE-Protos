@@ -58,29 +58,30 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		SocketChannel clntChan = (SocketChannel) key.channel();
 		ByteBuffer buf = (ByteBuffer) key.attachment();
 
-		// Decoder decoder = decoders.get(clntChan);
-		long bytesRead; 
+		Decoder decoder = decoders.get(clntChan);
+		long bytesRead;
 		try {
 			bytesRead = clntChan.read(buf);
-		} catch(IOException e) {
+		} catch (IOException e) {
 			return;
 		}
 
 		if (bytesRead == -1) { // Did the other end close?
 			clntChan.close();
+			decoders.remove(clntChan);
 		} else if (bytesRead > 0) {
-			// decoder.decode(buf.array(), (int) bytesRead);
 			byte[] write = buf.array();
+			decoder.decode(write, (int) bytesRead);
 			// HTTPHeaders headers = decoder.getHeaders();
 			// TODO: here we should analyze if the request is accepted by the
 			// proxy
-			byte[] copy = new byte[(int) bytesRead];
-			System.arraycopy(write, 0, copy, 0, (int) bytesRead);
 			System.out.println(Calendar.getInstance().getTime().toString()
 					+ "-> Request from client to proxy. Client address: "
 					+ clntChan.socket().getInetAddress());
 			worker.sendData(caller, clntChan, write, bytesRead);
-			key.interestOps(SelectionKey.OP_READ);
+			buf.clear();
+			if (decoder.keepReading())
+				key.interestOps(SelectionKey.OP_READ);
 		}
 	}
 

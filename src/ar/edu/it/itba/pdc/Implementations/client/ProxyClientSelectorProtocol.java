@@ -59,9 +59,10 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 
 		// Get the decoder that parsed the request
 		Decoder decoder = decoders.get((SocketChannel) key.attachment());
-		
+
 		if (decoder == null) {
-			System.out.println("NO DEBERIA PASAR - CLIENT - DECODER NULL - HANDLEREAD \n\n\n\n\n\n\n\n");
+			System.out
+					.println("NO DEBERIA PASAR - CLIENT - DECODER NULL - HANDLEREAD \n\n\n\n\n\n\n\n");
 		}
 		long bytesRead = -1;
 		try {
@@ -70,7 +71,7 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 			clntChan.close();
 			return;
 		}
-		decoder.decode(buf.array(), (int)bytesRead);
+		decoder.decode(buf.array(), (int) bytesRead);
 		if (bytesRead == -1) { // Did the other end close?
 			clntChan.close();
 		} else if (bytesRead > 0) {
@@ -85,9 +86,9 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 							+ clntChan.socket().getInetAddress());
 			worker.sendData(caller, (SocketChannel) key.attachment(), write,
 					bytesRead);
-			// if (decoder.keepReading()) {
-			key.interestOps(SelectionKey.OP_READ);
-			// }
+			if (decoder.keepReading()) {
+				key.interestOps(SelectionKey.OP_READ);
+			}
 		}
 	}
 
@@ -100,11 +101,11 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 		// buf.flip(); // Prepare buffer for writing
 		SocketChannel clntChan = (SocketChannel) key.channel();
 		clntChan.write(buf);
-		//The same decoder is used for request and response
+		// The same decoder is used for request and response
 		Decoder d = new DecoderImpl(bufSize);
 		d.decode(buf.array(), buf.remaining());
-		decoders.put((SocketChannel)key.attachment(), d);
-		
+		decoders.put((SocketChannel) key.attachment(), d);
+
 		System.out
 				.println(Calendar.getInstance().getTime().toString()
 						+ "-> Request from proxy server to external server. Server address: "

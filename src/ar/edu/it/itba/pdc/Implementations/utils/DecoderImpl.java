@@ -21,7 +21,7 @@ public class DecoderImpl implements Decoder {
 	public void decode(byte[] bytes, int count) {
 
 		if (headers == null) {
-			headers = new HTTPHeadersImpl(bytes);
+			headers = new HTTPPacket();
 		}
 		headers.parse(bytes);
 
@@ -35,15 +35,14 @@ public class DecoderImpl implements Decoder {
 			length = length.replaceAll(" ", "");
 		// TODO: chequear que no me pase del largo del buffer
 		// first time
-		if (!keepReading()) {
-			readSize = count - headers.getHeaderSize();
-		}
-		for (index = 0; index < count; index++) {
-			buffer[index] = bytes[index];
-		}
+		
 		if (length != null && Integer.parseInt(length) > readSize) {
 			read = true;
-			return;
+			readSize = count - headers.getHeaderSize();
+		}
+		
+		for (index = 0; index < count; index++) {
+			buffer[index] = bytes[index];
 		}
 
 	}

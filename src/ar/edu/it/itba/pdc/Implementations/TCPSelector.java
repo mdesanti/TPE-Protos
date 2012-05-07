@@ -21,6 +21,10 @@ public abstract class TCPSelector implements Runnable {
 	protected ProxyWorker worker;
 	protected TCPProtocol protocol;
 	protected Queue<DataEvent> queue;
+	/**
+	 * This map associates a specific socket channel with a queue of buffers to send. A certain socket
+	 * might receive several packets to send. Thats why this queue is needed
+	 * */
 	protected Map<SocketChannel, Queue<ByteBuffer>> map = new HashMap<SocketChannel, Queue<ByteBuffer>>();
 
 	public TCPSelector(ProxyWorker worker, int port, TCPProtocol protocol) {
