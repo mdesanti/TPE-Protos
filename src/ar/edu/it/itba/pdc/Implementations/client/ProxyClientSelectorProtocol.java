@@ -31,7 +31,8 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 
 	public ProxyClientSelectorProtocol() {
 		try {
-			FileWriter logger = new FileWriter("/Users/mdesanti90/log/clientLog");
+			FileWriter logger = new FileWriter(
+					"/Users/mdesanti90/log/clientLog");
 			this.logger = new BufferedWriter(logger);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -56,28 +57,37 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 		SocketChannel clntChan = (SocketChannel) key.channel();
 		ByteBuffer buf = ByteBuffer.allocate(bufSize);
 
-//		Decoder decoder = decoders.get(clntChan);
-//		if (decoder == null) {
-//			decoder = new DecoderImpl(bufSize);
-//			decoders.put(clntChan, decoder);
-//		}
-		long bytesRead = clntChan.read(buf);
+		// Get the decoder that parsed the request
+		Decoder decoder = decoders.get((SocketChannel) key.attachment());
+		
+		if (decoder == null) {
+			System.out.println("NO DEBERIA PASAR - CLIENT - DECODER NULL - HANDLEREAD \n\n\n\n\n\n\n\n");
+		}
+		long bytesRead = -1;
+		try {
+			bytesRead = clntChan.read(buf);
+		} catch (IOException e) {
+			clntChan.close();
+			return;
+		}
+		decoder.decode(buf.array(), (int)bytesRead);
 		if (bytesRead == -1) { // Did the other end close?
 			clntChan.close();
 		} else if (bytesRead > 0) {
-//			decoder.decode(buf.array(), (int) bytesRead);
+			// decoder.decode(buf.array(), (int) bytesRead);
 			byte[] write = buf.array();
-//			HTTPHeaders headers = decoder.getHeaders();
+			// HTTPHeaders headers = decoder.getHeaders();
 			// TODO: here we should analyze if the request is accepted by the
 			// proxy
-			System.out.println(Calendar.getInstance().getTime().toString()
-					+ "-> Response from external server to proxy. Server address: "
-					+ clntChan.socket().getInetAddress());
+			System.out
+					.println(Calendar.getInstance().getTime().toString()
+							+ "-> Response from external server to proxy. Server address: "
+							+ clntChan.socket().getInetAddress());
 			worker.sendData(caller, (SocketChannel) key.attachment(), write,
 					bytesRead);
-//			if (decoder.keepReading()) {
-				key.interestOps(SelectionKey.OP_READ);
-//			}
+			// if (decoder.keepReading()) {
+			key.interestOps(SelectionKey.OP_READ);
+			// }
 		}
 	}
 
@@ -90,9 +100,15 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 		// buf.flip(); // Prepare buffer for writing
 		SocketChannel clntChan = (SocketChannel) key.channel();
 		clntChan.write(buf);
-		System.out.println(Calendar.getInstance().getTime().toString()
-				+ "-> Request from proxy server to external server. Server address: "
-				+ clntChan.socket().getInetAddress());
+		//The same decoder is used for request and response
+		Decoder d = new DecoderImpl(bufSize);
+		d.decode(buf.array(), buf.remaining());
+		decoders.put((SocketChannel)key.attachment(), d);
+		
+		System.out
+				.println(Calendar.getInstance().getTime().toString()
+						+ "-> Request from proxy server to external server. Server address: "
+						+ clntChan.socket().getInetAddress());
 		// TODO: change condition. Shouldn't write any more if queue is empty
 		if (!buf.hasRemaining()) { // Buffer completely written?
 			map.get(key.channel()).remove();

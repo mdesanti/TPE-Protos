@@ -20,16 +20,23 @@ public class DecoderImpl implements Decoder {
 	@Override
 	public void decode(byte[] bytes, int count) {
 
-		if (headers == null)
+		if (headers == null) {
 			headers = new HTTPHeadersImpl(bytes);
-		String length = headers.getHeader("Content-Length");
+		}
+		headers.parse(bytes);
+
+		String length;
+		if (headers.isRequest())
+			length = headers.getRequestHeader("Content-Length");
+		else
+			length = headers.getResponseHeader("Content-Length");
 		// remove spaces
 		if (length != null)
 			length = length.replaceAll(" ", "");
 		// TODO: chequear que no me pase del largo del buffer
-		//first time
-		if(!keepReading()) {
-			readSize = count-headers.getHeaderSize();
+		// first time
+		if (!keepReading()) {
+			readSize = count - headers.getHeaderSize();
 		}
 		for (index = 0; index < count; index++) {
 			buffer[index] = bytes[index];
@@ -73,7 +80,10 @@ public class DecoderImpl implements Decoder {
 
 	@Override
 	public String getHeader(String header) {
-		return headers.getHeader(header);
+		if (headers.isRequest())
+			return headers.getRequestHeader(header);
+		else
+			return headers.getResponseHeader(header);
 	}
 
 	public HTTPHeaders getHeaders() {

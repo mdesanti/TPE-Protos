@@ -59,7 +59,12 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		ByteBuffer buf = (ByteBuffer) key.attachment();
 
 		// Decoder decoder = decoders.get(clntChan);
-		long bytesRead = clntChan.read(buf);
+		long bytesRead; 
+		try {
+			bytesRead = clntChan.read(buf);
+		} catch(IOException e) {
+			return;
+		}
 
 		if (bytesRead == -1) { // Did the other end close?
 			clntChan.close();

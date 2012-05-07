@@ -9,7 +9,6 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -21,7 +20,6 @@ import ar.edu.it.itba.pdc.Implementations.TCPSelector;
 import ar.edu.it.itba.pdc.Implementations.utils.DataEvent;
 import ar.edu.it.itba.pdc.Implementations.utils.DecoderImpl;
 import ar.edu.it.itba.pdc.Interfaces.Decoder;
-import ar.edu.it.itba.pdc.Interfaces.HTTPHeaders;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
 import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;
 
@@ -44,22 +42,15 @@ public class TCPClientSelector extends TCPSelector {
 
 		// Create a selector to multiplex listening sockets and connections
 		Selector selector = null;
-		ServerSocketChannel listnChannel = null;
 		try {
 			selector = Selector.open();
-			listnChannel = ServerSocketChannel.open();
-			listnChannel.socket().bind(new InetSocketAddress(port));
-			listnChannel.configureBlocking(false); // must be nonblocking to
-			// register
-			// Register selector with channel. The returned key is ignored
-			listnChannel.register(selector, SelectionKey.OP_ACCEPT);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		// Create a handler that will implement the protocol
 		// Create listening socket channel for each port and register selector
-		System.out.println("Proxy client listening on port " + port);
+		System.out.println("Proxy client initialized");
 		while (true) { // Run forever, processing available I/O operations
 
 			// Wait for some channel to be ready (or timeout)
@@ -105,15 +96,9 @@ public class TCPClientSelector extends TCPSelector {
 			Iterator<DataEvent> changes = this.queue.iterator();
 			while (changes.hasNext()) {
 				DataEvent change = changes.next();
-				Decoder decoder = decoders.get(change.getFrom());
-				HTTPHeaders headers;
-				if (decoder == null) {
-					decoder = new DecoderImpl(BUFSIZE);
-					// decoders.put(change.getFrom(), decoder);
-				}
+				Decoder decoder = new DecoderImpl(BUFSIZE);;
+				
 				decoder.decode(change.getData(), change.getData().length);
-				headers = decoder.getHeaders();
-				SocketChannel chan;
 				newEvents.add(new Event(decoder, change.getData(), change
 						.getFrom()));
 				changes.remove();
@@ -139,10 +124,9 @@ public class TCPClientSelector extends TCPSelector {
 
 		void process(Selector selector) {
 
-			HTTPHeaders headers = decoder.getHeaders();
 			SocketChannel chan = null;
 
-			if (headers.getHeader("RequestedURI") != null) {
+			if (decoder.getHeader("RequestedURI") != null) {
 				URL url = null;
 				try {
 					url = new URL("http://" + decoder.getHeader("Host"));
@@ -157,7 +141,6 @@ public class TCPClientSelector extends TCPSelector {
 
 					SelectionKey k = chan.register(selector,
 							SelectionKey.OP_WRITE);
-					k.attach(from);
 
 				} catch (MalformedURLException e) {
 					// TODO Auto-generated catch block
@@ -166,14 +149,15 @@ public class TCPClientSelector extends TCPSelector {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					//TODO should return error
+					return;
 				}
 			} else {
 
 			}
 
 			SelectionKey key = chan.keyFor(selector);
+			key.attach(from);
 			if (!map.containsKey(chan))
 				map.put(chan, new LinkedList<ByteBuffer>());
 			ByteBuffer buf = ByteBuffer.wrap(data);
