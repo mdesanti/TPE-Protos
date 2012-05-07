@@ -86,6 +86,7 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 							+ clntChan.socket().getInetAddress());
 			worker.sendData(caller, (SocketChannel) key.attachment(), write,
 					bytesRead);
+			buf.clear();
 			if (decoder.keepReading()) {
 				key.interestOps(SelectionKey.OP_READ);
 			}

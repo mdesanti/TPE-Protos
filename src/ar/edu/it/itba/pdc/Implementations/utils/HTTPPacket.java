@@ -1,5 +1,6 @@
 package ar.edu.it.itba.pdc.Implementations.utils;
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,45 +41,20 @@ public class HTTPPacket implements HTTPHeaders {
 		String[] args = startLine.split(" ");
 		if (args[0].equals("GET") || args[0].equals("POST")
 				|| args[0].equals("HEAD")) {
-			parseRequest(s);
+			parseRequest(lines);
 		} else if (args[0].contains("HTTP")) {
-			parseResponse(s);
+			parseResponse(lines);
 		} else {
 			// TODO: not supported
 		}
 
 	}
 
-	@Override
-	public String getRequestHeader(String header) {
-		return this.requestHeaders.get(header);
-	}
-
-	@Override
-	public String getResponseHeader(String header) {
-		return this.responseHeaders.get(header);
-	}
-
-	@Override
-	public boolean isResponse() {
-		return isResponse;
-	}
-
-	@Override
-	public boolean isRequest() {
-		return !isResponse;
-	}
-
-	@Override
-	public int getHeaderSize() {
-		return bodyBytes;
-	}
-
-	private void parseRequest(String message) {
+	private void parseRequest(String[] message) {
 
 		isResponse = false;
 
-		String[] lines = message.split("\r\n");
+		String[] lines = message;
 
 		parseHeaders(lines, requestHeaders);
 
@@ -92,12 +68,12 @@ public class HTTPPacket implements HTTPHeaders {
 		requestHeaders.put("HTTPVersion", httpVersion);
 	}
 
-	private void parseResponse(String message) {
+	private void parseResponse(String[] message) {
 
 		isResponse = true;
 
 		// HTTP-Version SP Status-Code SP Reason-Phrase CRLF
-		String[] lines = message.split("\r\n");
+		String[] lines = message;
 
 		parseHeaders(lines, responseHeaders);
 
@@ -128,9 +104,41 @@ public class HTTPPacket implements HTTPHeaders {
 				headers.put(headerValue[0], headerValue[1]);
 			}
 		}
-		if (i < length)
-			bodyBytes += lines[i].getBytes().length;
+		String buf = "";
+		for (; i < length; i++)
+			buf += lines[i];
+		bodyBytes += buf.length();
+		try {
+			System.out.println(buf.getBytes("UTF-8").length);
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 	}
 
+	@Override
+	public String getRequestHeader(String header) {
+		return this.requestHeaders.get(header);
+	}
+
+	@Override
+	public String getResponseHeader(String header) {
+		return this.responseHeaders.get(header);
+	}
+
+	@Override
+	public boolean isResponse() {
+		return isResponse;
+	}
+
+	@Override
+	public boolean isRequest() {
+		return !isResponse;
+	}
+
+	@Override
+	public int getHeaderSize() {
+		return bodyBytes;
+	}
 }

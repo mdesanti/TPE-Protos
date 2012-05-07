@@ -47,6 +47,9 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		clntChan.configureBlocking(false); // Must be nonblocking to register
 		// Register the selector with new channel for read and attach byte
 		// buffer
+		System.out.println(Calendar.getInstance().getTime().toString()
+				+ "-> Connection accepted. Client address: "
+				+ clntChan.socket().getInetAddress());
 		decoders.put(clntChan, new DecoderImpl(bufSize));
 		clntChan.register(key.selector(), SelectionKey.OP_READ,
 				ByteBuffer.allocate(bufSize));
