@@ -12,6 +12,6 @@ public interface HTTPHeaders {
 	
 	public int getHeaderSize();
 	
-	public void parse(byte[] data);
+	public void parse(byte[] data, int count);
 	
 }

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
+import java.net.Socket;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
@@ -26,13 +27,14 @@ import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;
 public class TCPClientSelector extends TCPSelector {
 
 	private Map<SocketChannel, Decoder> decoders = new HashMap<SocketChannel, Decoder>();
-	// private Map<SocketChannel, SocketChannel> relations = new
+	private Map<String, Socket> relations;
 	// HashMap<SocketChannel, SocketChannel>();
 	private List<Event> newEvents;
 
 	public TCPClientSelector(ProxyWorker worker, int port, TCPProtocol protocol) {
 		super(worker, port, protocol);
 		newEvents = new LinkedList<Event>();
+		relations = new HashMap<String, Socket>();
 	}
 
 	@Override
@@ -56,7 +58,7 @@ public class TCPClientSelector extends TCPSelector {
 			// Wait for some channel to be ready (or timeout)
 			try {
 				if (selector.select(TIMEOUT) == 0) { // returns # of ready chans
-//					System.out.println(".....Client.....\n");
+				// System.out.println(".....Client.....\n");
 					getNewEvents(selector);
 					for (Event e : newEvents) {
 						e.process(selector);
@@ -96,8 +98,9 @@ public class TCPClientSelector extends TCPSelector {
 			Iterator<DataEvent> changes = this.queue.iterator();
 			while (changes.hasNext()) {
 				DataEvent change = changes.next();
-				Decoder decoder = new DecoderImpl(BUFSIZE);;
-				
+				Decoder decoder = new DecoderImpl(BUFSIZE);
+				;
+
 				decoder.decode(change.getData(), change.getData().length);
 				newEvents.add(new Event(decoder, change.getData(), change
 						.getFrom()));
@@ -130,15 +133,22 @@ public class TCPClientSelector extends TCPSelector {
 				URL url = null;
 				try {
 					url = new URL("http://" + decoder.getHeader("Host"));
-					chan = SocketChannel.open(new InetSocketAddress(InetAddress
-							.getByName(decoder.getHeader("Host")), url
-							.getPort() == -1 ? url.getDefaultPort() : url
-							.getPort()));
-					chan.configureBlocking(false);
-					while (!chan.finishConnect()) {
-						System.out.print("."); // Do something else
-					}
+//					if (relations.containsKey(url.getHost())) {
+//						chan = SocketChannel.open(relations.get(url.getHost()).getRemoteSocketAddress());
+//					} else {
+						chan = SocketChannel
+								.open(new InetSocketAddress(InetAddress
+										.getByName(decoder.getHeader("Host")),
+										url.getPort() == -1 ? url
+												.getDefaultPort() : url
+												.getPort()));
+						while (!chan.finishConnect()) {
+							System.out.print("."); // Do something else
+						}
+						relations.put(url.getHost(), chan.socket());
+//					}
 
+					chan.configureBlocking(false);
 					SelectionKey k = chan.register(selector,
 							SelectionKey.OP_WRITE);
 
@@ -149,7 +159,7 @@ public class TCPClientSelector extends TCPSelector {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (IOException e) {
-					//TODO should return error
+					// TODO should return error
 					return;
 				}
 			} else {

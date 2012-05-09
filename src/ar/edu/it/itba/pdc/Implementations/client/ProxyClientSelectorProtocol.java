@@ -21,7 +21,7 @@ import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;
 
 public class ProxyClientSelectorProtocol implements TCPProtocol {
 
-	private static int bufSize = 40 * 1024;
+	private static int bufSize = 20 * 1024;
 	public static Charset charset = Charset.forName("UTF-8");
 
 	private Map<SocketChannel, Decoder> decoders = new HashMap<SocketChannel, Decoder>();

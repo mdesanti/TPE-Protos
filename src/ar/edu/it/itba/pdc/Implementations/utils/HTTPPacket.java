@@ -1,6 +1,5 @@
 package ar.edu.it.itba.pdc.Implementations.utils;
 
-import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,12 +24,14 @@ public class HTTPPacket implements HTTPHeaders {
 
 	}
 
-	public void parse(byte[] data) {
+	public void parse(byte[] data, int count) {
 		if (completeHeaders) {
 			return;
 		}
 
-		String s = new String(data);
+		String s = new String(data).substring(0, count);
+		String aux = new String("\r\n");
+		int w = aux.length();
 
 		String[] lines = s.split("\r\n");
 
@@ -104,17 +105,14 @@ public class HTTPPacket implements HTTPHeaders {
 				headers.put(headerValue[0], headerValue[1]);
 			}
 		}
-		String buf = "";
-		for (; i < length; i++)
+		//add "\r\n" bytes deleted when splitting
+		bodyBytes += (length - i)*2;
+		for (; i < length; i++) {
+			String buf = "";
 			buf += lines[i];
-		bodyBytes += buf.length();
-		try {
-			System.out.println(buf.getBytes("UTF-8").length);
-		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			bodyBytes += buf.getBytes().length;
 		}
-
+		
 	}
 
 	@Override
