@@ -11,6 +11,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -137,21 +138,20 @@ public class TCPClientSelector extends TCPSelector {
 				URL url = null;
 				try {
 					url = new URL("http://" + decoder.getHeader("Host"));
-					if (relations.containsKey(url.getHost())) {
-						chan = SocketChannel.open(relations.get(url.getHost())
-								.getRemoteSocketAddress());
-					} else {
-						chan = SocketChannel
-								.open(new InetSocketAddress(InetAddress
-										.getByName(decoder.getHeader("Host")),
-										url.getPort() == -1 ? url
-												.getDefaultPort() : url
-												.getPort()));
-						while (!chan.finishConnect()) {
-							System.out.print("."); // Do something else
-						}
-						relations.put(url.getHost(), chan.socket());
+					Socket s = relations.get(url.getHost());
+					if (s == null || !s.isConnected()) {
+						InetAddress addr = InetAddress.getByName(decoder
+								.getHeader("Host"));
+						int port = url.getPort() == -1 ? url.getDefaultPort()
+								: url.getPort();
+						s = new Socket(addr, port);
 					}
+
+					chan = SocketChannel.open(s.getRemoteSocketAddress());
+					while (!chan.finishConnect()) {
+						System.out.print("."); // Do something else
+					}
+					relations.put(url.getHost(), chan.socket());
 
 					chan.configureBlocking(false);
 					SelectionKey k = chan.register(selector,
@@ -179,7 +179,6 @@ public class TCPClientSelector extends TCPSelector {
 			map.get(chan).add(buf);
 			key.interestOps(SelectionKey.OP_WRITE);
 		}
-
 	}
 
 }
