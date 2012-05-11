@@ -8,10 +8,6 @@ public interface Decoder {
 	
 	public int getBufferSize();
 	
-	public byte[] getBuffer();
-	
-	public void reset();
-	
 	public String getHeader(String header);
 	
 	public HTTPHeaders getHeaders();

@@ -9,13 +9,13 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 
 import ar.edu.it.itba.pdc.Implementations.TCPSelector;
 import ar.edu.it.itba.pdc.Implementations.utils.DecoderImpl;
+import ar.edu.it.itba.pdc.Interfaces.Attachment;
 import ar.edu.it.itba.pdc.Interfaces.Decoder;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
 import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;
@@ -51,15 +51,14 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 				+ "-> Connection accepted. Client address: "
 				+ clntChan.socket().getInetAddress());
 		decoders.put(clntChan, new DecoderImpl(bufSize));
-		clntChan.register(key.selector(), SelectionKey.OP_READ,
-				ByteBuffer.allocate(bufSize));
+		clntChan.register(key.selector(), SelectionKey.OP_READ);
 	}
 
 	@Override
 	public void handleRead(SelectionKey key) throws IOException {
 		// Client socket channel has pending data
 		SocketChannel clntChan = (SocketChannel) key.channel();
-		ByteBuffer buf = (ByteBuffer) key.attachment();
+		ByteBuffer buf = ByteBuffer.allocate(bufSize);
 
 		Decoder decoder = decoders.get(clntChan);
 		long bytesRead;
@@ -81,9 +80,10 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 			System.out.println(Calendar.getInstance().getTime().toString()
 					+ "-> Request from client to proxy. Client address: "
 					+ clntChan.socket().getInetAddress());
-			worker.sendData(caller, clntChan, write, bytesRead);
+			boolean isMultipart = decoder.keepReading();
+			worker.sendData(caller, clntChan, write, bytesRead, isMultipart);
 			buf.clear();
-			if (decoder.keepReading())
+			if (isMultipart)
 				key.interestOps(SelectionKey.OP_READ);
 		}
 	}
@@ -96,6 +96,7 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		ByteBuffer buf = map.get(key.channel()).peek();
 		// buf.flip(); // Prepare buffer for writing
 		SocketChannel clntChan = (SocketChannel) key.channel();
+		boolean isMultipart = ((Attachment) key.attachment()).isMultipart();
 		System.out.println(Calendar.getInstance().getTime().toString()
 				+ "-> Response from proxy to client. Client address: "
 				+ clntChan.socket().getInetAddress());
@@ -113,7 +114,7 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		// TODO: change condition. Shouldn't write any more if queue is empty
 		if (!buf.hasRemaining()) { // Buffer completely written?
 			map.get(key.channel()).remove();
-			if (map.get(key.channel()).isEmpty()) {
+			if (map.get(key.channel()).isEmpty() && !isMultipart) {
 				// Nothing left, so no longer interested in writes
 				key.interestOps(SelectionKey.OP_READ);
 			} else {

@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 import ar.edu.it.itba.pdc.Implementations.TCPSelector;
+import ar.edu.it.itba.pdc.Implementations.utils.AttachmentImpl;
 import ar.edu.it.itba.pdc.Implementations.utils.DataEvent;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
 import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;
@@ -60,6 +61,7 @@ public class TCPServerSelector extends TCPSelector {
 								map.get(change.getFrom()).add(
 										ByteBuffer.wrap(change.getData()));
 								key.interestOps(SelectionKey.OP_WRITE);
+								key.attach(new AttachmentImpl(change.isMulipart(), null));
 							}
 							changes.remove();
 						}

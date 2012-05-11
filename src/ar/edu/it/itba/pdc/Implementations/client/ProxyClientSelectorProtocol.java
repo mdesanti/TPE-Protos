@@ -14,7 +14,9 @@ import java.util.Map;
 import java.util.Queue;
 
 import ar.edu.it.itba.pdc.Implementations.TCPSelector;
+import ar.edu.it.itba.pdc.Implementations.utils.AttachmentImpl;
 import ar.edu.it.itba.pdc.Implementations.utils.DecoderImpl;
+import ar.edu.it.itba.pdc.Interfaces.Attachment;
 import ar.edu.it.itba.pdc.Interfaces.Decoder;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
 import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;
@@ -58,11 +60,10 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 		ByteBuffer buf = ByteBuffer.allocate(bufSize);
 
 		// Get the decoder that parsed the request
-		Decoder decoder = decoders.get((SocketChannel) key.attachment());
+		Decoder decoder = decoders.get(((Attachment) key.attachment()).getFrom());
 
 		if (decoder == null) {
-			System.out
-					.println("NO DEBERIA PASAR - CLIENT - DECODER NULL - HANDLEREAD \n\n\n\n\n\n\n\n");
+			decoder = new DecoderImpl(bufSize);
 		}
 		long bytesRead = -1;
 		try {
@@ -71,10 +72,10 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 			clntChan.close();
 			return;
 		}
-		decoder.decode(buf.array(), (int) bytesRead);
 		if (bytesRead == -1) { // Did the other end close?
 			clntChan.close();
 		} else if (bytesRead > 0) {
+			decoder.decode(buf.array(), (int) bytesRead);
 			// decoder.decode(buf.array(), (int) bytesRead);
 			byte[] write = buf.array();
 			// HTTPHeaders headers = decoder.getHeaders();
@@ -84,10 +85,12 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 					.println(Calendar.getInstance().getTime().toString()
 							+ "-> Response from external server to proxy. Server address: "
 							+ clntChan.socket().getInetAddress());
-			worker.sendData(caller, (SocketChannel) key.attachment(), write,
-					bytesRead);
+			
+			boolean keepReading = decoder.keepReading();
+			worker.sendData(caller, ((Attachment)key.attachment()).getFrom(), write,
+					bytesRead, keepReading);
 			buf.clear();
-			if (decoder.keepReading()) {
+			if (keepReading) {
 				key.interestOps(SelectionKey.OP_READ);
 			}
 		}
@@ -102,10 +105,8 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 		// buf.flip(); // Prepare buffer for writing
 		SocketChannel clntChan = (SocketChannel) key.channel();
 		clntChan.write(buf);
+		AttachmentImpl att = (AttachmentImpl)key.attachment();
 		// The same decoder is used for request and response
-		Decoder d = new DecoderImpl(bufSize);
-		d.decode(buf.array(), buf.remaining());
-		decoders.put((SocketChannel) key.attachment(), d);
 
 		System.out
 				.println(Calendar.getInstance().getTime().toString()
@@ -114,7 +115,7 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 		// TODO: change condition. Shouldn't write any more if queue is empty
 		if (!buf.hasRemaining()) { // Buffer completely written?
 			map.get(key.channel()).remove();
-			if (map.get(key.channel()).isEmpty()) {
+			if (map.get(key.channel()).isEmpty() && !att.isMultipart()) {
 				// Nothing left, so no longer interested in writes
 				key.interestOps(SelectionKey.OP_READ);
 			} else {

@@ -11,22 +11,24 @@ import ar.edu.it.itba.pdc.Interfaces.HTTPHeaders;
  * */
 public class HTTPPacket implements HTTPHeaders {
 
-	private Map<String, String> requestHeaders;
-	private Map<String, String> responseHeaders;
-	private boolean isResponse = false;
+	private Map<String, String> headers;
 	private int bodyBytes = 0;
 	private boolean completeHeaders = false;
 
 	public HTTPPacket() {
 
-		requestHeaders = new HashMap<String, String>();
-		responseHeaders = new HashMap<String, String>();
+		headers = new HashMap<String, String>();
 
 	}
 
 	public void parse(byte[] data, int count) {
 		if (completeHeaders) {
+			bodyBytes += count;
 			return;
+		}
+		
+		if(count == -1) {
+			System.out.println("-1");
 		}
 
 		String s = new String(data).substring(0, count);
@@ -53,43 +55,41 @@ public class HTTPPacket implements HTTPHeaders {
 
 	private void parseRequest(String[] message) {
 
-		isResponse = false;
 
 		String[] lines = message;
 
-		parseHeaders(lines, requestHeaders);
+		parseHeaders(lines);
 
 		String firstLine = lines[0];
 		String[] args = firstLine.split(" ");
 		String method = args[0];
-		requestHeaders.put("Method", method);
+		headers.put("Method", method);
 		String requestURI = args[1];
-		requestHeaders.put("RequestedURI", requestURI);
+		headers.put("RequestedURI", requestURI);
 		String httpVersion = args[2];
-		requestHeaders.put("HTTPVersion", httpVersion);
+		headers.put("HTTPVersion", httpVersion);
 	}
 
 	private void parseResponse(String[] message) {
 
-		isResponse = true;
 
 		// HTTP-Version SP Status-Code SP Reason-Phrase CRLF
 		String[] lines = message;
 
-		parseHeaders(lines, responseHeaders);
+		parseHeaders(lines);
 
 		String firstLine = lines[0];
 		String[] args = firstLine.split(" ");
 		String statusCode = args[0];
-		responseHeaders.put("StatusCode", statusCode);
+		headers.put("StatusCode", statusCode);
 		String reason = args[1];
-		responseHeaders.put("Reason", reason);
+		headers.put("Reason", reason);
 		String httpVersion = args[0];
-		responseHeaders.put("HTTPVersion", httpVersion);
+		headers.put("HTTPVersion", httpVersion);
 
 	}
 
-	private void parseHeaders(String[] lines, Map<String, String> headers) {
+	private void parseHeaders(String[] lines) {
 		// will read until an empty line appears
 		int length = lines.length;
 		int i = 1;
@@ -116,27 +116,12 @@ public class HTTPPacket implements HTTPHeaders {
 	}
 
 	@Override
-	public String getRequestHeader(String header) {
-		return this.requestHeaders.get(header);
+	public String getHeader(String header) {
+		return this.headers.get(header);
 	}
 
 	@Override
-	public String getResponseHeader(String header) {
-		return this.responseHeaders.get(header);
-	}
-
-	@Override
-	public boolean isResponse() {
-		return isResponse;
-	}
-
-	@Override
-	public boolean isRequest() {
-		return !isResponse;
-	}
-
-	@Override
-	public int getHeaderSize() {
+	public int getReadBytes() {
 		return bodyBytes;
 	}
 }

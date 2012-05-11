@@ -9,12 +9,13 @@ public class DataEvent {
 	private TCPSelector sender;
 	private SocketChannel from;
 	private byte[] data;
-	private boolean firstPart;
+	private boolean multiPart;
 	
-	public DataEvent(TCPSelector sender, SocketChannel from, byte[] data) {
+	public DataEvent(TCPSelector sender, SocketChannel from, byte[] data, boolean multiPart) {
 		this.sender = sender;
 		this.from = from;
 		this.data = data;
+		this.multiPart = multiPart;
 	}
 	
 	public byte[] getData() {
@@ -27,6 +28,10 @@ public class DataEvent {
 	
 	public TCPSelector getSender() {
 		return sender;
+	}
+	
+	public boolean isMulipart() {
+		return multiPart;
 	}
 	
 	

@@ -7,14 +7,12 @@ public class DecoderImpl implements Decoder {
 
 	private int buffsize;
 	private boolean read = false;
-//	private byte[] buffer;
 	private int index = 0;
 	private HTTPHeaders headers = null;
 	private int readSize = 0;
 
 	public DecoderImpl(int buffSize) {
 		this.buffsize = buffSize;
-//		buffer = new byte[10 * buffSize];
 	}
 
 	@Override
@@ -26,22 +24,17 @@ public class DecoderImpl implements Decoder {
 		headers.parse(bytes, count);
 
 		String length;
-		if (headers.isRequest())
-			length = headers.getRequestHeader("Content-Length");
-		else
-			length = headers.getResponseHeader("Content-Length");
+		length = headers.getHeader("Content-Length");
 		// remove spaces
-		if (length != null)
+		if (length != null) {
 			length = length.replaceAll(" ", "");
-		
-		if (length != null && Integer.parseInt(length) > readSize) {
-			read = true;
-			readSize = count - headers.getHeaderSize();
+			int aux = Integer.parseInt(length);
+			if (aux > headers.getReadBytes()) {
+				read = true;
+			} else {
+				read = false;
+			}
 		}
-		
-//		for (index = 0; index < count; index++) {
-//			buffer[index] = bytes[index];
-//		}
 
 	}
 
@@ -56,31 +49,8 @@ public class DecoderImpl implements Decoder {
 	}
 
 	@Override
-	public byte[] getBuffer() {
-//		byte[] aux = new byte[buffer.length];
-//		int i = 0;
-//		for (i = 0; i < buffer.length; i++) {
-//			aux[i] = buffer[i];
-//		}
-//		buffer = new byte[10 * buffsize];
-//		index = 0;
-		return null;
-	}
-
-	@Override
-	public void reset() {
-//		buffer = new byte[10 * buffsize];
-//		index = 0;
-//		read = false;
-//		headers = null;
-	}
-
-	@Override
 	public String getHeader(String header) {
-		if (headers.isRequest())
-			return headers.getRequestHeader(header);
-		else
-			return headers.getResponseHeader(header);
+		return headers.getHeader(header);
 	}
 
 	public HTTPHeaders getHeaders() {

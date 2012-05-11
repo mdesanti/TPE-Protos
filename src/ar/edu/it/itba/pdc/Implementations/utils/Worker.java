@@ -53,11 +53,11 @@ public class Worker implements ProxyWorker{
 
 	@Override
 	public void sendData(TCPSelector sender, SocketChannel from,
-			byte[] data, long count) {
+			byte[] data, long count, boolean multiPart) {
 		byte[] copy = new byte[(int) count];
 		System.arraycopy(data, 0, copy, 0, (int) count);
 		synchronized (queue) {
-			queue.add(new DataEvent(sender, from, copy));
+			queue.add(new DataEvent(sender, from, copy, multiPart));
 			queue.notify();
 		}
 

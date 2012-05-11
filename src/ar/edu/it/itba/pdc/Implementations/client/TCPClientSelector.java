@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import ar.edu.it.itba.pdc.Implementations.TCPSelector;
+import ar.edu.it.itba.pdc.Implementations.utils.AttachmentImpl;
 import ar.edu.it.itba.pdc.Implementations.utils.DataEvent;
 import ar.edu.it.itba.pdc.Implementations.utils.DecoderImpl;
 import ar.edu.it.itba.pdc.Interfaces.Decoder;
@@ -58,7 +59,7 @@ public class TCPClientSelector extends TCPSelector {
 			// Wait for some channel to be ready (or timeout)
 			try {
 				if (selector.select(TIMEOUT) == 0) { // returns # of ready chans
-				// System.out.println(".....Client.....\n");
+					// System.out.println(".....Client.....\n");
 					getNewEvents(selector);
 					for (Event e : newEvents) {
 						e.process(selector);
@@ -103,7 +104,7 @@ public class TCPClientSelector extends TCPSelector {
 
 				decoder.decode(change.getData(), change.getData().length);
 				newEvents.add(new Event(decoder, change.getData(), change
-						.getFrom()));
+						.getFrom(), change.isMulipart()));
 				changes.remove();
 			}
 		}
@@ -114,11 +115,14 @@ public class TCPClientSelector extends TCPSelector {
 		private Decoder decoder;
 		private byte[] data;
 		private SocketChannel from;
+		private boolean multipart = false;
 
-		public Event(Decoder decoder, byte[] data, SocketChannel from) {
+		public Event(Decoder decoder, byte[] data, SocketChannel from,
+				boolean isMultipart) {
 			this.decoder = decoder;
 			this.data = data;
 			this.from = from;
+			this.multipart = isMultipart;
 		}
 
 		public Decoder getDecoder() {
@@ -133,9 +137,10 @@ public class TCPClientSelector extends TCPSelector {
 				URL url = null;
 				try {
 					url = new URL("http://" + decoder.getHeader("Host"));
-//					if (relations.containsKey(url.getHost())) {
-//						chan = SocketChannel.open(relations.get(url.getHost()).getRemoteSocketAddress());
-//					} else {
+					if (relations.containsKey(url.getHost())) {
+						chan = SocketChannel.open(relations.get(url.getHost())
+								.getRemoteSocketAddress());
+					} else {
 						chan = SocketChannel
 								.open(new InetSocketAddress(InetAddress
 										.getByName(decoder.getHeader("Host")),
@@ -146,7 +151,7 @@ public class TCPClientSelector extends TCPSelector {
 							System.out.print("."); // Do something else
 						}
 						relations.put(url.getHost(), chan.socket());
-//					}
+					}
 
 					chan.configureBlocking(false);
 					SelectionKey k = chan.register(selector,
@@ -167,7 +172,7 @@ public class TCPClientSelector extends TCPSelector {
 			}
 
 			SelectionKey key = chan.keyFor(selector);
-			key.attach(from);
+			key.attach(new AttachmentImpl(multipart, from));
 			if (!map.containsKey(chan))
 				map.put(chan, new LinkedList<ByteBuffer>());
 			ByteBuffer buf = ByteBuffer.wrap(data);
