@@ -45,7 +45,7 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 				+ clntChan.socket().getInetAddress());
 		requestDecoders.put(clntChan, new DecoderImpl(bufSize));
 		responseDecoders.put(clntChan, new DecoderImpl(bufSize));
-		
+
 		clntChan.register(key.selector(), SelectionKey.OP_READ);
 	}
 
@@ -70,15 +70,16 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 			byte[] write = buf.array();
 			decoder.decode(write, (int) bytesRead);
 			decoder.applyRestrictions();
-			
+
 			System.out.println(Calendar.getInstance().getTime().toString()
 					+ "-> Request from client to proxy. Client address: "
 					+ clntChan.socket().getInetAddress());
 			boolean isMultipart = decoder.keepReading();
-			
+
 			URL url = new URL("http://" + decoder.getHeader("Host"));
-			
-			worker.sendData(caller, clntChan, write, bytesRead, isMultipart, url);
+
+			worker.sendData(caller, clntChan, write, bytesRead, isMultipart,
+					url);
 			buf.clear();
 			if (isMultipart)
 				key.interestOps(SelectionKey.OP_READ);
@@ -97,9 +98,12 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		decoder.decode(buf.array(), buf.array().length);
 		decoder.applyRestrictions();
 		boolean isMultipart = ((Attachment) key.attachment()).isMultipart();
-//		System.out.println(Calendar.getInstance().getTime().toString()
-//				+ "-> Response from proxy to client. Client address: "
-//				+ clntChan.socket().getInetAddress());
+
+		System.out.println(Calendar.getInstance().getTime().toString()
+				+ "-> Response from proxy to client with status code "
+				+ decoder.getHeader("StatusCode") + ". Client address: "
+				+ clntChan.socket().getInetAddress());
+
 		if (!clntChan.isConnected()) {
 			clntChan.close();
 		}

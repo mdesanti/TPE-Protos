@@ -93,9 +93,9 @@ public class HTTPPacket implements HTTPHeaders {
 
 		String firstLine = lines[0];
 		String[] args = firstLine.split(" ");
-		String statusCode = args[0];
+		String statusCode = args[1];
 		headers.put("StatusCode", statusCode);
-		String reason = args[1];
+		String reason = args[2];
 		headers.put("Reason", reason);
 		String httpVersion = args[0];
 		headers.put("HTTPVersion", httpVersion);

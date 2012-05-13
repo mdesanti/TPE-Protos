@@ -37,15 +37,18 @@ public class DecoderImpl implements Decoder {
 		}
 
 	}
-	
+
 	@Override
 	public void applyRestrictions() {
-//		boolean image = headers.getHeader("Content-Type").contains("image/");
-		
-//		if(image) {
-//			System.out.println("Es una imagen");
-//		}
-		
+		String contentType = headers.getHeader("Content-Type");
+		boolean image = false;
+		if (contentType != null)
+			image = contentType.contains("image/");
+
+		if (image) {
+			System.out.println("Es una imagen");
+		}
+
 	}
 
 	@Override
