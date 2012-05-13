@@ -3,6 +3,7 @@ package ar.edu.it.itba.pdc.Implementations.proxy.utils;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.channels.SocketChannel;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -53,11 +54,11 @@ public class Worker implements ProxyWorker{
 
 	@Override
 	public void sendData(TCPSelector sender, SocketChannel from,
-			byte[] data, long count, boolean multiPart) {
+			byte[] data, long count, boolean multiPart, URL url) {
 		byte[] copy = new byte[(int) count];
 		System.arraycopy(data, 0, copy, 0, (int) count);
 		synchronized (queue) {
-			queue.add(new DataEvent(sender, from, copy, multiPart));
+			queue.add(new DataEvent(sender, from, copy, multiPart, url));
 			queue.notify();
 		}
 

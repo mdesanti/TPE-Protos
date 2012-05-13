@@ -3,11 +3,13 @@ package ar.edu.it.itba.pdc.Implementations.proxy.server;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
@@ -24,20 +26,12 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 	private static int bufSize = 20 * 1024;
 	public static Charset charset = Charset.forName("UTF-8");
 
-	private Map<SocketChannel, Decoder> decoders = new HashMap<SocketChannel, Decoder>();
+	private Map<SocketChannel, Decoder> requestDecoders = new HashMap<SocketChannel, Decoder>();
+	private Map<SocketChannel, Decoder> responseDecoders = new HashMap<SocketChannel, Decoder>();
 	private ProxyWorker worker;
 	private TCPSelector caller;
-	private BufferedWriter logger;
 
 	public ProxyServerSelectorProtocol() {
-		try {
-			FileWriter logger = new FileWriter(
-					"/Users/mdesanti90/log/serverLog");
-			this.logger = new BufferedWriter(logger);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 
 	@Override
@@ -46,10 +40,12 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		clntChan.configureBlocking(false); // Must be nonblocking to register
 		// Register the selector with new channel for read and attach byte
 		// buffer
-//		System.out.println(Calendar.getInstance().getTime().toString()
-//				+ "-> Connection accepted. Client address: "
-//				+ clntChan.socket().getInetAddress());
-		decoders.put(clntChan, new DecoderImpl(bufSize));
+		System.out.println(Calendar.getInstance().getTime().toString()
+				+ "-> Connection accepted. Client address: "
+				+ clntChan.socket().getInetAddress());
+		requestDecoders.put(clntChan, new DecoderImpl(bufSize));
+		responseDecoders.put(clntChan, new DecoderImpl(bufSize));
+		
 		clntChan.register(key.selector(), SelectionKey.OP_READ);
 	}
 
@@ -59,7 +55,7 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		SocketChannel clntChan = (SocketChannel) key.channel();
 		ByteBuffer buf = ByteBuffer.allocate(bufSize);
 
-		Decoder decoder = decoders.get(clntChan);
+		Decoder decoder = requestDecoders.get(clntChan);
 		long bytesRead;
 		try {
 			bytesRead = clntChan.read(buf);
@@ -69,18 +65,20 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 
 		if (bytesRead == -1) { // Did the other end close?
 			clntChan.close();
-			decoders.remove(clntChan);
+			requestDecoders.remove(clntChan);
 		} else if (bytesRead > 0) {
 			byte[] write = buf.array();
 			decoder.decode(write, (int) bytesRead);
-			// HTTPHeaders headers = decoder.getHeaders();
-			// TODO: here we should analyze if the request is accepted by the
-			// proxy
-//			System.out.println(Calendar.getInstance().getTime().toString()
-//					+ "-> Request from client to proxy. Client address: "
-//					+ clntChan.socket().getInetAddress());
+			decoder.applyRestrictions();
+			
+			System.out.println(Calendar.getInstance().getTime().toString()
+					+ "-> Request from client to proxy. Client address: "
+					+ clntChan.socket().getInetAddress());
 			boolean isMultipart = decoder.keepReading();
-			worker.sendData(caller, clntChan, write, bytesRead, isMultipart);
+			
+			URL url = new URL("http://" + decoder.getHeader("Host"));
+			
+			worker.sendData(caller, clntChan, write, bytesRead, isMultipart, url);
 			buf.clear();
 			if (isMultipart)
 				key.interestOps(SelectionKey.OP_READ);
@@ -95,6 +93,9 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		ByteBuffer buf = map.get(key.channel()).peek();
 		// buf.flip(); // Prepare buffer for writing
 		SocketChannel clntChan = (SocketChannel) key.channel();
+		Decoder decoder = responseDecoders.get(clntChan);
+		decoder.decode(buf.array(), buf.array().length);
+		decoder.applyRestrictions();
 		boolean isMultipart = ((Attachment) key.attachment()).isMultipart();
 //		System.out.println(Calendar.getInstance().getTime().toString()
 //				+ "-> Response from proxy to client. Client address: "

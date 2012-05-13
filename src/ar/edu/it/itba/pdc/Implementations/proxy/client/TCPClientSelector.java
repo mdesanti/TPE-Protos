@@ -13,13 +13,11 @@ import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 import ar.edu.it.itba.pdc.Implementations.proxy.TCPSelector;
 import ar.edu.it.itba.pdc.Implementations.proxy.utils.AttachmentImpl;
 import ar.edu.it.itba.pdc.Implementations.proxy.utils.DataEvent;
-import ar.edu.it.itba.pdc.Implementations.proxy.utils.DecoderImpl;
 import ar.edu.it.itba.pdc.Interfaces.Decoder;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
 import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;
@@ -29,11 +27,9 @@ public class TCPClientSelector extends TCPSelector {
 	private Map<SocketChannel, Decoder> decoders = new HashMap<SocketChannel, Decoder>();
 	private Map<String, Socket> relations;
 	// HashMap<SocketChannel, SocketChannel>();
-	private List<Event> newEvents;
 
 	public TCPClientSelector(ProxyWorker worker, int port, TCPProtocol protocol) {
 		super(worker, port, protocol);
-		newEvents = new LinkedList<Event>();
 		relations = new HashMap<String, Socket>();
 	}
 
@@ -60,10 +56,6 @@ public class TCPClientSelector extends TCPSelector {
 				if (selector.select(TIMEOUT) == 0) { // returns # of ready chans
 					// System.out.println(".....Client.....\n");
 					getNewEvents(selector);
-					for (Event e : newEvents) {
-						e.process(selector);
-					}
-					newEvents.clear();
 					continue;
 				}
 				// Get iterator on set of keys with I/O to process
@@ -98,85 +90,58 @@ public class TCPClientSelector extends TCPSelector {
 			Iterator<DataEvent> changes = this.queue.iterator();
 			while (changes.hasNext()) {
 				DataEvent change = changes.next();
-				Decoder decoder = new DecoderImpl(BUFSIZE);
-				;
-
-				decoder.decode(change.getData(), change.getData().length);
-				newEvents.add(new Event(decoder, change.getData(), change
-						.getFrom(), change.isMulipart()));
+				process(change, selector);
 				changes.remove();
 			}
 		}
 	}
 
-	class Event {
+	private void process(DataEvent event, Selector selector) {
 
-		private Decoder decoder;
-		private byte[] data;
-		private SocketChannel from;
-		private boolean multipart = false;
+		byte[] data = event.getData();
+		SocketChannel from = event.getFrom();
+		boolean multipart = event.isMulipart();
 
-		public Event(Decoder decoder, byte[] data, SocketChannel from,
-				boolean isMultipart) {
-			this.decoder = decoder;
-			this.data = data;
-			this.from = from;
-			this.multipart = isMultipart;
-		}
+		SocketChannel chan = null;
 
-		public Decoder getDecoder() {
-			return decoder;
-		}
-
-		void process(Selector selector) {
-
-			SocketChannel chan = null;
-
-			if (decoder.getHeader("RequestedURI") != null) {
-				URL url = null;
-				try {
-					url = new URL("http://" + decoder.getHeader("Host"));
-					Socket s = relations.get(url.getHost());
-					if (s == null || !s.isConnected()) {
-						InetAddress addr = InetAddress.getByName(decoder
-								.getHeader("Host"));
-						int port = url.getPort() == -1 ? url.getDefaultPort()
-								: url.getPort();
-						s = new Socket(addr, port);
-					}
-
-					chan = SocketChannel.open(s.getRemoteSocketAddress());
-					while (!chan.finishConnect()) {
-						System.out.print("."); // Do something else
-					}
-					relations.put(url.getHost(), chan.socket());
-
-					chan.configureBlocking(false);
-					SelectionKey k = chan.register(selector,
-							SelectionKey.OP_WRITE);
-
-				} catch (MalformedURLException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (UnknownHostException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO should return error
-					return;
-				}
-			} else {
-
+		try {
+			URL url = event.getUrl();
+			Socket s = relations.get(url.getHost());
+			if (s == null || !s.isConnected()) {
+				InetAddress addr = InetAddress.getByName(url.getHost());
+				int port = url.getPort() == -1 ? url.getDefaultPort() : url
+						.getPort();
+				s = new Socket(addr, port);
 			}
 
-			SelectionKey key = chan.keyFor(selector);
-			key.attach(new AttachmentImpl(multipart, from));
-			if (!map.containsKey(chan))
-				map.put(chan, new LinkedList<ByteBuffer>());
-			ByteBuffer buf = ByteBuffer.wrap(data);
-			map.get(chan).add(buf);
-			key.interestOps(SelectionKey.OP_WRITE);
+			chan = SocketChannel.open(s.getRemoteSocketAddress());
+			while (!chan.finishConnect()) {
+				System.out.print("."); // Do something else
+			}
+			relations.put(url.getHost(), chan.socket());
+
+			chan.configureBlocking(false);
+			SelectionKey k = chan.register(selector, SelectionKey.OP_WRITE);
+
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO should return error
+			return;
 		}
+
+		SelectionKey key = chan.keyFor(selector);
+		key.attach(new AttachmentImpl(multipart, from));
+		if (!map.containsKey(chan))
+			map.put(chan, new LinkedList<ByteBuffer>());
+		ByteBuffer buf = ByteBuffer.wrap(data);
+		map.get(chan).add(buf);
+		key.interestOps(SelectionKey.OP_WRITE);
+
 	}
 
 }

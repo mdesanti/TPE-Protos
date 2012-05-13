@@ -1,5 +1,6 @@
 package ar.edu.it.itba.pdc.Interfaces;
 
+import java.net.URL;
 import java.nio.channels.SocketChannel;
 
 import ar.edu.it.itba.pdc.Implementations.proxy.TCPSelector;
@@ -12,7 +13,7 @@ public interface ProxyWorker extends Runnable {
 	public void setClient(TCPSelector client);
 
 	void sendData(TCPSelector sender, SocketChannel from, byte[] data,
-			long count, boolean multiPart);
+			long count, boolean multiPart, URL url);
 	
 	
 }
