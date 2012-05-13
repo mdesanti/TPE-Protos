@@ -1,4 +1,4 @@
-package ar.edu.it.itba.pdc.Implementations.client;
+package ar.edu.it.itba.pdc.Implementations.proxy.client;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -8,14 +8,13 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 
-import ar.edu.it.itba.pdc.Implementations.TCPSelector;
-import ar.edu.it.itba.pdc.Implementations.utils.AttachmentImpl;
-import ar.edu.it.itba.pdc.Implementations.utils.DecoderImpl;
+import ar.edu.it.itba.pdc.Implementations.proxy.TCPSelector;
+import ar.edu.it.itba.pdc.Implementations.proxy.utils.AttachmentImpl;
+import ar.edu.it.itba.pdc.Implementations.proxy.utils.DecoderImpl;
 import ar.edu.it.itba.pdc.Interfaces.Attachment;
 import ar.edu.it.itba.pdc.Interfaces.Decoder;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
@@ -81,10 +80,10 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 			// HTTPHeaders headers = decoder.getHeaders();
 			// TODO: here we should analyze if the request is accepted by the
 			// proxy
-			System.out
-					.println(Calendar.getInstance().getTime().toString()
-							+ "-> Response from external server to proxy. Server address: "
-							+ clntChan.socket().getInetAddress());
+//			System.out
+//					.println(Calendar.getInstance().getTime().toString()
+//							+ "-> Response from external server to proxy. Server address: "
+//							+ clntChan.socket().getInetAddress());
 			
 			boolean keepReading = decoder.keepReading();
 			worker.sendData(caller, ((Attachment)key.attachment()).getFrom(), write,
@@ -92,6 +91,8 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 			buf.clear();
 			if (keepReading) {
 				key.interestOps(SelectionKey.OP_READ);
+			} else {
+				
 			}
 		}
 	}
@@ -108,10 +109,10 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 		AttachmentImpl att = (AttachmentImpl)key.attachment();
 		// The same decoder is used for request and response
 
-		System.out
-				.println(Calendar.getInstance().getTime().toString()
-						+ "-> Request from proxy server to external server. Server address: "
-						+ clntChan.socket().getInetAddress());
+//		System.out
+//				.println(Calendar.getInstance().getTime().toString()
+//						+ "-> Request from proxy server to external server. Server address: "
+//						+ clntChan.socket().getInetAddress());
 		// TODO: change condition. Shouldn't write any more if queue is empty
 		if (!buf.hasRemaining()) { // Buffer completely written?
 			map.get(key.channel()).remove();

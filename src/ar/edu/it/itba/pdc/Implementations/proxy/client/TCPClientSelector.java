@@ -1,8 +1,7 @@
-package ar.edu.it.itba.pdc.Implementations.client;
+package ar.edu.it.itba.pdc.Implementations.proxy.client;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.URL;
@@ -11,17 +10,16 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import ar.edu.it.itba.pdc.Implementations.TCPSelector;
-import ar.edu.it.itba.pdc.Implementations.utils.AttachmentImpl;
-import ar.edu.it.itba.pdc.Implementations.utils.DataEvent;
-import ar.edu.it.itba.pdc.Implementations.utils.DecoderImpl;
+import ar.edu.it.itba.pdc.Implementations.proxy.TCPSelector;
+import ar.edu.it.itba.pdc.Implementations.proxy.utils.AttachmentImpl;
+import ar.edu.it.itba.pdc.Implementations.proxy.utils.DataEvent;
+import ar.edu.it.itba.pdc.Implementations.proxy.utils.DecoderImpl;
 import ar.edu.it.itba.pdc.Interfaces.Decoder;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
 import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;

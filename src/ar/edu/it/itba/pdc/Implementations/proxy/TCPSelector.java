@@ -1,4 +1,4 @@
-package ar.edu.it.itba.pdc.Implementations;
+package ar.edu.it.itba.pdc.Implementations.proxy;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
@@ -7,7 +7,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 
-import ar.edu.it.itba.pdc.Implementations.utils.DataEvent;
+import ar.edu.it.itba.pdc.Implementations.proxy.utils.DataEvent;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
 import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;
 
@@ -35,9 +35,9 @@ public abstract class TCPSelector implements Runnable {
 		queue = new LinkedList<DataEvent>();
 	}
 	
-	public void processEvent(DataEvent event) {
+	public void processEvent(DataEvent dataEvent) {
 		synchronized (queue) {
-			queue.add(event);
+			queue.add(dataEvent);
 			
 		}
 	}

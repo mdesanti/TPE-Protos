@@ -1,4 +1,4 @@
-package ar.edu.it.itba.pdc.Implementations.server;
+package ar.edu.it.itba.pdc.Implementations.proxy.server;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -8,13 +8,12 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 
-import ar.edu.it.itba.pdc.Implementations.TCPSelector;
-import ar.edu.it.itba.pdc.Implementations.utils.DecoderImpl;
+import ar.edu.it.itba.pdc.Implementations.proxy.TCPSelector;
+import ar.edu.it.itba.pdc.Implementations.proxy.utils.DecoderImpl;
 import ar.edu.it.itba.pdc.Interfaces.Attachment;
 import ar.edu.it.itba.pdc.Interfaces.Decoder;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
@@ -77,9 +76,9 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 			// HTTPHeaders headers = decoder.getHeaders();
 			// TODO: here we should analyze if the request is accepted by the
 			// proxy
-			System.out.println(Calendar.getInstance().getTime().toString()
-					+ "-> Request from client to proxy. Client address: "
-					+ clntChan.socket().getInetAddress());
+//			System.out.println(Calendar.getInstance().getTime().toString()
+//					+ "-> Request from client to proxy. Client address: "
+//					+ clntChan.socket().getInetAddress());
 			boolean isMultipart = decoder.keepReading();
 			worker.sendData(caller, clntChan, write, bytesRead, isMultipart);
 			buf.clear();
@@ -97,9 +96,9 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		// buf.flip(); // Prepare buffer for writing
 		SocketChannel clntChan = (SocketChannel) key.channel();
 		boolean isMultipart = ((Attachment) key.attachment()).isMultipart();
-		System.out.println(Calendar.getInstance().getTime().toString()
-				+ "-> Response from proxy to client. Client address: "
-				+ clntChan.socket().getInetAddress());
+//		System.out.println(Calendar.getInstance().getTime().toString()
+//				+ "-> Response from proxy to client. Client address: "
+//				+ clntChan.socket().getInetAddress());
 		if (!clntChan.isConnected()) {
 			clntChan.close();
 		}

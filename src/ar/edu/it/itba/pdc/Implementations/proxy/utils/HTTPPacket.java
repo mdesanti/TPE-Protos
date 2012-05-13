@@ -1,5 +1,9 @@
-package ar.edu.it.itba.pdc.Implementations.utils;
+package ar.edu.it.itba.pdc.Implementations.proxy.utils;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,6 +18,7 @@ public class HTTPPacket implements HTTPHeaders {
 	private Map<String, String> headers;
 	private int bodyBytes = 0;
 	private boolean completeHeaders = false;
+	private boolean save = false;
 
 	public HTTPPacket() {
 
@@ -22,39 +27,52 @@ public class HTTPPacket implements HTTPHeaders {
 	}
 
 	public void parse(byte[] data, int count) {
-		if (completeHeaders) {
-			bodyBytes += count;
-			return;
-		}
-		
-		if(count == -1) {
-			System.out.println("-1");
-		}
+		String[] args = null;
+		try {
+			
+			String s = new String(data).substring(0, count);
+			System.out.println(s);
+			if(save) {
+				savePicture(s);
+			}
+			
+			if (completeHeaders) {
+				bodyBytes += count;
+				return;
+			}
+			
 
-		String s = new String(data).substring(0, count);
-		String aux = new String("\r\n");
-		int w = aux.length();
+			if (count == -1) {
+				System.out.println("-1");
+			}
 
-		String[] lines = s.split("\r\n");
+			String aux = new String("\r\n");
+			int w = aux.length();
 
-		if (lines.length == 0) {
-			System.out.println("No deberia pasar");
-		}
-		String startLine = lines[0];
-		String[] args = startLine.split(" ");
-		if (args[0].equals("GET") || args[0].equals("POST")
-				|| args[0].equals("HEAD")) {
-			parseRequest(lines);
-		} else if (args[0].contains("HTTP")) {
-			parseResponse(lines);
-		} else {
-			// TODO: not supported
+			String[] lines = s.split("\r\n");
+
+			if (lines.length == 0) {
+				System.out.println("No deberia pasar");
+			}
+			String startLine = lines[0];
+			args = startLine.split(" ");
+			if (args[0].equals("GET") || args[0].equals("POST")
+					|| args[0].equals("HEAD")) {
+				parseRequest(lines);
+			} else if (args[0].contains("HTTP")) {
+				parseResponse(lines);
+			} else {
+				// TODO: not supported
+			}
+
+
+		} catch (ArrayIndexOutOfBoundsException e) {
+			System.out.println(args.length);
 		}
 
 	}
 
 	private void parseRequest(String[] message) {
-
 
 		String[] lines = message;
 
@@ -71,7 +89,6 @@ public class HTTPPacket implements HTTPHeaders {
 	}
 
 	private void parseResponse(String[] message) {
-
 
 		// HTTP-Version SP Status-Code SP Reason-Phrase CRLF
 		String[] lines = message;
@@ -105,14 +122,32 @@ public class HTTPPacket implements HTTPHeaders {
 				headers.put(headerValue[0], headerValue[1]);
 			}
 		}
-		//add "\r\n" bytes deleted when splitting
-		bodyBytes += (length - i)*2;
+		
+		//Body Part
+		String contentType = headers.get("Content-Type");
+		if(contentType != null && contentType.contains("image/")) {
+			savePicture(lines[i]);
+			save = true;
+		}
+		// add "\r\n" bytes deleted when splitting
+		bodyBytes += (length - i) * 2;
 		for (; i < length; i++) {
 			String buf = "";
 			buf += lines[i];
 			bodyBytes += buf.getBytes().length;
 		}
-		
+
+	}
+	
+	private void savePicture(String picture) {
+		FileWriter f;
+		try {
+			f = new FileWriter(new File("/tmp/prueba" + this.hashCode()));
+			f.write(picture);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@Override

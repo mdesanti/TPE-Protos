@@ -7,7 +7,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Map;
 import java.util.Queue;
 
-import ar.edu.it.itba.pdc.Implementations.TCPSelector;
+import ar.edu.it.itba.pdc.Implementations.proxy.TCPSelector;
 
 public interface TCPProtocol {
 	

@@ -1,4 +1,4 @@
-package ar.edu.it.itba.pdc.Implementations.utils;
+package ar.edu.it.itba.pdc.Implementations.proxy.utils;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -7,7 +7,7 @@ import java.nio.channels.SocketChannel;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import ar.edu.it.itba.pdc.Implementations.TCPSelector;
+import ar.edu.it.itba.pdc.Implementations.proxy.TCPSelector;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
 
 public class Worker implements ProxyWorker{

@@ -2,7 +2,7 @@ package ar.edu.it.itba.pdc.Interfaces;
 
 import java.nio.channels.SocketChannel;
 
-import ar.edu.it.itba.pdc.Implementations.TCPSelector;
+import ar.edu.it.itba.pdc.Implementations.proxy.TCPSelector;
 
 public interface ProxyWorker extends Runnable {
 

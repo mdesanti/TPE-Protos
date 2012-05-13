@@ -1,4 +1,4 @@
-package ar.edu.it.itba.pdc.Implementations.server;
+package ar.edu.it.itba.pdc.Implementations.proxy.server;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -9,9 +9,9 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import ar.edu.it.itba.pdc.Implementations.TCPSelector;
-import ar.edu.it.itba.pdc.Implementations.utils.AttachmentImpl;
-import ar.edu.it.itba.pdc.Implementations.utils.DataEvent;
+import ar.edu.it.itba.pdc.Implementations.proxy.TCPSelector;
+import ar.edu.it.itba.pdc.Implementations.proxy.utils.AttachmentImpl;
+import ar.edu.it.itba.pdc.Implementations.proxy.utils.DataEvent;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
 import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;
 

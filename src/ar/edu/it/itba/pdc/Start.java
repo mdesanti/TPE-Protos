@@ -1,11 +1,11 @@
 package ar.edu.it.itba.pdc;
 
-import ar.edu.it.itba.pdc.Implementations.TCPSelector;
-import ar.edu.it.itba.pdc.Implementations.client.ProxyClientSelectorProtocol;
-import ar.edu.it.itba.pdc.Implementations.client.TCPClientSelector;
-import ar.edu.it.itba.pdc.Implementations.server.ProxyServerSelectorProtocol;
-import ar.edu.it.itba.pdc.Implementations.server.TCPServerSelector;
-import ar.edu.it.itba.pdc.Implementations.utils.Worker;
+import ar.edu.it.itba.pdc.Implementations.proxy.TCPSelector;
+import ar.edu.it.itba.pdc.Implementations.proxy.client.ProxyClientSelectorProtocol;
+import ar.edu.it.itba.pdc.Implementations.proxy.client.TCPClientSelector;
+import ar.edu.it.itba.pdc.Implementations.proxy.server.ProxyServerSelectorProtocol;
+import ar.edu.it.itba.pdc.Implementations.proxy.server.TCPServerSelector;
+import ar.edu.it.itba.pdc.Implementations.proxy.utils.Worker;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
 
 public class Start {
