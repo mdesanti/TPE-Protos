@@ -9,24 +9,28 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 
 import javax.imageio.ImageIO;
 
-public class ImageManipulation {
+public class Transformations {
 
 	public static void main(String[] args) throws IOException {
 		InputStream is = new BufferedInputStream(new FileInputStream(
 				"/Users/egpintos17/Pictures/Celular/DSC00002.JPG"));
-		ImageManipulation test = new ImageManipulation();
+		Transformations test = new Transformations();
 		byte[] byteArray = test.rotate(is, 180);
-		
-		//Probando si se forma bien.
+
+		// Probando si se forma bien.
 		String fileName = "/Users/egpintos17/Pictures/Celular/DSC00002_R.JPG";
-		FileOutputStream fw =  new FileOutputStream(fileName, true);
+		FileOutputStream fw = new FileOutputStream(fileName, true);
 		fw.write(byteArray);
 		fw.close();
 
-		
+		String data = "aeio hola chau como estas lala hola lala lele";
+		System.out.println(data);
+		System.out.println(new String(test.transformL33t(data.getBytes())));
+
 	}
 
 	public byte[] rotate(InputStream original, Integer degrees) {
@@ -54,13 +58,14 @@ public class ImageManipulation {
 		}
 		return out.toByteArray();
 	}
-	
-//	public bytes[] transformL33t(byte[] bytes){
-//		String data = new String(bytes);
-//		for (int i = 0; i < data.length(); i++) {
-//			String 
-//			switch()
-//		}
-//		for
-//	}
+
+	public byte[] transformL33t(byte[] bytes)
+			throws UnsupportedEncodingException {
+		String data = new String(bytes);
+		String data1 = data.replace('a', '4');
+		String data2 = data1.replace('e', '3');
+		String data3 = data2.replace('i', '1');
+		String data4 = data3.replace('o', '0');
+		return data4.getBytes();
+	}
 }
