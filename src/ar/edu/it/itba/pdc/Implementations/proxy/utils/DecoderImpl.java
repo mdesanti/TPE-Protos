@@ -1,7 +1,12 @@
 package ar.edu.it.itba.pdc.Implementations.proxy.utils;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import ar.edu.it.itba.pdc.Interfaces.Decoder;
 import ar.edu.it.itba.pdc.Interfaces.HTTPHeaders;
@@ -38,6 +43,11 @@ public class DecoderImpl implements Decoder {
 				read = true;
 			} else {
 				read = false;
+			}
+		} else {
+			String transferEncoding = headers.getHeader("Transfer-Encoding");
+			if(transferEncoding != null && transferEncoding.contains("chunked")) {
+				
 			}
 		}
 
@@ -76,20 +86,28 @@ public class DecoderImpl implements Decoder {
 				fileName = "/tmp/prueba" + time + "." + extension;
 			try {
 				FileOutputStream fw = new FileOutputStream(fileName, true);
-//				String data = "fruta";
+				// String data = "fruta";
 				String data = headers.getBody(bytes, count);
 				fw.write(data.getBytes());
 				fw.close();
-				if(!keepReading())
+				if (!keepReading()) {
+					Transformations im = new Transformations();
+					InputStream is = new BufferedInputStream(
+							new FileInputStream((fileName)));
+					byte[] modified = im.rotate(is, 180);
+					is.close();
+					OutputStream os = new BufferedOutputStream(
+							new FileOutputStream("/tmp/rotated.jpeg"));
+					os.write(modified);
+					os.close();
 					fileName = null;
+				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
 		}
-		
-		if(!keepReading())
 
 	}
 

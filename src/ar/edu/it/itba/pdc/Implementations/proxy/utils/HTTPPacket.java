@@ -106,7 +106,7 @@ public class HTTPPacket implements HTTPHeaders {
 		parseHeaders(lines);
 	}
 
-	private String parseHeaders(String[] lines) {
+	private void parseHeaders(String[] lines) {
 		// will read until an empty line appears
 		int length = lines.length;
 		int i = 1;
@@ -117,7 +117,7 @@ public class HTTPPacket implements HTTPHeaders {
 				String[] headerValue = lines[i].split(":");
 				headerValue[1] = headerValue[1].replaceAll(" ", "");
 				if (headerValue.length < 2) {
-					return null;
+					return;
 				} else {
 					for (int j = 2; j < headerValue.length; j++) {
 						headerValue[1] += headerValue[j];
@@ -135,8 +135,6 @@ public class HTTPPacket implements HTTPHeaders {
 			buf += lines[i];
 			bodyBytes += lines[i].length();
 		}
-
-		return buf;
 
 	}
 
@@ -178,12 +176,17 @@ public class HTTPPacket implements HTTPHeaders {
 			} else {
 			}
 		}
-
 		// Body Part
 		String buf = "";
+		boolean firstTime = true;
 		for (; i < length; i++) {
+			if(!firstTime) {
+				buf += "\r\n";
+			}
+			firstTime = false;
 			buf += lines[i];
 		}
+		
 
 		return buf;
 
