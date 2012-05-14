@@ -18,7 +18,7 @@ public class HTTPPacket implements HTTPHeaders {
 	private Map<String, String> headers;
 	private int bodyBytes = 0;
 	private boolean completeHeaders = false;
-	private boolean save = false;
+	private boolean bodyHeaders = false;
 	private boolean contentExpected = true;
 
 	public HTTPPacket() {
@@ -160,13 +160,15 @@ public class HTTPPacket implements HTTPHeaders {
 		String s = new String(data).substring(0, count);
 		String[] lines = s.split("\r\n");
 		
-		boolean flag = false;
+		if(lines.length > 1) {
+			System.out.println("A vergaaa");
+		}
 		
 		int length = lines.length;
 		int i;
-		for (i = 0; i < length && !flag && length != 1; i++) {
+		for (i = 0; i < length && !bodyHeaders && length != 1; i++) {
 			if (lines[i].isEmpty()) {
-				flag = true;
+				bodyHeaders = true;
 			} else {
 			}
 		}
