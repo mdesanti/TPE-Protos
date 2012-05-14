@@ -13,10 +13,10 @@ public class DecoderImpl implements Decoder {
 	private int index = 0;
 	private HTTPHeaders headers = null;
 	private String fileName;
-	private String time;
+	private long time;
 
 	public DecoderImpl(int buffSize) {
-		time = Calendar.getInstance().getTime().toString();
+		time = System.currentTimeMillis();
 	}
 
 	@Override
@@ -74,7 +74,7 @@ public class DecoderImpl implements Decoder {
 		if (contentType.contains("image/")) {
 			String extension = contentType.split("/")[1];
 			if (fileName == null)
-				fileName = "/tmp/prueba" + Calendar.getInstance().getTime().toString() + "." + extension;
+				fileName = "/tmp/prueba" + time + "." + extension;
 			try {
 				System.out.println(time);
 				FileOutputStream fw = new FileOutputStream(fileName, true);
