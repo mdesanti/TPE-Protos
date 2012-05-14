@@ -106,6 +106,9 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 		ByteBuffer buf = map.get(key.channel()).peek();
 		// buf.flip(); // Prepare buffer for writing
 		SocketChannel clntChan = (SocketChannel) key.channel();
+		if(buf == null) {
+			return;
+		}
 		clntChan.write(buf);
 		AttachmentImpl att = (AttachmentImpl)key.attachment();
 		// The same decoder is used for request and response
