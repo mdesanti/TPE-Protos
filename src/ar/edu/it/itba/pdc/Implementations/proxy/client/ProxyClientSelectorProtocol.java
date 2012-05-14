@@ -70,12 +70,17 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 			// HTTPHeaders headers = decoder.getHeaders();
 			// TODO: here we should analyze if the request is accepted by the
 			// proxy
-			System.out
-					.println(Calendar.getInstance().getTime().toString()
-							+ "-> Response from external server to proxy. Server address: "
-							+ clntChan.socket().getInetAddress());
+//			System.out
+//					.println(Calendar.getInstance().getTime().toString()
+//							+ "-> Response from external server to proxy. Server address: "
+//							+ clntChan.socket().getInetAddress());
 			
 			boolean keepReading = decoder.keepReading();
+			String connection = decoder.getHeader("Connection");
+//			if(connection != null && connection.contains("close")) {
+//				clntChan.close();
+//				return;
+//			}
 			worker.sendData(caller, ((Attachment)key.attachment()).getFrom(), write,
 					bytesRead, keepReading);
 			buf.clear();
@@ -101,10 +106,10 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 		clntChan.write(buf);
 		AttachmentImpl att = (AttachmentImpl)key.attachment();
 
-		System.out
-				.println(Calendar.getInstance().getTime().toString()
-						+ "-> Request from proxy server to external server. Server address: "
-						+ clntChan.socket().getInetAddress());
+//		System.out
+//				.println(Calendar.getInstance().getTime().toString()
+//						+ "-> Request from proxy server to external server. Server address: "
+//						+ clntChan.socket().getInetAddress());
 		if (!buf.hasRemaining()) { // Buffer completely written?
 			map.get(key.channel()).remove();
 			if (map.get(key.channel()).isEmpty() && !att.isMultipart()) {
