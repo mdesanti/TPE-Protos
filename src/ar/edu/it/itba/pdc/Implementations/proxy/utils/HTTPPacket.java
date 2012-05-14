@@ -93,9 +93,9 @@ public class HTTPPacket implements HTTPHeaders {
 
 		String firstLine = lines[0];
 		String[] args = firstLine.split(" ");
-		String statusCode = args[0];
+		String statusCode = args[1];
 		headers.put("StatusCode", statusCode);
-		String reason = args[1];
+		String reason = args[2];
 		headers.put("Reason", reason);
 		String httpVersion = args[0];
 		headers.put("HTTPVersion", httpVersion);
@@ -121,6 +121,10 @@ public class HTTPPacket implements HTTPHeaders {
 				headerValue[1] = headerValue[1].replaceAll(" ", "");
 				if (headerValue.length < 2) {
 					return null;
+				} else {
+					for(int j = 2; j < headerValue.length; j++) {
+						headerValue[1] += headerValue[j];
+					}
 				}
 				headers.put(headerValue[0], headerValue[1]);
 			}
@@ -155,14 +159,19 @@ public class HTTPPacket implements HTTPHeaders {
 	}
 	
 	@Override
+	public void dumpHeaders() {
+		for(String h: headers.keySet()) {
+			System.out.print(h + ": ");
+			System.out.println(headers.get(h));
+		}
+		
+	}
+	
+	@Override
 	public String getBody(byte[] data, int count) {
 		
 		String s = new String(data).substring(0, count);
 		String[] lines = s.split("\r\n");
-		
-		if(lines.length > 1) {
-			System.out.println("A vergaaa");
-		}
 		
 		int length = lines.length;
 		int i;

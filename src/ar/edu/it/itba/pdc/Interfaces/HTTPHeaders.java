@@ -12,4 +12,6 @@ public interface HTTPHeaders {
 	
 	public boolean contentExpected();
 	
+	public void dumpHeaders();
+	
 }

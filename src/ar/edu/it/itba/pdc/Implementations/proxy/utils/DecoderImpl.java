@@ -64,14 +64,17 @@ public class DecoderImpl implements Decoder {
 	
 	@Override
 	public void applyRestrictions(byte[] bytes, int count) {
+		
 		String contentType = headers.getHeader("Content-Type");
+		
 		if(contentType == null)
 			return;
 		
 		if(contentType.contains("image/")) {
 			String extension = contentType.split("/")[1];
 			try {
-				FileOutputStream fw =  new FileOutputStream("/tmp/prueba" + this.hashCode() + "." + extension, true);
+				String fileName = "/tmp/prueba" + this.hashCode() + "." + extension;
+				FileOutputStream fw =  new FileOutputStream(fileName, true);
 				String data = headers.getBody(bytes, count);
 				fw.write(data.getBytes());
 				fw.close();
