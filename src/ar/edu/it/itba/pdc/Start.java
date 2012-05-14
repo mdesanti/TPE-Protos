@@ -16,7 +16,7 @@ public class Start {
 				new ProxyServerSelectorProtocol());
 		TCPSelector clientSelector = new TCPClientSelector(work, 9091,
 				new ProxyClientSelectorProtocol());
-		
+
 		work.setServer(serverSelector);
 		work.setClient(clientSelector);
 

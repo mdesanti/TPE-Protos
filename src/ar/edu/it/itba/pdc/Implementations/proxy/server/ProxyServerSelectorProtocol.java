@@ -1,19 +1,20 @@
 package ar.edu.it.itba.pdc.Implementations.proxy.server;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 
 import ar.edu.it.itba.pdc.Implementations.proxy.TCPSelector;
 import ar.edu.it.itba.pdc.Implementations.proxy.utils.DecoderImpl;
+import ar.edu.it.itba.pdc.Interfaces.Attachment;
 import ar.edu.it.itba.pdc.Interfaces.Decoder;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
 import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;
@@ -23,12 +24,20 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 	private static int bufSize = 20 * 1024;
 	public static Charset charset = Charset.forName("UTF-8");
 
-	private Map<SocketChannel, Decoder> requestDecoders = new HashMap<SocketChannel, Decoder>();
-	private Map<SocketChannel, Decoder> responseDecoders = new HashMap<SocketChannel, Decoder>();
+	private Map<SocketChannel, Decoder> decoders = new HashMap<SocketChannel, Decoder>();
 	private ProxyWorker worker;
 	private TCPSelector caller;
+	private BufferedWriter logger;
 
 	public ProxyServerSelectorProtocol() {
+		try {
+			FileWriter logger = new FileWriter(
+					"/Users/mdesanti90/log/serverLog");
+			this.logger = new BufferedWriter(logger);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -37,12 +46,10 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		clntChan.configureBlocking(false); // Must be nonblocking to register
 		// Register the selector with new channel for read and attach byte
 		// buffer
-		System.out.println(Calendar.getInstance().getTime().toString()
-				+ "-> Connection accepted. Client address: "
-				+ clntChan.socket().getInetAddress());
-		requestDecoders.put(clntChan, new DecoderImpl(bufSize));
-		responseDecoders.put(clntChan, new DecoderImpl(bufSize));
-
+//		System.out.println(Calendar.getInstance().getTime().toString()
+//				+ "-> Connection accepted. Client address: "
+//				+ clntChan.socket().getInetAddress());
+		decoders.put(clntChan, new DecoderImpl(bufSize));
 		clntChan.register(key.selector(), SelectionKey.OP_READ);
 	}
 
@@ -52,7 +59,7 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		SocketChannel clntChan = (SocketChannel) key.channel();
 		ByteBuffer buf = ByteBuffer.allocate(bufSize);
 
-		Decoder decoder = requestDecoders.get(clntChan);
+		Decoder decoder = decoders.get(clntChan);
 		long bytesRead;
 		try {
 			bytesRead = clntChan.read(buf);
@@ -62,21 +69,18 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 
 		if (bytesRead == -1) { // Did the other end close?
 			clntChan.close();
-			requestDecoders.remove(clntChan);
+			decoders.remove(clntChan);
 		} else if (bytesRead > 0) {
 			byte[] write = buf.array();
 			decoder.decode(write, (int) bytesRead);
-			decoder.applyRestrictions();
-
-			System.out.println(Calendar.getInstance().getTime().toString()
-					+ "-> Request from client to proxy. Client address: "
-					+ clntChan.socket().getInetAddress());
+			// HTTPHeaders headers = decoder.getHeaders();
+			// TODO: here we should analyze if the request is accepted by the
+			// proxy
+//			System.out.println(Calendar.getInstance().getTime().toString()
+//					+ "-> Request from client to proxy. Client address: "
+//					+ clntChan.socket().getInetAddress());
 			boolean isMultipart = decoder.keepReading();
-
-			URL url = new URL("http://" + decoder.getHeader("Host"));
-
-			worker.sendData(caller, clntChan, write, bytesRead, isMultipart,
-					url);
+			worker.sendData(caller, clntChan, write, bytesRead, isMultipart);
 			buf.clear();
 			if (isMultipart)
 				key.interestOps(SelectionKey.OP_READ);
@@ -88,31 +92,13 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 			Map<SocketChannel, Queue<ByteBuffer>> map) throws IOException {
 		// TODO: peek, do not remove. In case the buffer can not be completely
 		// written
+		ByteBuffer buf = map.get(key.channel()).peek();
 		// buf.flip(); // Prepare buffer for writing
-		Queue<ByteBuffer> queue = map.get(key.channel());
-		if(queue.isEmpty()) {
-			System.out.print(".");
-			key.interestOps(SelectionKey.OP_WRITE);
-			return;
-		}
-		ByteBuffer buf = queue.peek();
 		SocketChannel clntChan = (SocketChannel) key.channel();
-		if(buf == null) {
-			key.interestOps(SelectionKey.OP_WRITE);
-			map.get(key.channel()).remove();
-			System.out.println("Buffer es null");
-			return;
-		}
-		Decoder decoder = responseDecoders.get(clntChan);
-		decoder.decode(buf.array(), buf.array().length);
-		decoder.applyRestrictions();
-		boolean isMultipart = decoder.keepReading();
-
-		System.out.println(Calendar.getInstance().getTime().toString()
-				+ "-> Response from proxy to client with status code "
-				+ decoder.getHeader("StatusCode") + ". Client address: "
-				+ clntChan.socket().getInetAddress());
-
+		boolean isMultipart = ((Attachment) key.attachment()).isMultipart();
+//		System.out.println(Calendar.getInstance().getTime().toString()
+//				+ "-> Response from proxy to client. Client address: "
+//				+ clntChan.socket().getInetAddress());
 		if (!clntChan.isConnected()) {
 			clntChan.close();
 		}
@@ -130,7 +116,6 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 			if (map.get(key.channel()).isEmpty() && !isMultipart) {
 				// Nothing left, so no longer interested in writes
 				key.interestOps(SelectionKey.OP_READ);
-				responseDecoders.put(clntChan, new DecoderImpl(bufSize));
 			} else {
 				key.interestOps(SelectionKey.OP_WRITE);
 				buf.clear();

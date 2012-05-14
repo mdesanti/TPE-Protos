@@ -8,6 +8,4 @@ public interface HTTPHeaders {
 	
 	public void parse(byte[] data, int count);
 	
-	public boolean noContentExpected();
-	
 }

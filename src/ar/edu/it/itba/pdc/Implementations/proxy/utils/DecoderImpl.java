@@ -29,24 +29,11 @@ public class DecoderImpl implements Decoder {
 		if (length != null) {
 			length = length.replaceAll(" ", "");
 			int aux = Integer.parseInt(length);
-			if (aux > headers.getReadBytes() && !headers.noContentExpected()) {
+			if (aux > headers.getReadBytes()) {
 				read = true;
 			} else {
 				read = false;
 			}
-		}
-
-	}
-
-	@Override
-	public void applyRestrictions() {
-		String contentType = headers.getHeader("Content-Type");
-		boolean image = false;
-		if (contentType != null)
-			image = contentType.contains("image/");
-
-		if (image) {
-			System.out.println("Es una imagen");
 		}
 
 	}
