@@ -92,12 +92,15 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		// TODO: peek, do not remove. In case the buffer can not be completely
 		// written
 		ByteBuffer buf = map.get(key.channel()).peek();
+		if(buf == null)
+			return;
 		// buf.flip(); // Prepare buffer for writing
 		SocketChannel clntChan = (SocketChannel) key.channel();
 		Decoder decoder = responseDecoders.get(clntChan);
+		System.out.println(buf);
 		decoder.decode(buf.array(), buf.array().length);
 		decoder.applyRestrictions();
-		boolean isMultipart = ((Attachment) key.attachment()).isMultipart();
+		boolean isMultipart = decoder.keepReading();
 
 		System.out.println(Calendar.getInstance().getTime().toString()
 				+ "-> Response from proxy to client with status code "
@@ -121,6 +124,7 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 			if (map.get(key.channel()).isEmpty() && !isMultipart) {
 				// Nothing left, so no longer interested in writes
 				key.interestOps(SelectionKey.OP_READ);
+				responseDecoders.put(clntChan, new DecoderImpl(bufSize));
 			} else {
 				key.interestOps(SelectionKey.OP_WRITE);
 				buf.clear();

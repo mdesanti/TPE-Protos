@@ -34,14 +34,13 @@ public class HTTPPacket implements HTTPHeaders {
 				System.out.println("-1");
 			}
 			
+			String s = new String(data).substring(0, count);			
+			
 			if (completeHeaders) {
 				bodyBytes += count;
 				return;
 			}
 			
-
-
-			String s = new String(data).substring(0, count);			
 			String aux = new String("\r\n");
 			int w = aux.length();
 
