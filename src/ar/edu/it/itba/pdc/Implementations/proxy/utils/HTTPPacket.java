@@ -30,24 +30,18 @@ public class HTTPPacket implements HTTPHeaders {
 		String[] args = null;
 		try {
 			
-			String s = new String(data).substring(0, count);
-			System.out.println(s);
-			if(save) {
-				savePicture(s);
-			}
 			
 			if (completeHeaders) {
 				bodyBytes += count;
 				return;
 			}
 			
+			String s = new String(data).substring(0, count);
 
 			if (count == -1) {
 				System.out.println("-1");
 			}
 
-			String aux = new String("\r\n");
-			int w = aux.length();
 
 			String[] lines = s.split("\r\n");
 
@@ -124,11 +118,6 @@ public class HTTPPacket implements HTTPHeaders {
 		}
 		
 		//Body Part
-		String contentType = headers.get("Content-Type");
-		if(contentType != null && contentType.contains("image/")) {
-			savePicture(lines[i]);
-			save = true;
-		}
 		// add "\r\n" bytes deleted when splitting
 		bodyBytes += (length - i) * 2;
 		for (; i < length; i++) {
@@ -139,17 +128,6 @@ public class HTTPPacket implements HTTPHeaders {
 
 	}
 	
-	private void savePicture(String picture) {
-		FileWriter f;
-		try {
-			f = new FileWriter(new File("/tmp/prueba" + this.hashCode()));
-			f.write(picture);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
 	@Override
 	public String getHeader(String header) {
 		return this.headers.get(header);

@@ -99,7 +99,6 @@ public class TCPClientSelector extends TCPSelector {
 			while (changes.hasNext()) {
 				DataEvent change = changes.next();
 				Decoder decoder = new DecoderImpl(BUFSIZE);
-				;
 
 				decoder.decode(change.getData(), change.getData().length);
 				newEvents.add(new Event(decoder, change.getData(), change

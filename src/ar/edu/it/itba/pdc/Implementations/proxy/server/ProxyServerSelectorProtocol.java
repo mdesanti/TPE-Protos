@@ -8,6 +8,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
@@ -46,9 +47,9 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		clntChan.configureBlocking(false); // Must be nonblocking to register
 		// Register the selector with new channel for read and attach byte
 		// buffer
-//		System.out.println(Calendar.getInstance().getTime().toString()
-//				+ "-> Connection accepted. Client address: "
-//				+ clntChan.socket().getInetAddress());
+		System.out.println(Calendar.getInstance().getTime().toString()
+				+ "-> Connection accepted. Client address: "
+				+ clntChan.socket().getInetAddress());
 		decoders.put(clntChan, new DecoderImpl(bufSize));
 		clntChan.register(key.selector(), SelectionKey.OP_READ);
 	}
@@ -76,9 +77,9 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 			// HTTPHeaders headers = decoder.getHeaders();
 			// TODO: here we should analyze if the request is accepted by the
 			// proxy
-//			System.out.println(Calendar.getInstance().getTime().toString()
-//					+ "-> Request from client to proxy. Client address: "
-//					+ clntChan.socket().getInetAddress());
+			System.out.println(Calendar.getInstance().getTime().toString()
+					+ "-> Request from client to proxy. Client address: "
+					+ clntChan.socket().getInetAddress());
 			boolean isMultipart = decoder.keepReading();
 			worker.sendData(caller, clntChan, write, bytesRead, isMultipart);
 			buf.clear();
@@ -96,9 +97,9 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		// buf.flip(); // Prepare buffer for writing
 		SocketChannel clntChan = (SocketChannel) key.channel();
 		boolean isMultipart = ((Attachment) key.attachment()).isMultipart();
-//		System.out.println(Calendar.getInstance().getTime().toString()
-//				+ "-> Response from proxy to client. Client address: "
-//				+ clntChan.socket().getInetAddress());
+		System.out.println(Calendar.getInstance().getTime().toString()
+				+ "-> Response from proxy to client. Client address: "
+				+ clntChan.socket().getInetAddress());
 		if (!clntChan.isConnected()) {
 			clntChan.close();
 		}
