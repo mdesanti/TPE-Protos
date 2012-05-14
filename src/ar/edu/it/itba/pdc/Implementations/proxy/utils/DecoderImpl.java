@@ -2,6 +2,7 @@ package ar.edu.it.itba.pdc.Implementations.proxy.utils;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Calendar;
 
 import ar.edu.it.itba.pdc.Interfaces.Decoder;
 import ar.edu.it.itba.pdc.Interfaces.HTTPHeaders;
@@ -11,9 +12,11 @@ public class DecoderImpl implements Decoder {
 	private boolean read = false;
 	private int index = 0;
 	private HTTPHeaders headers = null;
-	private String fileName = null;
+	private String fileName;
+	private String time;
 
 	public DecoderImpl(int buffSize) {
+		time = Calendar.getInstance().getTime().toString();
 	}
 
 	@Override
@@ -71,8 +74,9 @@ public class DecoderImpl implements Decoder {
 		if (contentType.contains("image/")) {
 			String extension = contentType.split("/")[1];
 			if (fileName == null)
-				fileName = "/tmp/prueba" + this.hashCode() + "." + extension;
+				fileName = "/tmp/prueba" + Calendar.getInstance().getTime().toString() + "." + extension;
 			try {
+				System.out.println(time);
 				FileOutputStream fw = new FileOutputStream(fileName, true);
 				String data = headers.getBody(bytes, count);
 				fw.write(data.getBytes());
