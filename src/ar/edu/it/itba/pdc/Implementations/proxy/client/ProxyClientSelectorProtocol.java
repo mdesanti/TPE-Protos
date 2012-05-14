@@ -81,10 +81,10 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 			// HTTPHeaders headers = decoder.getHeaders();
 			// TODO: here we should analyze if the request is accepted by the
 			// proxy
-			System.out
-					.println(Calendar.getInstance().getTime().toString()
-							+ "-> Response from external server to proxy. Server address: "
-							+ clntChan.socket().getInetAddress());
+//			System.out
+//					.println(Calendar.getInstance().getTime().toString()
+//							+ "-> Response from external server to proxy. Server address: "
+//							+ clntChan.socket().getInetAddress());
 			
 			boolean keepReading = decoder.keepReading();
 			worker.sendData(caller, ((Attachment)key.attachment()).getFrom(), write,
@@ -93,7 +93,7 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 			if (keepReading) {
 				key.interestOps(SelectionKey.OP_READ);
 			} else {
-				
+				decoders.put(((Attachment) key.attachment()).getFrom(), new DecoderImpl(bufSize));
 			}
 		}
 	}
@@ -106,14 +106,17 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 		ByteBuffer buf = map.get(key.channel()).peek();
 		// buf.flip(); // Prepare buffer for writing
 		SocketChannel clntChan = (SocketChannel) key.channel();
+		if(buf == null) {
+			return;
+		}
 		clntChan.write(buf);
 		AttachmentImpl att = (AttachmentImpl)key.attachment();
 		// The same decoder is used for request and response
 
-		System.out
-				.println(Calendar.getInstance().getTime().toString()
-						+ "-> Request from proxy server to external server. Server address: "
-						+ clntChan.socket().getInetAddress());
+//		System.out
+//				.println(Calendar.getInstance().getTime().toString()
+//						+ "-> Request from proxy server to external server. Server address: "
+//						+ clntChan.socket().getInetAddress());
 		// TODO: change condition. Shouldn't write any more if queue is empty
 		if (!buf.hasRemaining()) { // Buffer completely written?
 			map.get(key.channel()).remove();

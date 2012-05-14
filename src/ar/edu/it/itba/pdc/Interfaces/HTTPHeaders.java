@@ -8,4 +8,10 @@ public interface HTTPHeaders {
 	
 	public void parse(byte[] data, int count);
 	
+	public String getBody(byte[] data, int count);
+	
+	public boolean contentExpected();
+	
+	public void dumpHeaders();
+	
 }

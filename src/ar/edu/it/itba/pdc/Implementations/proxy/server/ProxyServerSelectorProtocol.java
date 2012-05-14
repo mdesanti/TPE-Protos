@@ -25,7 +25,8 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 	private static int bufSize = 20 * 1024;
 	public static Charset charset = Charset.forName("UTF-8");
 
-	private Map<SocketChannel, Decoder> decoders = new HashMap<SocketChannel, Decoder>();
+	private Map<SocketChannel, Decoder> requestDecoders = new HashMap<SocketChannel, Decoder>();
+	private Map<SocketChannel, Decoder> responseDecoders = new HashMap<SocketChannel, Decoder>();
 	private ProxyWorker worker;
 	private TCPSelector caller;
 	private BufferedWriter logger;
@@ -47,10 +48,11 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		clntChan.configureBlocking(false); // Must be nonblocking to register
 		// Register the selector with new channel for read and attach byte
 		// buffer
-		System.out.println(Calendar.getInstance().getTime().toString()
-				+ "-> Connection accepted. Client address: "
-				+ clntChan.socket().getInetAddress());
-		decoders.put(clntChan, new DecoderImpl(bufSize));
+		// System.out.println(Calendar.getInstance().getTime().toString()
+		// + "-> Connection accepted. Client address: "
+		// + clntChan.socket().getInetAddress());
+		requestDecoders.put(clntChan, new DecoderImpl(bufSize));
+		responseDecoders.put(clntChan, new DecoderImpl(bufSize));
 		clntChan.register(key.selector(), SelectionKey.OP_READ);
 	}
 
@@ -60,7 +62,7 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		SocketChannel clntChan = (SocketChannel) key.channel();
 		ByteBuffer buf = ByteBuffer.allocate(bufSize);
 
-		Decoder decoder = decoders.get(clntChan);
+		Decoder decoder = requestDecoders.get(clntChan);
 		long bytesRead;
 		try {
 			bytesRead = clntChan.read(buf);
@@ -70,39 +72,47 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 
 		if (bytesRead == -1) { // Did the other end close?
 			clntChan.close();
-			decoders.remove(clntChan);
+			requestDecoders.remove(clntChan);
 		} else if (bytesRead > 0) {
 			byte[] write = buf.array();
 			decoder.decode(write, (int) bytesRead);
 			// HTTPHeaders headers = decoder.getHeaders();
 			// TODO: here we should analyze if the request is accepted by the
 			// proxy
-			System.out.println(Calendar.getInstance().getTime().toString()
-					+ "-> Request from client to proxy. Client address: "
-					+ clntChan.socket().getInetAddress());
+			// System.out.println(Calendar.getInstance().getTime().toString()
+			// + "-> Request from client to proxy. Client address: "
+			// + clntChan.socket().getInetAddress());
 			boolean isMultipart = decoder.keepReading();
 			worker.sendData(caller, clntChan, write, bytesRead, isMultipart);
 			buf.clear();
-			if (isMultipart)
+			if (isMultipart) {
 				key.interestOps(SelectionKey.OP_READ);
+			} else {
+				requestDecoders.put(clntChan, new DecoderImpl(bufSize));
+			}
 		}
 	}
 
 	@Override
 	public void handleWrite(SelectionKey key,
 			Map<SocketChannel, Queue<ByteBuffer>> map) throws IOException {
-		// TODO: peek, do not remove. In case the buffer can not be completely
-		// written
+
 		ByteBuffer buf = map.get(key.channel()).peek();
 		// buf.flip(); // Prepare buffer for writing
 		SocketChannel clntChan = (SocketChannel) key.channel();
-		boolean isMultipart = ((Attachment) key.attachment()).isMultipart();
-		System.out.println(Calendar.getInstance().getTime().toString()
-				+ "-> Response from proxy to client. Client address: "
-				+ clntChan.socket().getInetAddress());
+		Decoder decoder = requestDecoders.get(clntChan);
+		if (buf == null) {
+			clntChan.close();
+			return;
+		}
 		if (!clntChan.isConnected()) {
 			clntChan.close();
 		}
+		decoder.decode(buf.array(), buf.array().length);
+		decoder.applyRestrictions(buf.array(), buf.array().length);
+		// System.out.println(Calendar.getInstance().getTime().toString()
+		// + "-> Response from proxy to client. Client address: "
+		// + clntChan.socket().getInetAddress());
 		try {
 			clntChan.write(buf);
 		} catch (IOException e) {
@@ -114,13 +124,19 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		// TODO: change condition. Shouldn't write any more if queue is empty
 		if (!buf.hasRemaining()) { // Buffer completely written?
 			map.get(key.channel()).remove();
-			if (map.get(key.channel()).isEmpty() && !isMultipart) {
+			if (map.get(key.channel()).isEmpty() && !decoder.keepReading()) {
 				// Nothing left, so no longer interested in writes
 				key.interestOps(SelectionKey.OP_READ);
+				responseDecoders.put(clntChan, new DecoderImpl(bufSize));
+			} else if (!decoder.keepReading()) {
+				// queue is not empty but decoder hasn't got anything to write
+				key.interestOps(SelectionKey.OP_WRITE);
+				responseDecoders.put(clntChan, new DecoderImpl(bufSize));
+				buf.clear();
 			} else {
 				key.interestOps(SelectionKey.OP_WRITE);
-				buf.clear();
 			}
+			buf.clear();
 			buf.compact(); // Make room for more data to be read in
 		} else {
 			buf.compact();

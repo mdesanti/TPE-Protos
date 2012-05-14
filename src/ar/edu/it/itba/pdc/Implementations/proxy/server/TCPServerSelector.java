@@ -53,16 +53,7 @@ public class TCPServerSelector extends TCPSelector {
 						Iterator<DataEvent> changes = this.queue.iterator();
 						while (changes.hasNext()) {
 							DataEvent change = changes.next();
-							SelectionKey key = change.getFrom().keyFor(selector);
-							if (key != null) {
-								if (!map.containsKey(change.getFrom()))
-									map.put(change.getFrom(),
-											new LinkedList<ByteBuffer>());
-								map.get(change.getFrom()).add(
-										ByteBuffer.wrap(change.getData()));
-								key.interestOps(SelectionKey.OP_WRITE);
-								key.attach(new AttachmentImpl(change.isMulipart(), null));
-							}
+							process(change, selector);
 							changes.remove();
 						}
 					}
@@ -92,6 +83,25 @@ public class TCPServerSelector extends TCPSelector {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		}
+	}
+	
+	private void process(DataEvent change, Selector selector) {
+		
+		SelectionKey key = change.getFrom().keyFor(selector);
+		
+		if (key != null) {
+			if (!map.containsKey(change.getFrom()))
+				map.put(change.getFrom(),
+						new LinkedList<ByteBuffer>());
+			if(!map.get(change.getFrom()).add(
+					ByteBuffer.wrap(change.getData()))) {
+				while(true) {
+					System.out.println("NO SE PUDO AGREGAR");
+				}
+			}
+			key.interestOps(SelectionKey.OP_WRITE);
+			key.attach(new AttachmentImpl(change.isMulipart(), null));
 		}
 	}
 }

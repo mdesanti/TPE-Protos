@@ -18,7 +18,8 @@ public class HTTPPacket implements HTTPHeaders {
 	private Map<String, String> headers;
 	private int bodyBytes = 0;
 	private boolean completeHeaders = false;
-	private boolean save = false;
+	private boolean bodyHeaders = false;
+	private boolean contentExpected = true;
 
 	public HTTPPacket() {
 
@@ -61,7 +62,7 @@ public class HTTPPacket implements HTTPHeaders {
 
 
 		} catch (ArrayIndexOutOfBoundsException e) {
-			System.out.println(args.length);
+//			System.out.println(args.length);
 		}
 
 	}
@@ -70,7 +71,6 @@ public class HTTPPacket implements HTTPHeaders {
 
 		String[] lines = message;
 
-		parseHeaders(lines);
 
 		String firstLine = lines[0];
 		String[] args = firstLine.split(" ");
@@ -80,6 +80,9 @@ public class HTTPPacket implements HTTPHeaders {
 		headers.put("RequestedURI", requestURI);
 		String httpVersion = args[2];
 		headers.put("HTTPVersion", httpVersion);
+		
+		parseHeaders(lines);
+		
 	}
 
 	private void parseResponse(String[] message) {
@@ -87,20 +90,26 @@ public class HTTPPacket implements HTTPHeaders {
 		// HTTP-Version SP Status-Code SP Reason-Phrase CRLF
 		String[] lines = message;
 
-		parseHeaders(lines);
 
 		String firstLine = lines[0];
 		String[] args = firstLine.split(" ");
-		String statusCode = args[0];
+		String statusCode = args[1];
 		headers.put("StatusCode", statusCode);
-		String reason = args[1];
+		String reason = args[2];
 		headers.put("Reason", reason);
 		String httpVersion = args[0];
 		headers.put("HTTPVersion", httpVersion);
 
+		statusCode = statusCode.replaceAll(" ", "");
+		
+		if(statusCode.matches("1..") || statusCode.equals("204") || statusCode.equals("304")) {
+			contentExpected = false;
+		}
+		
+		parseHeaders(lines);
 	}
 
-	private void parseHeaders(String[] lines) {
+	private String parseHeaders(String[] lines) {
 		// will read until an empty line appears
 		int length = lines.length;
 		int i = 1;
@@ -111,7 +120,11 @@ public class HTTPPacket implements HTTPHeaders {
 				String[] headerValue = lines[i].split(":");
 				headerValue[1] = headerValue[1].replaceAll(" ", "");
 				if (headerValue.length < 2) {
-					return;
+					return null;
+				} else {
+					for(int j = 2; j < headerValue.length; j++) {
+						headerValue[1] += headerValue[j];
+					}
 				}
 				headers.put(headerValue[0], headerValue[1]);
 			}
@@ -120,11 +133,13 @@ public class HTTPPacket implements HTTPHeaders {
 		//Body Part
 		// add "\r\n" bytes deleted when splitting
 		bodyBytes += (length - i) * 2;
+		String buf = "";
 		for (; i < length; i++) {
-			String buf = "";
 			buf += lines[i];
 			bodyBytes += buf.getBytes().length;
 		}
+		
+		return buf;
 
 	}
 	
@@ -137,4 +152,50 @@ public class HTTPPacket implements HTTPHeaders {
 	public int getReadBytes() {
 		return bodyBytes;
 	}
+	
+	@Override
+	public boolean contentExpected() {
+		return contentExpected;
+	}
+	
+	@Override
+	public void dumpHeaders() {
+		for(String h: headers.keySet()) {
+			System.out.print(h + ": ");
+			System.out.println(headers.get(h));
+		}
+		
+	}
+	
+	@Override
+	public String getBody(byte[] data, int count) {
+		
+		String s = new String(data).substring(0, count);
+		String[] lines = s.split("\r\n");
+		
+		int length = lines.length;
+		int i;
+		for (i = 0; i < length && !bodyHeaders && length != 1; i++) {
+			if (lines[i].isEmpty()) {
+				bodyHeaders = true;
+			} else {
+			}
+		}
+		
+		//Body Part
+		// add "\r\n" bytes deleted when splitting
+		String buf = "";
+		boolean firstTime = true;
+		for (; i < length; i++) {
+			buf += lines[i];
+			if(!firstTime) {
+				buf += "\r\n";
+			}
+			firstTime = false;
+		}
+		
+		return buf;
+		
+	}
+	
 }
