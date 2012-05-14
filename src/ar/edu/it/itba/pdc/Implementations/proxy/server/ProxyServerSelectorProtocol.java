@@ -25,7 +25,8 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 	private static int bufSize = 20 * 1024;
 	public static Charset charset = Charset.forName("UTF-8");
 
-	private Map<SocketChannel, Decoder> decoders = new HashMap<SocketChannel, Decoder>();
+	private Map<SocketChannel, Decoder> requestDecoders = new HashMap<SocketChannel, Decoder>();
+	private Map<SocketChannel, Decoder> responseDecoders = new HashMap<SocketChannel, Decoder>();
 	private ProxyWorker worker;
 	private TCPSelector caller;
 	private BufferedWriter logger;
@@ -50,7 +51,8 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		System.out.println(Calendar.getInstance().getTime().toString()
 				+ "-> Connection accepted. Client address: "
 				+ clntChan.socket().getInetAddress());
-		decoders.put(clntChan, new DecoderImpl(bufSize));
+		requestDecoders.put(clntChan, new DecoderImpl(bufSize));
+		responseDecoders.put(clntChan, new DecoderImpl(bufSize));
 		clntChan.register(key.selector(), SelectionKey.OP_READ);
 	}
 
@@ -60,7 +62,7 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		SocketChannel clntChan = (SocketChannel) key.channel();
 		ByteBuffer buf = ByteBuffer.allocate(bufSize);
 
-		Decoder decoder = decoders.get(clntChan);
+		Decoder decoder = requestDecoders.get(clntChan);
 		long bytesRead;
 		try {
 			bytesRead = clntChan.read(buf);
@@ -70,7 +72,7 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 
 		if (bytesRead == -1) { // Did the other end close?
 			clntChan.close();
-			decoders.remove(clntChan);
+			requestDecoders.remove(clntChan);
 		} else if (bytesRead > 0) {
 			byte[] write = buf.array();
 			decoder.decode(write, (int) bytesRead);
@@ -91,11 +93,16 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 	@Override
 	public void handleWrite(SelectionKey key,
 			Map<SocketChannel, Queue<ByteBuffer>> map) throws IOException {
-		// TODO: peek, do not remove. In case the buffer can not be completely
-		// written
+
 		ByteBuffer buf = map.get(key.channel()).peek();
 		// buf.flip(); // Prepare buffer for writing
 		SocketChannel clntChan = (SocketChannel) key.channel();
+		Decoder decoder = requestDecoders.get(clntChan);
+		if (buf == null) {
+			clntChan.close();
+			return;
+		}
+		decoder.decode(buf.array(), buf.array().length);
 		boolean isMultipart = ((Attachment) key.attachment()).isMultipart();
 		System.out.println(Calendar.getInstance().getTime().toString()
 				+ "-> Response from proxy to client. Client address: "

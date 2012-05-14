@@ -12,4 +12,6 @@ public interface Decoder {
 	
 	public HTTPHeaders getHeaders();
 	
+	public void applyRestrictions();
+	
 }

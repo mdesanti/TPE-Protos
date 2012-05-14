@@ -28,8 +28,10 @@ public class DecoderImpl implements Decoder {
 		// remove spaces
 		if (length != null) {
 			length = length.replaceAll(" ", "");
-			int aux = Integer.parseInt(length);
-			if (aux > headers.getReadBytes()) {
+			int expectedRead = Integer.parseInt(length);
+			if (expectedRead > headers.getReadBytes()) {
+				if(!headers.contentExpected())
+					read = false;
 				read = true;
 			} else {
 				read = false;
@@ -55,6 +57,12 @@ public class DecoderImpl implements Decoder {
 
 	public HTTPHeaders getHeaders() {
 		return headers;
+	}
+	
+	@Override
+	public void applyRestrictions() {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

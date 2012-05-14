@@ -93,7 +93,7 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 			if (keepReading) {
 				key.interestOps(SelectionKey.OP_READ);
 			} else {
-				
+				decoders.put(((Attachment) key.attachment()).getFrom(), new DecoderImpl(bufSize));
 			}
 		}
 	}

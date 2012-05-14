@@ -19,6 +19,7 @@ public class HTTPPacket implements HTTPHeaders {
 	private int bodyBytes = 0;
 	private boolean completeHeaders = false;
 	private boolean save = false;
+	private boolean contentExpected = true;
 
 	public HTTPPacket() {
 
@@ -70,7 +71,6 @@ public class HTTPPacket implements HTTPHeaders {
 
 		String[] lines = message;
 
-		parseHeaders(lines);
 
 		String firstLine = lines[0];
 		String[] args = firstLine.split(" ");
@@ -80,6 +80,9 @@ public class HTTPPacket implements HTTPHeaders {
 		headers.put("RequestedURI", requestURI);
 		String httpVersion = args[2];
 		headers.put("HTTPVersion", httpVersion);
+		
+		parseHeaders(lines);
+		
 	}
 
 	private void parseResponse(String[] message) {
@@ -87,7 +90,6 @@ public class HTTPPacket implements HTTPHeaders {
 		// HTTP-Version SP Status-Code SP Reason-Phrase CRLF
 		String[] lines = message;
 
-		parseHeaders(lines);
 
 		String firstLine = lines[0];
 		String[] args = firstLine.split(" ");
@@ -98,6 +100,13 @@ public class HTTPPacket implements HTTPHeaders {
 		String httpVersion = args[0];
 		headers.put("HTTPVersion", httpVersion);
 
+		statusCode = statusCode.replaceAll(" ", "");
+		
+		if(statusCode.matches("1..") || statusCode.equals("204") || statusCode.equals("304")) {
+			contentExpected = false;
+		}
+		
+		parseHeaders(lines);
 	}
 
 	private void parseHeaders(String[] lines) {
@@ -136,5 +145,10 @@ public class HTTPPacket implements HTTPHeaders {
 	@Override
 	public int getReadBytes() {
 		return bodyBytes;
+	}
+	
+	@Override
+	public boolean contentExpected() {
+		return contentExpected;
 	}
 }
