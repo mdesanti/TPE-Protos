@@ -185,8 +185,13 @@ public class HTTPPacket implements HTTPHeaders {
 		//Body Part
 		// add "\r\n" bytes deleted when splitting
 		String buf = "";
+		boolean firstTime = true;
 		for (; i < length; i++) {
 			buf += lines[i];
+			if(!firstTime) {
+				buf += "\r\n";
+			}
+			firstTime = false;
 		}
 		
 		return buf;

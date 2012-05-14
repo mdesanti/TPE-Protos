@@ -158,8 +158,7 @@ public class TCPClientSelector extends TCPSelector {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				} catch (UnknownHostException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					return;
 				} catch (IOException e) {
 					// TODO should return error
 					return;

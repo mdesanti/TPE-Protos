@@ -8,14 +8,12 @@ import ar.edu.it.itba.pdc.Interfaces.HTTPHeaders;
 
 public class DecoderImpl implements Decoder {
 
-	private int buffsize;
 	private boolean read = false;
 	private int index = 0;
 	private HTTPHeaders headers = null;
-	private int readSize = 0;
+	private String fileName = null;
 
 	public DecoderImpl(int buffSize) {
-		this.buffsize = buffSize;
 	}
 
 	@Override
@@ -33,7 +31,7 @@ public class DecoderImpl implements Decoder {
 			length = length.replaceAll(" ", "");
 			int expectedRead = Integer.parseInt(length);
 			if (expectedRead > headers.getReadBytes()) {
-				if(!headers.contentExpected())
+				if (!headers.contentExpected())
 					read = false;
 				read = true;
 			} else {
@@ -61,30 +59,33 @@ public class DecoderImpl implements Decoder {
 	public HTTPHeaders getHeaders() {
 		return headers;
 	}
-	
+
 	@Override
 	public void applyRestrictions(byte[] bytes, int count) {
-		
+
 		String contentType = headers.getHeader("Content-Type");
-		
-		if(contentType == null)
+
+		if (contentType == null)
 			return;
-		
-		if(contentType.contains("image/")) {
+
+		if (contentType.contains("image/")) {
 			String extension = contentType.split("/")[1];
+			if (fileName == null)
+				fileName = "/tmp/prueba" + this.hashCode() + "." + extension;
 			try {
-				String fileName = "/tmp/prueba" + this.hashCode() + "." + extension;
-				FileOutputStream fw =  new FileOutputStream(fileName, true);
+				FileOutputStream fw = new FileOutputStream(fileName, true);
 				String data = headers.getBody(bytes, count);
 				fw.write(data.getBytes());
 				fw.close();
+				if(!keepReading())
+					fileName = null;
 			} catch (IOException e) {
-//				 TODO Auto-generated catch block
+				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
+
 		}
-		
+
 	}
 
 }
