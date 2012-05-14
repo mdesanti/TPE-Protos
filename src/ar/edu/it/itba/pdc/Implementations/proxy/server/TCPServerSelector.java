@@ -48,20 +48,23 @@ public class TCPServerSelector extends TCPSelector {
 			// Wait for some channel to be ready (or timeout)
 			try {
 				if (selector.select(TIMEOUT) == 0) { // returns # of ready chans
-//					System.out.println(".....Server.....\n");
+				// System.out.println(".....Server.....\n");
 					synchronized (this.queue) {
 						Iterator<DataEvent> changes = this.queue.iterator();
 						while (changes.hasNext()) {
 							DataEvent change = changes.next();
-							SelectionKey key = change.getFrom().keyFor(selector);
+							SelectionKey key = change.getFrom()
+									.keyFor(selector);
 							if (key != null) {
 								if (!map.containsKey(change.getFrom()))
 									map.put(change.getFrom(),
 											new LinkedList<ByteBuffer>());
-								map.get(change.getFrom()).add(
-										ByteBuffer.wrap(change.getData()));
+								ByteBuffer buf = ByteBuffer.wrap(change
+										.getData());
+								map.get(change.getFrom()).add(buf);
 								key.interestOps(SelectionKey.OP_WRITE);
-								key.attach(new AttachmentImpl(change.isMulipart(), null));
+								key.attach(new AttachmentImpl(change
+										.isMulipart(), null));
 							}
 							changes.remove();
 						}

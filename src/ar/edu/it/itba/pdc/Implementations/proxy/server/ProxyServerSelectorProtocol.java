@@ -1,7 +1,5 @@
 package ar.edu.it.itba.pdc.Implementations.proxy.server;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -16,7 +14,6 @@ import java.util.Queue;
 
 import ar.edu.it.itba.pdc.Implementations.proxy.TCPSelector;
 import ar.edu.it.itba.pdc.Implementations.proxy.utils.DecoderImpl;
-import ar.edu.it.itba.pdc.Interfaces.Attachment;
 import ar.edu.it.itba.pdc.Interfaces.Decoder;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
 import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;
@@ -91,13 +88,22 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 			Map<SocketChannel, Queue<ByteBuffer>> map) throws IOException {
 		// TODO: peek, do not remove. In case the buffer can not be completely
 		// written
-		ByteBuffer buf = map.get(key.channel()).peek();
-		if(buf == null)
-			return;
 		// buf.flip(); // Prepare buffer for writing
+		Queue<ByteBuffer> queue = map.get(key.channel());
+		if(queue.isEmpty()) {
+			System.out.print(".");
+			key.interestOps(SelectionKey.OP_WRITE);
+			return;
+		}
+		ByteBuffer buf = queue.peek();
 		SocketChannel clntChan = (SocketChannel) key.channel();
+		if(buf == null) {
+			key.interestOps(SelectionKey.OP_WRITE);
+			map.get(key.channel()).remove();
+			System.out.println("Buffer es null");
+			return;
+		}
 		Decoder decoder = responseDecoders.get(clntChan);
-		System.out.println(buf);
 		decoder.decode(buf.array(), buf.array().length);
 		decoder.applyRestrictions();
 		boolean isMultipart = decoder.keepReading();
