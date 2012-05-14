@@ -1,5 +1,8 @@
 package ar.edu.it.itba.pdc.Implementations.proxy.utils;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 import ar.edu.it.itba.pdc.Interfaces.Decoder;
 import ar.edu.it.itba.pdc.Interfaces.HTTPHeaders;
 
@@ -60,8 +63,24 @@ public class DecoderImpl implements Decoder {
 	}
 	
 	@Override
-	public void applyRestrictions() {
-		// TODO Auto-generated method stub
+	public void applyRestrictions(byte[] bytes, int count) {
+		String contentType = headers.getHeader("Content-Type");
+		if(contentType == null)
+			return;
+		
+		if(contentType.contains("image/")) {
+			String extension = contentType.split("/")[1];
+			try {
+				FileOutputStream fw =  new FileOutputStream("/tmp/prueba" + this.hashCode() + "." + extension, true);
+				String data = headers.getBody(bytes, count);
+				fw.write(data.getBytes());
+				fw.close();
+			} catch (IOException e) {
+//				 TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
 		
 	}
 
