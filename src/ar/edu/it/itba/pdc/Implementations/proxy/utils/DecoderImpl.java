@@ -2,7 +2,6 @@ package ar.edu.it.itba.pdc.Implementations.proxy.utils;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Calendar;
 
 import ar.edu.it.itba.pdc.Interfaces.Decoder;
 import ar.edu.it.itba.pdc.Interfaces.HTTPHeaders;
@@ -66,29 +65,28 @@ public class DecoderImpl implements Decoder {
 	@Override
 	public void applyRestrictions(byte[] bytes, int count) {
 
-		String contentType = headers.getHeader("Content-Type");
-
-		if (contentType == null)
-			return;
-
-		if (contentType.contains("image/")) {
-			String extension = contentType.split("/")[1];
-			if (fileName == null)
-				fileName = "/tmp/prueba" + time + "." + extension;
-			try {
-				System.out.println(time);
-				FileOutputStream fw = new FileOutputStream(fileName, true);
-				String data = headers.getBody(bytes, count);
-				fw.write(data.getBytes());
-				fw.close();
-				if(!keepReading())
-					fileName = null;
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
-		}
+//		String contentType = headers.getHeader("Content-Type");
+//
+//		if (contentType == null)
+//			return;
+//
+//		if (contentType.contains("image/")) {
+//			String extension = contentType.split("/")[1];
+//			if (fileName == null)
+//				fileName = "/tmp/prueba" + time + "." + extension;
+//			try {
+//				FileOutputStream fw = new FileOutputStream(fileName, true);
+//				String data = headers.getBody(bytes, count);
+//				fw.write(data.getBytes());
+//				fw.close();
+//				if(!keepReading())
+//					fileName = null;
+//			} catch (IOException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//
+//		}
 
 	}
 

@@ -1,7 +1,5 @@
 package ar.edu.it.itba.pdc.Implementations.proxy.server;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -15,7 +13,6 @@ import java.util.Queue;
 
 import ar.edu.it.itba.pdc.Implementations.proxy.TCPSelector;
 import ar.edu.it.itba.pdc.Implementations.proxy.utils.DecoderImpl;
-import ar.edu.it.itba.pdc.Interfaces.Attachment;
 import ar.edu.it.itba.pdc.Interfaces.Decoder;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
 import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;
@@ -29,17 +26,8 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 	private Map<SocketChannel, Decoder> responseDecoders = new HashMap<SocketChannel, Decoder>();
 	private ProxyWorker worker;
 	private TCPSelector caller;
-	private BufferedWriter logger;
 
 	public ProxyServerSelectorProtocol() {
-		try {
-			FileWriter logger = new FileWriter(
-					"/Users/mdesanti90/log/serverLog");
-			this.logger = new BufferedWriter(logger);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 
 	@Override
@@ -128,20 +116,13 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 				// Nothing left, so no longer interested in writes
 				key.interestOps(SelectionKey.OP_READ);
 				responseDecoders.put(clntChan, new DecoderImpl(bufSize));
-				System.out.println("Decoder Reset");
 			} else if (!decoder.keepReading()) {
 				// queue is not empty but decoder hasn't got anything to write
 				key.interestOps(SelectionKey.OP_WRITE);
 				responseDecoders.put(clntChan, new DecoderImpl(bufSize));
-				System.out.println("Decoder Reset");
 				buf.clear();
-			} else if(map.get(key.channel()).isEmpty()) {
-				//queue is empty but response is multipart
-				key.interestOps(SelectionKey.OP_WRITE);
-				responseDecoders.put(clntChan, decoder);
 			} else {
 				key.interestOps(SelectionKey.OP_WRITE);
-				responseDecoders.put(clntChan, decoder);
 			}
 			buf.clear();
 			buf.compact(); // Make room for more data to be read in

@@ -1,7 +1,5 @@
 package ar.edu.it.itba.pdc.Implementations.proxy.client;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -29,17 +27,8 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 	private Map<SocketChannel, Decoder> decoders = new HashMap<SocketChannel, Decoder>();
 	private ProxyWorker worker;
 	private TCPSelector caller;
-	private BufferedWriter logger;
 
 	public ProxyClientSelectorProtocol() {
-		try {
-			FileWriter logger = new FileWriter(
-					"/Users/mdesanti90/log/clientLog");
-			this.logger = new BufferedWriter(logger);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 
 	@Override
@@ -128,6 +117,7 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 			buf.compact(); // Make room for more data to be read in
 		} else {
 			buf.compact();
+			buf.clear();
 			key.interestOps(SelectionKey.OP_WRITE);
 		}
 	}
