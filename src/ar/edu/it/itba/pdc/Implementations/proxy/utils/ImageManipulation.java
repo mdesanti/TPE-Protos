@@ -19,6 +19,8 @@ public class ImageManipulation {
 				"/Users/egpintos17/Pictures/Celular/DSC00002.JPG"));
 		ImageManipulation test = new ImageManipulation();
 		byte[] byteArray = test.rotate(is, 180);
+		
+		//Probando si se forma bien.
 		String fileName = "/Users/egpintos17/Pictures/Celular/DSC00002_R.JPG";
 		FileOutputStream fw =  new FileOutputStream(fileName, true);
 		fw.write(byteArray);
@@ -52,4 +54,13 @@ public class ImageManipulation {
 		}
 		return out.toByteArray();
 	}
+	
+//	public bytes[] transformL33t(byte[] bytes){
+//		String data = new String(bytes);
+//		for (int i = 0; i < data.length(); i++) {
+//			String 
+//			switch()
+//		}
+//		for
+//	}
 }
