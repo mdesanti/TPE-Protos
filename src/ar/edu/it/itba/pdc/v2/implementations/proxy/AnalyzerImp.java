@@ -24,7 +24,7 @@ public class AnalyzerImp implements Analyzer {
 		
 		Decoder decoder = new DecoderImpl(10*1024);
 		int receivedMsg;
-		byte[] buf = new byte[500];
+		byte[] buf = new byte[10*1024];
 		decoder.decode(buffer.array(), count);
 		
 		Socket externalServer = connectionManager.getConnection(decoder.getHeader("Host"));

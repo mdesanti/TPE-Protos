@@ -19,10 +19,10 @@ import java.util.Map;
 import ar.edu.it.itba.pdc.Implementations.proxy.TCPSelector;
 import ar.edu.it.itba.pdc.Implementations.proxy.utils.AttachmentImpl;
 import ar.edu.it.itba.pdc.Implementations.proxy.utils.DataEvent;
-import ar.edu.it.itba.pdc.Implementations.proxy.utils.DecoderImpl;
-import ar.edu.it.itba.pdc.Interfaces.Decoder;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
 import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;
+import ar.edu.it.itba.pdc.v2.implementations.utils.DecoderImpl;
+import ar.edu.it.itba.pdc.v2.interfaces.Decoder;
 
 public class TCPClientSelector extends TCPSelector {
 

@@ -15,7 +15,7 @@ public abstract class TCPSelector implements Runnable {
 
 	
 	protected static final int BUFSIZE = 10 * 1024; // Buffer size (bytes)
-	protected static final int TIMEOUT = 1000; // Wait timeout (milliseconds)
+	protected static final int TIMEOUT = 100; // Wait timeout (milliseconds)
 
 	protected int port;
 	protected ProxyWorker worker;

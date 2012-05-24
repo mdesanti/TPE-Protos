@@ -37,12 +37,12 @@ public class ThreadedSocketServer  {
 		this.analyzer = new AnalyzerImp(connectionManager);
 	}
 
-	private void run() throws IOException {
+	private void run() throws IOException, InterruptedException {
 		ExecutorService es = Executors.newCachedThreadPool();
 		while (true) {
 			Socket socket = this.serverSocket.accept();
-
 			es.execute(new Attend(socket, handler, connectionManager, analyzer));
+			Thread.sleep(500);
 		}
 	}
 

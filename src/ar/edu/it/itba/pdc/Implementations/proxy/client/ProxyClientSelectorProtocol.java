@@ -13,11 +13,11 @@ import java.util.Queue;
 
 import ar.edu.it.itba.pdc.Implementations.proxy.TCPSelector;
 import ar.edu.it.itba.pdc.Implementations.proxy.utils.AttachmentImpl;
-import ar.edu.it.itba.pdc.Implementations.proxy.utils.DecoderImpl;
 import ar.edu.it.itba.pdc.Interfaces.Attachment;
-import ar.edu.it.itba.pdc.Interfaces.Decoder;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
 import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;
+import ar.edu.it.itba.pdc.v2.implementations.utils.DecoderImpl;
+import ar.edu.it.itba.pdc.v2.interfaces.Decoder;
 
 public class ProxyClientSelectorProtocol implements TCPProtocol {
 
@@ -70,10 +70,10 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 			// HTTPHeaders headers = decoder.getHeaders();
 			// TODO: here we should analyze if the request is accepted by the
 			// proxy
-//			System.out
-//					.println(Calendar.getInstance().getTime().toString()
-//							+ "-> Response from external server to proxy. Server address: "
-//							+ clntChan.socket().getInetAddress());
+			System.out
+					.println(Calendar.getInstance().getTime().toString()
+							+ "-> Response from external server to proxy. Server address: "
+							+ clntChan.socket().getInetAddress());
 			
 			boolean keepReading = decoder.keepReading();
 			String connection = decoder.getHeader("Connection");
@@ -106,10 +106,10 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 		clntChan.write(buf);
 		AttachmentImpl att = (AttachmentImpl)key.attachment();
 
-//		System.out
-//				.println(Calendar.getInstance().getTime().toString()
-//						+ "-> Request from proxy server to external server. Server address: "
-//						+ clntChan.socket().getInetAddress());
+		System.out
+				.println(Calendar.getInstance().getTime().toString()
+						+ "-> Request from proxy server to external server. Server address: "
+						+ clntChan.socket().getInetAddress());
 		if (!buf.hasRemaining()) { // Buffer completely written?
 			map.get(key.channel()).remove();
 			if (map.get(key.channel()).isEmpty() && !att.isMultipart()) {

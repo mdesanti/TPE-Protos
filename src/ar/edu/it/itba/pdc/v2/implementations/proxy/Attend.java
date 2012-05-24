@@ -30,7 +30,7 @@ public class Attend implements Runnable {
 	public void run() {
 
 		Decoder decoder = new DecoderImpl(20 * 1024);
-		byte[] buffer = new byte[500];
+		byte[] buffer = new byte[10*1024];
 		ByteBuffer req = ByteBuffer.allocate(20 * 1024);
 		InputStream response;
 		String s = socket.getRemoteSocketAddress().toString();
@@ -54,16 +54,18 @@ public class Attend implements Runnable {
 				}
 
 				response = analyzer.analyze(req, totalCount, clientIs);
+				
 				req.clear();
 				
 				try {
 					while (((receivedMsg = response.read(buffer)) != -1)) {
+						
 						clientOs.write(buffer);
-						req.put(buffer);
+						System.out.println(new String(buffer));
+//						req.put(buffer);
 					}
 				} catch (IOException e) {
 					response.close();
-					e.printStackTrace();
 				}
 
 			} catch (IOException e) {
