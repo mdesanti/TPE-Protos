@@ -54,19 +54,23 @@ public class Attend implements Runnable {
 				}
 
 				response = analyzer.analyze(req, totalCount, clientIs);
-
 				req.clear();
 				totalCount = 0;
 
 				try {
 					while (((receivedMsg = response.read(buffer)) != -1)) {
 						totalCount += receivedMsg;
-						req.put(buffer);
+//						System.out.print(new String(buffer));
 						clientOs.write(buffer);
+						Thread.sleep(10);
 					}
 				} catch (IOException e) {
 					response.close();
 					System.out.println(e.getMessage());
+					socket.close();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 
 				if (receivedMsg == -1) {
