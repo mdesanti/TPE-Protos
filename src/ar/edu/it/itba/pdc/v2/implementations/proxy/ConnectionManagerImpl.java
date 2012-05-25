@@ -24,13 +24,13 @@ public class ConnectionManagerImpl implements ConnectionManager{
 	public synchronized Socket getConnection(String host) {
 		try {
 			URL url = new URL("http://" + host);
-//			ConnectionStatus connection = connections.get(url.getHost());
-//			if(connection != null && connection.isInUse())
-//				return null;
-//			if(connection != null) {
-//				if(connection.getSocket().isConnected() && !connection.getSocket().isClosed())
-//					return connection.getSocket();
-//			}
+			ConnectionStatus connection = connections.get(url.getHost());
+			if(connection != null && connection.isInUse())
+				return null;
+			if(connection != null) {
+				if(connection.getSocket().isConnected() && !connection.getSocket().isClosed())
+					return connection.getSocket();
+			}
 			int port = (url.getPort() == -1) ?80:url.getPort();
 			Socket s = new Socket(InetAddress.getByName(url.getHost()), port);
 			connections.put(host, new ConnectionStatus(s, true));

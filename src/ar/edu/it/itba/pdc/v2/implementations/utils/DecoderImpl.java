@@ -1,7 +1,11 @@
 package ar.edu.it.itba.pdc.v2.implementations.utils;
 
 import java.nio.ByteBuffer;
+import java.util.Map;
 
+import com.sun.org.apache.xalan.internal.xsltc.compiler.sym;
+
+import ar.edu.it.itba.pdc.v2.implementations.RebuiltHeader;
 import ar.edu.it.itba.pdc.v2.interfaces.Decoder;
 import ar.edu.it.itba.pdc.v2.interfaces.HTTPHeaders;
 
@@ -58,7 +62,6 @@ public class DecoderImpl implements Decoder {
 		String[] lines = read.split("\r\n");
 		boolean found = false;
 		ByteBuffer buffer = ByteBuffer.allocate(count - headers.getReadBytes());
-		System.out.println(count - headers.getReadBytes());
 		for (int i = 0; i < lines.length; i++) {
 			if (found) {
 				if (i < lines.length - 1)
@@ -165,27 +168,34 @@ public class DecoderImpl implements Decoder {
 			keepReadingBytes = 0;
 			return;
 		}
-
+		boolean endsWithEnter = false;
 		if (isChunked()) {
-			boolean endsWithEnter = false;
-			if (new String(bytes).substring(0, count).endsWith("\r\n"))
+			System.out.println(new String(bytes).substring(0, count).length());
+			if (new String(bytes).substring(0, count).endsWith("\r\n")) {
 				endsWithEnter = true;
+			}
 			String[] chunks = new String(bytes).substring(0, count).split(
 					"\r\n");
+//			for (int i = 0; i < chunks.length; i++) {
+//				if (i < chunks.length - 1)
+//					chunks[i] = chunks[i] + "\r\n";
+//				else{
+//					if(endsWithEnter){
+//						chunks[i] = chunks[i] + "\r\n";
+//					}
+//				}
+//			}
 			for (int j = 0; j < chunks.length; j++) {
 				if (keepReadingBytes == 0) {
-					Integer sizeLine = Integer.parseInt(chunks[j], 16);
+					Integer sizeLine = Integer.parseInt(
+							chunks[j], 16);
 					if (sizeLine == 0) {
 						read = false;
 					}
 					keepReadingBytes = sizeLine;
 				} else {
-					if (j < chunks.length - 1)
-						keepReadingBytes -= chunks[j].length() + 2;
-					else if (endsWithEnter) {
-						keepReadingBytes -= chunks[j].length() + 2;
-					} else
-						keepReadingBytes -= chunks[j].length();
+					System.out.println(chunks[j].length());
+					keepReadingBytes -= chunks[j].length();
 				}
 
 			}
@@ -215,6 +225,28 @@ public class DecoderImpl implements Decoder {
 	@Override
 	public HTTPHeaders getHeaders() {
 		return headers;
+	}
+
+	@Override
+	public RebuiltHeader rebuildHeaders() {
+		Map<String, String> allHeaders = headers.getAllHeaders();
+		String sb = "";
+
+		allHeaders.remove("Content-Encoding");
+		// allHeaders.put("Via", " mu0Proxy");
+		sb += allHeaders.get("Method") + " ";
+		sb += allHeaders.get("RequestedURI") + " ";
+		sb += allHeaders.get("HTTPVersion") + "\r\n";
+
+		allHeaders.remove("Method");
+		allHeaders.remove("RequestedURI");
+		allHeaders.remove("HTTPVersion");
+		for (String key : allHeaders.keySet()) {
+			sb += (key + ":" + allHeaders.get(key) + "\r\n");
+		}
+		sb += ("\r\n");
+
+		return new RebuiltHeader(sb.getBytes(), sb.length());
 	}
 
 }

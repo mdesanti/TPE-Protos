@@ -39,43 +39,6 @@ public class HTTPPacket implements HTTPHeaders {
 		}
 	}
 
-	// public void parse(byte[] data, int count) {
-	// String[] args = null;
-	// try {
-	//
-	// // if (completeHeaders) {
-	// // bodyBytes += count;
-	// // return;
-	// // }
-	//
-	// String s = new String(data).substring(0, count);
-	//
-	// if (count == -1) {
-	// System.out.println("-1");
-	// }
-	//
-	// String[] lines = s.split("\r\n");
-	//
-	// if (lines.length == 0) {
-	// System.out.println("No deberia pasar");
-	// }
-	// String startLine = lines[0];
-	// args = startLine.split(" ");
-	// if (args[0].equals("GET") || args[0].equals("POST")
-	// || args[0].equals("HEAD")) {
-	// parseRequest(lines);
-	// } else if (args[0].contains("HTTP")) {
-	// parseResponse(lines);
-	// } else {
-	// // TODO: not supported
-	// }
-	//
-	// } catch (ArrayIndexOutOfBoundsException e) {
-	// // System.out.println(args.length);
-	// }
-	//
-	// }
-
 	private void parseRequest(String[] message) {
 
 		String[] lines = message;
@@ -135,15 +98,6 @@ public class HTTPPacket implements HTTPHeaders {
 			}
 		}
 
-		// // Body Part
-		// // add "\r\n" bytes deleted when splitting
-		// bodyBytes += (length - i) * 2;
-		// String buf = "";
-		// for (; i < length; i++) {
-		// buf += lines[i];
-		// bodyBytes += lines[i].length();
-		// }
-
 	}
 
 	@Override
@@ -169,35 +123,10 @@ public class HTTPPacket implements HTTPHeaders {
 		}
 
 	}
-
-	// @Override
-	// public String getBody(byte[] data, int count) {
-	//
-	// String s = new String(data).substring(0, count);
-	// String[] lines = s.split("\r\n");
-	//
-	// int length = lines.length;
-	// int i;
-	// for (i = 0; i < length && !bodyHeaders && length != 1; i++) {
-	// if (lines[i].isEmpty()) {
-	// bodyHeaders = true;
-	// } else {
-	// }
-	// }
-	// // Body Part
-	// String buf = "";
-	// boolean firstTime = true;
-	// for (; i < length; i++) {
-	// if(!firstTime) {
-	// buf += "\r\n";
-	// }
-	// firstTime = false;
-	// buf += lines[i];
-	// }
-	//
-	//
-	// return buf;
-	//
-	// }
+	
+	@Override
+	public Map<String, String> getAllHeaders() {
+		return headers;
+	}
 
 }

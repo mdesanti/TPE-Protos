@@ -1,5 +1,7 @@
 package ar.edu.it.itba.pdc.v2.interfaces;
 
+import ar.edu.it.itba.pdc.v2.implementations.RebuiltHeader;
+
 
 
 public interface Decoder {
@@ -29,5 +31,7 @@ public interface Decoder {
 	public byte[] getExtra(byte[] data, int count);
 	
 	public void analize(byte[] bytes, int count);
+	
+	public RebuiltHeader rebuildHeaders();
 	
 }
