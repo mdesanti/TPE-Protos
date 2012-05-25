@@ -30,14 +30,14 @@ public class Attend implements Runnable {
 	public void run() {
 
 		Decoder decoder = new DecoderImpl(20 * 1024);
-		byte[] buffer = new byte[10*1024];
+		byte[] buffer = new byte[500];
 		ByteBuffer req = ByteBuffer.allocate(20 * 1024);
 		InputStream response;
 		String s = socket.getRemoteSocketAddress().toString();
 		System.out.printf("Se conecto %s\n", s);
 		while (!socket.isClosed()) {
 			try {
-				int receivedMsg, totalCount = 0;
+				int receivedMsg = 0, totalCount = 0;
 
 				InputStream clientIs = socket.getInputStream();
 				OutputStream clientOs = socket.getOutputStream();
@@ -54,18 +54,23 @@ public class Attend implements Runnable {
 				}
 
 				response = analyzer.analyze(req, totalCount, clientIs);
-				
+
 				req.clear();
-				
+				totalCount = 0;
+
 				try {
 					while (((receivedMsg = response.read(buffer)) != -1)) {
-						
+						totalCount += receivedMsg;
+						req.put(buffer);
 						clientOs.write(buffer);
-						System.out.println(new String(buffer));
-//						req.put(buffer);
 					}
 				} catch (IOException e) {
 					response.close();
+					System.out.println(e.getMessage());
+				}
+
+				if (receivedMsg == -1) {
+					socket.close();
 				}
 
 			} catch (IOException e) {

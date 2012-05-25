@@ -1,13 +1,5 @@
 package ar.edu.it.itba.pdc.v2.implementations.utils;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-
 import ar.edu.it.itba.pdc.Implementations.proxy.utils.HTTPPacket;
 import ar.edu.it.itba.pdc.Interfaces.HTTPHeaders;
 import ar.edu.it.itba.pdc.v2.interfaces.Decoder;

@@ -33,7 +33,7 @@ public class AnalyzerImp implements Analyzer {
 		try {
 			externalIs = externalServer.getInputStream();
 			externalOs = externalServer.getOutputStream();
-			externalOs.write(buffer.array());
+			externalOs.write(buffer.array(), 0, count);
 			return externalIs;
 		} catch (IOException e) {
 			return null;

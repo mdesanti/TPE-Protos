@@ -39,6 +39,7 @@ public class ThreadedSocketServer  {
 
 	private void run() throws IOException, InterruptedException {
 		ExecutorService es = Executors.newCachedThreadPool();
+		System.out.println("Proxy listening on port 9090");
 		while (true) {
 			Socket socket = this.serverSocket.accept();
 			es.execute(new Attend(socket, handler, connectionManager, analyzer));
