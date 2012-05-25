@@ -1,35 +1,35 @@
 package ar.edu.it.itba.pdc.v2.implementations.utils;
 
-import ar.edu.it.itba.pdc.Implementations.proxy.utils.HTTPPacket;
-import ar.edu.it.itba.pdc.Interfaces.HTTPHeaders;
+import java.nio.ByteBuffer;
+
 import ar.edu.it.itba.pdc.v2.interfaces.Decoder;
+import ar.edu.it.itba.pdc.v2.interfaces.HTTPHeaders;
 
 public class DecoderImpl implements Decoder {
 
-	private boolean read = false;
+	private boolean read = true;
 	private int index = 0;
 	private HTTPHeaders headers = null;
 	private String fileName;
+	private int keepReadingBytes = 0;
 	private long time;
 
 	public DecoderImpl(int buffSize) {
+		headers = new HTTPPacket();
 		time = System.currentTimeMillis();
 	}
 
 	@Override
 	public void decode(byte[] bytes, int count) {
 
-		if (headers == null) {
-			headers = new HTTPPacket();
-		}
-		headers.parse(bytes, count);
+		// headers.parse(bytes, count);
 
 		String length;
-		
-		if(headers.getHeader("Method").contains("GET")) {
+
+		if (headers.getHeader("Method").contains("GET")) {
 			read = false;
 		}
-		
+
 		length = headers.getHeader("Content-Length");
 		// remove spaces
 		if (length != null) {
@@ -53,8 +53,35 @@ public class DecoderImpl implements Decoder {
 	}
 
 	@Override
+	public byte[] getExtra(byte[] data, int count) {
+		String read = new String(data).substring(0, count);
+		String[] lines = read.split("\r\n");
+		boolean found = false;
+		ByteBuffer buffer = ByteBuffer.allocate(count - headers.getReadBytes());
+		System.out.println(count - headers.getReadBytes());
+		for (int i = 0; i < lines.length; i++) {
+			if (found) {
+				if (i < lines.length - 1)
+					lines[i] += "\r\n";
+				buffer.put(lines[i].getBytes());
+			}
+			if (lines[i].equals("")) {
+				found = true;
+			}
+
+		}
+
+		return buffer.array();
+	}
+
+	@Override
 	public boolean keepReading() {
 		return read;
+	}
+
+	private boolean isChunked() {
+		return (headers.getHeader("Transfer-Encoding") != null)
+				&& (headers.getHeader("Transfer-Encoding").contains("chunked"));
 	}
 
 	@Override
@@ -109,27 +136,85 @@ public class DecoderImpl implements Decoder {
 	@Override
 	public void applyTransformations(byte[] bytes, int count) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void applyFilters() {
 		// TODO Auto-generated method stub
-		
+
 	}
-	
+
 	@Override
 	public boolean completeHeaders(byte[] bytes, int count) {
 		String read = new String(bytes).substring(0, count);
 		String[] lines = read.split("\r\n");
-		
-		for(String line: lines) {
-			if(line.equals("")) {
+
+		for (String line : lines) {
+			if (line.equals("")) {
 				return true;
 			}
 		}
-		
+
 		return false;
+	}
+
+	@Override
+	public void analize(byte[] bytes, int count) {
+		if (!headers.contentExpected()) {
+			keepReadingBytes = 0;
+			return;
+		}
+
+		if (isChunked()) {
+			boolean endsWithEnter = false;
+			if (new String(bytes).substring(0, count).endsWith("\r\n"))
+				endsWithEnter = true;
+			String[] chunks = new String(bytes).substring(0, count).split(
+					"\r\n");
+			for (int j = 0; j < chunks.length; j++) {
+				if (keepReadingBytes == 0) {
+					Integer sizeLine = Integer.parseInt(chunks[j], 16);
+					if (sizeLine == 0) {
+						read = false;
+					}
+					keepReadingBytes = sizeLine;
+				} else {
+					if (j < chunks.length - 1)
+						keepReadingBytes -= chunks[j].length() + 2;
+					else if (endsWithEnter) {
+						keepReadingBytes -= chunks[j].length() + 2;
+					} else
+						keepReadingBytes -= chunks[j].length();
+				}
+
+			}
+		} else {
+			if (keepReadingBytes == 0) {
+				keepReadingBytes = Integer.parseInt(headers.getHeader(
+						"Content-Length").replaceAll(" ", ""));
+			}
+			keepReadingBytes -= count;
+			if (keepReadingBytes == 0)
+				read = false;
+		}
+	}
+
+	@Override
+	public void reset() {
+		read = true;
+		index = 0;
+		headers = new HTTPPacket();
+	}
+
+	@Override
+	public void parseHeaders(byte[] data, int count) {
+		headers.parseHeaders(data, count);
+	}
+
+	@Override
+	public HTTPHeaders getHeaders() {
+		return headers;
 	}
 
 }

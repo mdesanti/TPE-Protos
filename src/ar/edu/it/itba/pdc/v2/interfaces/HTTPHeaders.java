@@ -1,4 +1,4 @@
-package ar.edu.it.itba.pdc.Interfaces;
+package ar.edu.it.itba.pdc.v2.interfaces;
 
 public interface HTTPHeaders {
 
@@ -6,12 +6,10 @@ public interface HTTPHeaders {
 	
 	public int getReadBytes();
 	
-	public void parse(byte[] data, int count);
-	
-	public String getBody(byte[] data, int count);
-	
 	public boolean contentExpected();
 	
 	public void dumpHeaders();
+	
+	public void parseHeaders(byte[] data, int count);
 	
 }

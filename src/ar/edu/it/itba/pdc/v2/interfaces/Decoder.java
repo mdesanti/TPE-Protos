@@ -1,6 +1,7 @@
 package ar.edu.it.itba.pdc.v2.interfaces;
 
 
+
 public interface Decoder {
 
 	public void decode(byte[] bytes, int count);
@@ -18,5 +19,15 @@ public interface Decoder {
 	public void applyRestrictions(byte[] bytes, int count);
 	
 	public boolean completeHeaders(byte[] bytes, int count);
+	
+	public void reset();
+	
+	public void parseHeaders(byte[] data, int count);
+	
+	public HTTPHeaders getHeaders();
+	
+	public byte[] getExtra(byte[] data, int count);
+	
+	public void analize(byte[] bytes, int count);
 	
 }

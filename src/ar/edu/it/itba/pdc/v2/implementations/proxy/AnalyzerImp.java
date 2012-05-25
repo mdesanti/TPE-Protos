@@ -10,61 +10,98 @@ import ar.edu.it.itba.pdc.v2.implementations.utils.DecoderImpl;
 import ar.edu.it.itba.pdc.v2.interfaces.Analyzer;
 import ar.edu.it.itba.pdc.v2.interfaces.ConnectionManager;
 import ar.edu.it.itba.pdc.v2.interfaces.Decoder;
+import ar.edu.it.itba.pdc.v2.interfaces.HTTPHeaders;
 
 public class AnalyzerImp implements Analyzer {
-	
+
 	private ConnectionManager connectionManager;
-	private static int BUFFSIZE = 5*1024;
-	
+	private static int BUFFSIZE = 5 * 1024;
+
 	public AnalyzerImp(ConnectionManager connectionManager) {
 		this.connectionManager = connectionManager;
 	}
-	
+
 	@Override
 	public void analyze(ByteBuffer buffer, int count, Socket socket) {
-		
+
 		Decoder decoder = new DecoderImpl(BUFFSIZE);
 		ByteBuffer resp = ByteBuffer.allocate(BUFFSIZE);
 		int receivedMsg, totalCount = 0;
 		byte[] buf = new byte[BUFFSIZE];
 		boolean keepReading = true;
-		decoder.decode(buffer.array(), count);
-		
+		HTTPHeaders headers;
+		decoder.parseHeaders(buffer.array(), count);
+		headers = decoder.getHeaders();
+
+		if (headers.getReadBytes() < count) {
+			// separar headers de lo que sobra
+		}
+
 		Socket externalServer;
-		String host = decoder.getHeader("Host");
-		while((externalServer = connectionManager.getConnection(host)) ==  null);
-		InputStream externalIs;
+		String host = decoder.getHeader("Host").replace(" ", "");
+		while ((externalServer = connectionManager.getConnection(host)) == null)
+			;
+		InputStream externalIs, clientIs;
 		OutputStream externalOs, clientOs;
 		try {
 			externalIs = externalServer.getInputStream();
 			externalOs = externalServer.getOutputStream();
+			clientIs = socket.getInputStream();
 			clientOs = socket.getOutputStream();
 			externalOs.write(buffer.array(), 0, count);
-			
-			//if client continues to send info, read it and send it to server
-			
-			//read response from server and write it to client
+
+			// if client continues to send info, read it and send it to server
+			// while (decoder.keepReading()
+			// && ((receivedMsg = clientIs.read(buf)) != -1)) {
+			// // totalCount += receivedMsg;
+			// decoder.decode(buf, receivedMsg);
+			// externalOs.write(buf, 0, receivedMsg);
+			// }
+			// read response from server and write it to client
 			try {
-				//read headers
-				//parse headers and decide what to do
-				
-				//send whats left of the response to client
-				while (((receivedMsg = externalIs.read(buf)) != -1)) {
+				decoder.reset();
+				// read headers
+				while (keepReading
+						&& ((receivedMsg = externalIs.read(buf)) != -1)) {
+					totalCount += receivedMsg;
+					resp.put(buf, 0, receivedMsg);
+					keepReading = !decoder.completeHeaders(resp.array(),
+							resp.array().length);
+				}
+				// parse headers and decide what to do
+				decoder.parseHeaders(resp.array(), totalCount);
+
+				headers = decoder.getHeaders();
+
+				// sends only headers to server
+				clientOs.write(resp.array(), 0, headers.getReadBytes());
+
+				if (headers.getReadBytes() < totalCount) {
+					byte[] extra = decoder.getExtra(resp.array(), totalCount);
+					clientOs.write(extra, 0,
+							totalCount - headers.getReadBytes());
+					decoder.analize(extra,
+							totalCount - headers.getReadBytes());
+				}
+				keepReading = decoder.keepReading();
+				while (keepReading
+						&& ((receivedMsg = externalIs.read(buf)) != -1)) {
 					totalCount += receivedMsg;
 					clientOs.write(buf, 0, receivedMsg);
+					decoder.analize(buf, receivedMsg);
+					keepReading = decoder.keepReading();
 				}
+				System.out.println("TERMINO");
 				connectionManager.releaseConnection(externalServer);
-				externalServer.close();
 			} catch (IOException e) {
-				externalIs.close();
 				connectionManager.releaseConnection(externalServer);
 				System.out.println(e.getMessage());
 			}
 
 		} catch (IOException e) {
+			System.out.println(e.getMessage());
 		}
-		
-		
+
 	}
-	
+
 }
