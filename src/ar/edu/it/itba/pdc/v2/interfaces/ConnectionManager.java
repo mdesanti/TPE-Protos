@@ -6,4 +6,6 @@ public interface ConnectionManager {
 
 	public Socket getConnection(String host);
 	
+	public void releaseConnection(Socket socket);
+	
 }

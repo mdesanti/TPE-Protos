@@ -32,7 +32,6 @@ public class Attend implements Runnable {
 		Decoder decoder = new DecoderImpl(20 * 1024);
 		byte[] buffer = new byte[500];
 		ByteBuffer req = ByteBuffer.allocate(20 * 1024);
-		InputStream response;
 		String s = socket.getRemoteSocketAddress().toString();
 		System.out.printf("Se conecto %s\n", s);
 		while (!socket.isClosed()) {
@@ -40,7 +39,6 @@ public class Attend implements Runnable {
 				int receivedMsg = 0, totalCount = 0;
 
 				InputStream clientIs = socket.getInputStream();
-				OutputStream clientOs = socket.getOutputStream();
 
 				boolean keepReading = true;
 
@@ -48,34 +46,14 @@ public class Attend implements Runnable {
 				while (keepReading
 						&& ((receivedMsg = clientIs.read(buffer)) != -1)) {
 					totalCount += receivedMsg;
-					req.put(buffer);
+					req.put(buffer, 0, receivedMsg);
 					keepReading = !decoder.completeHeaders(req.array(),
 							req.array().length);
 				}
 
-				response = analyzer.analyze(req, totalCount, clientIs);
-				req.clear();
-				totalCount = 0;
+				analyzer.analyze(req, totalCount, socket);
 
-				try {
-					while (((receivedMsg = response.read(buffer)) != -1)) {
-						totalCount += receivedMsg;
-//						System.out.print(new String(buffer));
-						clientOs.write(buffer);
-						Thread.sleep(10);
-					}
-				} catch (IOException e) {
-					response.close();
-					System.out.println(e.getMessage());
-					socket.close();
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-				if (receivedMsg == -1) {
-					socket.close();
-				}
+				socket.close();
 
 			} catch (IOException e) {
 			}
