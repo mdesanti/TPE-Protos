@@ -1,9 +1,11 @@
 package ar.edu.it.itba.pdc.v2.implementations.proxy;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 
 import ar.edu.it.itba.pdc.v2.implementations.utils.DecoderImpl;
@@ -91,6 +93,7 @@ public class AnalyzerImp implements Analyzer {
 					decoder.analize(extra,
 							totalCount - headers.getReadBytes());
 				}
+				resp.clear();
 				keepReading = decoder.keepReading();
 				while (keepReading
 						&& ((receivedMsg = externalIs.read(buf)) != -1)) {
@@ -108,6 +111,8 @@ public class AnalyzerImp implements Analyzer {
 
 		} catch (IOException e) {
 			System.out.println(e.getMessage());
+		} catch(BufferOverflowException e) {
+			e.printStackTrace();
 		}
 
 	}

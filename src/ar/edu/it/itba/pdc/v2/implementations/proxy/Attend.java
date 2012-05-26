@@ -31,9 +31,10 @@ public class Attend implements Runnable {
 
 		Decoder decoder = new DecoderImpl(20 * 1024);
 		byte[] buffer = new byte[500];
+		analyzer = new AnalyzerImp(connectionManager);
 		ByteBuffer req = ByteBuffer.allocate(20 * 1024);
 		String s = socket.getRemoteSocketAddress().toString();
-		System.out.printf("Se conecto %s\n", s);
+		System.out.printf("Se conecto %s - Thread nro: %d\n", s, Thread.currentThread().getId());
 		while (!socket.isClosed()) {
 			try {
 				int receivedMsg = 0, totalCount = 0;

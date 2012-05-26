@@ -173,8 +173,12 @@ public class DecoderImpl implements Decoder {
 					"\r\n");
 			for (int j = 0; j < chunks.length; j++) {
 				if (keepReadingBytes == 0) {
-					Integer sizeLine = Integer.parseInt(
-							chunks[j], 16);
+					Integer sizeLine = null;
+					try {
+						sizeLine = Integer.parseInt(chunks[j], 16);
+					} catch (NumberFormatException e) {
+						sizeLine = 0;
+					}
 					if (sizeLine == 0) {
 						read = false;
 					}
@@ -185,7 +189,7 @@ public class DecoderImpl implements Decoder {
 				}
 
 			}
-		} else if(headers.getHeader("Content-Length") != null) {
+		} else if (headers.getHeader("Content-Length") != null) {
 			if (keepReadingBytes == 0) {
 				keepReadingBytes = Integer.parseInt(headers.getHeader(
 						"Content-Length").replaceAll(" ", ""));
