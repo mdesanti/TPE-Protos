@@ -168,23 +168,9 @@ public class DecoderImpl implements Decoder {
 			keepReadingBytes = 0;
 			return;
 		}
-		boolean endsWithEnter = false;
 		if (isChunked()) {
-			System.out.println(new String(bytes).substring(0, count).length());
-			if (new String(bytes).substring(0, count).endsWith("\r\n")) {
-				endsWithEnter = true;
-			}
 			String[] chunks = new String(bytes).substring(0, count).split(
 					"\r\n");
-//			for (int i = 0; i < chunks.length; i++) {
-//				if (i < chunks.length - 1)
-//					chunks[i] = chunks[i] + "\r\n";
-//				else{
-//					if(endsWithEnter){
-//						chunks[i] = chunks[i] + "\r\n";
-//					}
-//				}
-//			}
 			for (int j = 0; j < chunks.length; j++) {
 				if (keepReadingBytes == 0) {
 					Integer sizeLine = Integer.parseInt(
@@ -199,7 +185,7 @@ public class DecoderImpl implements Decoder {
 				}
 
 			}
-		} else {
+		} else if(headers.getHeader("Content-Length") != null) {
 			if (keepReadingBytes == 0) {
 				keepReadingBytes = Integer.parseInt(headers.getHeader(
 						"Content-Length").replaceAll(" ", ""));
@@ -207,6 +193,8 @@ public class DecoderImpl implements Decoder {
 			keepReadingBytes -= count;
 			if (keepReadingBytes == 0)
 				read = false;
+		} else {
+			read = false;
 		}
 	}
 

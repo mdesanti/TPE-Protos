@@ -33,9 +33,6 @@ public class AnalyzerImp implements Analyzer {
 		decoder.parseHeaders(buffer.array(), count);
 		headers = decoder.getHeaders();
 
-		if (headers.getReadBytes() < count) {
-			// separar headers de lo que sobra
-		}
 
 		Socket externalServer;
 		String host = decoder.getHeader("Host").replace(" ", "");
@@ -48,18 +45,29 @@ public class AnalyzerImp implements Analyzer {
 			externalOs = externalServer.getOutputStream();
 			clientIs = socket.getInputStream();
 			clientOs = socket.getOutputStream();
-			externalOs.write(buffer.array(), 0, count);
-
+			externalOs.write(buffer.array(), 0, headers.getReadBytes());
+			
+			if (headers.getReadBytes() < count) {
+				byte[] extra = decoder.getExtra(buffer.array(), count);
+				externalOs.write(extra, 0,
+						count - headers.getReadBytes());
+				decoder.analize(extra,
+						count - headers.getReadBytes());
+			} else {
+				decoder.analize(buffer.array(), count);
+			}
+			keepReading = decoder.keepReading();
 			// if client continues to send info, read it and send it to server
-			// while (decoder.keepReading()
-			// && ((receivedMsg = clientIs.read(buf)) != -1)) {
-			// // totalCount += receivedMsg;
-			// decoder.decode(buf, receivedMsg);
-			// externalOs.write(buf, 0, receivedMsg);
-			// }
+			while (decoder.keepReading()
+					&& ((receivedMsg = clientIs.read(buf)) != -1)) {
+				// totalCount += receivedMsg;
+				decoder.decode(buf, receivedMsg);
+				externalOs.write(buf, 0, receivedMsg);
+			}
 			// read response from server and write it to client
 			try {
 				decoder.reset();
+				keepReading = true;
 				// read headers
 				while (keepReading
 						&& ((receivedMsg = externalIs.read(buf)) != -1)) {

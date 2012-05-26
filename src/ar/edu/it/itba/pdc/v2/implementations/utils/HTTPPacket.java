@@ -97,6 +97,10 @@ public class HTTPPacket implements HTTPHeaders {
 				headers.put(headerValue[0], headerValue[1]);
 			}
 		}
+		if (!completeHeaders) {
+			completeHeaders = true;
+			headerBytes += 2;
+		}
 
 	}
 
@@ -123,7 +127,7 @@ public class HTTPPacket implements HTTPHeaders {
 		}
 
 	}
-	
+
 	@Override
 	public Map<String, String> getAllHeaders() {
 		return headers;
