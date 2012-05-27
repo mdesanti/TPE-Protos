@@ -33,10 +33,9 @@ public class AnalyzerImp implements Analyzer {
 		boolean keepReading = true;
 
 		// Parse request headers
-		HTTPHeaders headers;
+		HTTPHeaders requestHeaders, responseHeaders;
 		decoder.parseHeaders(buffer.array(), count);
-		headers = decoder.getHeaders();
-
+		requestHeaders = decoder.getHeaders();
 		// Rebuilt the headers according to proxy rules and implementations
 		RebuiltHeader rh = decoder.rebuildHeaders();
 
@@ -56,10 +55,10 @@ public class AnalyzerImp implements Analyzer {
 			externalOs.write(rh.getHeader(), 0, rh.getSize());
 
 			// If client sends something in the body..
-			if (headers.getReadBytes() < count) {
+			if (requestHeaders.getReadBytes() < count) {
 				byte[] extra = decoder.getExtra(buffer.array(), count);
-				externalOs.write(extra, 0, count - headers.getReadBytes());
-				decoder.analize(extra, count - headers.getReadBytes());
+				externalOs.write(extra, 0, count - requestHeaders.getReadBytes());
+				decoder.analize(extra, count - requestHeaders.getReadBytes());
 			} else {
 				decoder.analize(buffer.array(), count);
 			}
@@ -86,21 +85,20 @@ public class AnalyzerImp implements Analyzer {
 				// Parse response heaaders
 				decoder.parseHeaders(resp.array(), totalCount);
 
-				headers = decoder.getHeaders();
-
+				responseHeaders = decoder.getHeaders();
 				// Sends only headers to client
-				clientOs.write(resp.array(), 0, headers.getReadBytes());
+				clientOs.write(resp.array(), 0, responseHeaders.getReadBytes());
 
 				// Sends the rest of the body to client...
 				boolean isImage = false;
-				if (headers.getReadBytes() < totalCount) {
+				if (responseHeaders.getReadBytes() < totalCount) {
 					byte[] extra = decoder.getExtra(resp.array(), totalCount);
-					decoder.analize(extra, totalCount - headers.getReadBytes());
+					decoder.analize(extra, totalCount - responseHeaders.getReadBytes());
 					isImage = decoder.applyRestrictions(extra,
-							totalCount - headers.getReadBytes());
+							totalCount - responseHeaders.getReadBytes(),requestHeaders);
 					if (!isImage) {
 						clientOs.write(extra, 0,
-								totalCount - headers.getReadBytes());
+								totalCount - responseHeaders.getReadBytes());
 					}
 				}
 				resp.clear();
@@ -109,7 +107,7 @@ public class AnalyzerImp implements Analyzer {
 						&& ((receivedMsg = externalIs.read(buf)) != -1)) {
 					totalCount += receivedMsg;
 					decoder.analize(buf, receivedMsg);
-					decoder.applyRestrictions(buf, receivedMsg);
+					decoder.applyRestrictions(buf, receivedMsg,requestHeaders);
 					if (!isImage){
 						clientOs.write(buf, 0, receivedMsg);
 					}

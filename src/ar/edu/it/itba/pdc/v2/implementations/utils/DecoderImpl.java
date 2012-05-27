@@ -1,6 +1,7 @@
 package ar.edu.it.itba.pdc.v2.implementations.utils;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -63,7 +64,8 @@ public class DecoderImpl implements Decoder {
 
 	@Override
 	public byte[] getExtra(byte[] data, int count) {
-		String read = new String(data).substring(0, count);
+		String read = null;
+		read = new String(data).substring(0, count);
 		String[] lines = read.split("\r\n");
 		boolean found = false;
 		ByteBuffer buffer = ByteBuffer.allocate(count - headers.getReadBytes());
@@ -103,7 +105,8 @@ public class DecoderImpl implements Decoder {
 	}
 
 	@Override
-	public boolean applyRestrictions(byte[] bytes, int count) {
+	public boolean applyRestrictions(byte[] bytes, int count,
+			HTTPHeaders requestHeaders) {
 
 		String contentType = headers.getHeader("Content-Type");
 
@@ -111,22 +114,31 @@ public class DecoderImpl implements Decoder {
 			return false;
 
 		if (contentType.contains("image/")) {
-			String extension = contentType.split("/")[1];
-			if (fileName == null)
-				fileName = "/tmp/prueba" + time + "." + extension;
+			if (fileName == null) {
+				String path[] = requestHeaders.getHeader("RequestedURI").split(
+						"/");
+				File f = new File("/tmp/prueba");
+				f.mkdir();
+				if (path[path.length - 1].length() < 10)
+					fileName = "/tmp/prueba/" + path[path.length - 1];
+				else
+					fileName = "/tmp/prueba/"
+							+ path[path.length - 1].substring(0, 6) + "."
+							+ headers.getHeader("Content-Type").split("/")[1];
+			}
 			try {
 				FileOutputStream fw = new FileOutputStream(fileName, true);
-				fw.write(bytes);
+				fw.write(bytes, 0, count);
 				fw.close();
-//				if (!keepReading()) {
+				// if (!keepReading()) {
 
-					// is.close();
-					// OutputStream os = new BufferedOutputStream(
-					// new FileOutputStream("/tmp/rotated"+time+"."+extension));
-					// os.write(modified);
-					// os.close();
-					// fileName = null;
-//				}
+				// is.close();
+				// OutputStream os = new BufferedOutputStream(
+				// new FileOutputStream("/tmp/rotated"+time+"."+extension));
+				// os.write(modified);
+				// os.close();
+				// fileName = null;
+				// }
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -251,14 +263,13 @@ public class DecoderImpl implements Decoder {
 		sb += allHeaders.get("RequestedURI") + " ";
 		sb += allHeaders.get("HTTPVersion") + "\r\n";
 
-		allHeaders.remove("Method");
-		allHeaders.remove("RequestedURI");
-		allHeaders.remove("HTTPVersion");
 		for (String key : allHeaders.keySet()) {
-			sb += (key + ":" + allHeaders.get(key) + "\r\n");
+			if (!key.equals("Method") && !key.equals("RequestedURI")
+					&& !key.equals("HTTPVersion"))
+				sb += (key + ":" + allHeaders.get(key) + "\r\n");
 		}
-		allHeaders.put("Via", " mu0Proxy");
-		sb += "Via:" + allHeaders.get("Via") + "\r\n";
+		// allHeaders.put("Via", " mu0Proxy");
+		// sb += "Via:" + allHeaders.get("Via") + "\r\n";
 		sb += ("\r\n");
 		return new RebuiltHeader(sb.getBytes(), sb.length());
 	}
