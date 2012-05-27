@@ -103,7 +103,7 @@ public class AnalyzerImp implements Analyzer {
 					keepReading = decoder.keepReading();
 				}
 				connectionManager.releaseConnection(externalServer);
-				System.out.println("TERMINO");
+//				System.out.println("TERMINO");
 			} catch (IOException e) {
 				connectionManager.releaseConnection(externalServer);
 				System.out.println(e.getMessage());
