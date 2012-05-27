@@ -18,7 +18,7 @@ public interface Decoder {
 	
 	public void applyFilters();
 
-	public boolean applyRestrictions(byte[] bytes, int count);
+	public boolean applyRestrictions(byte[] bytes, int count,HTTPHeaders requestHeader);
 	
 	public byte[] getRotatedImage();
 	

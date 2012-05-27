@@ -33,7 +33,7 @@ public class Transformations {
 
 	}
 
-	public byte[] rotate(InputStream original, Integer degrees) {
+	public synchronized byte[]  rotate(InputStream original, Integer degrees) {
 		BufferedImage originalImage = null;
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		try {
