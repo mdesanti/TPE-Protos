@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
@@ -22,11 +23,11 @@ public class DecoderImpl implements Decoder {
 	private HTTPHeaders headers = null;
 	private String fileName;
 	private int keepReadingBytes = 0;
-	private long time;
+	private boolean rotateImages;
+	private boolean transformL33t;
 
 	public DecoderImpl(int buffSize) {
 		headers = new HTTPPacket();
-		time = System.currentTimeMillis();
 	}
 
 	@Override
@@ -105,15 +106,32 @@ public class DecoderImpl implements Decoder {
 	}
 
 	@Override
-	public boolean applyRestrictions(byte[] bytes, int count,
+	public void analizeRestrictions() {
+		if (headers.getHeader("Content-Type") != null) {
+			rotateImages = headers.getHeader("Content-Type").contains("image/");
+			transformL33t = headers.getHeader("Content-Type").contains(
+					"text/plain");
+		}
+	}
+
+	public boolean getRotateImages() {
+		return rotateImages;
+	}
+
+	public boolean getTransformL33t() {
+		return transformL33t;
+	}
+
+	@Override
+	public void applyRestrictions(byte[] bytes, int count,
 			HTTPHeaders requestHeaders) {
 
-		String contentType = headers.getHeader("Content-Type");
+		// String contentType = headers.getHeader("Content-Type");
 
-		if (contentType == null)
-			return false;
+		// if (contentType == null)
+		// return false;
 
-		if (contentType.contains("image/")) {
+		if (rotateImages) {
 			if (fileName == null) {
 				String path[] = requestHeaders.getHeader("RequestedURI").split(
 						"/");
@@ -121,37 +139,71 @@ public class DecoderImpl implements Decoder {
 				f.mkdir();
 				if (path[path.length - 1].length() < 10)
 					fileName = "/tmp/prueba/" + path[path.length - 1];
-				else
+				else {
+
 					fileName = "/tmp/prueba/"
 							+ path[path.length - 1].substring(0, 6) + "."
 							+ headers.getHeader("Content-Type").split("/")[1];
+				}
 			}
 			try {
 				FileOutputStream fw = new FileOutputStream(fileName, true);
 				fw.write(bytes, 0, count);
 				fw.close();
-				// if (!keepReading()) {
-
-				// is.close();
-				// OutputStream os = new BufferedOutputStream(
-				// new FileOutputStream("/tmp/rotated"+time+"."+extension));
-				// os.write(modified);
-				// os.close();
-				// fileName = null;
-				// }
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
-			return true;
+		} else if (transformL33t) {
+			if (fileName == null) {
+				String path[] = requestHeaders.getHeader("RequestedURI").split(
+						"/");
+				File f = new File("/tmp/prueba");
+				f.mkdir();
+				if (path[path.length - 1].length() < 10)
+					fileName = "/tmp/prueba/" + path[path.length - 1] + ".txt";
+				else {
+					fileName = "/tmp/prueba/"
+							+ path[path.length - 1].substring(0, 6) + "."
+							+ "txt";
+				}
+			}
+			try {
+				FileOutputStream fw = new FileOutputStream(fileName, true);
+				fw.write(bytes, 0, count);
+				fw.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
-		return false;
 
 	}
 
 	@Override
 	public byte[] getRotatedImage() {
+		Transformations im = new Transformations();
+//		InputStream is = null;
+//		try {
+//			is = new BufferedInputStream(new FileInputStream((fileName)));
+//		} catch (FileNotFoundException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+		byte[] modified = im.rotate(fileName, 180);
+//		try {
+//			is.close();
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+		fileName = null;
+		return modified;
+	}
+
+	@Override
+	public byte[] getTransformed() {
 		Transformations im = new Transformations();
 		InputStream is = null;
 		try {
@@ -160,7 +212,13 @@ public class DecoderImpl implements Decoder {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		byte[] modified = im.rotate(is, 180);
+		byte[] modified = null;
+		try {
+			modified = im.transformL33t(is);
+		} catch (UnsupportedEncodingException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		try {
 			is.close();
 		} catch (IOException e) {
@@ -241,6 +299,8 @@ public class DecoderImpl implements Decoder {
 		read = true;
 		index = 0;
 		headers = new HTTPPacket();
+		fileName = null;
+		keepReadingBytes = 0;
 	}
 
 	@Override
