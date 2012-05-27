@@ -23,8 +23,10 @@ public class DecoderImpl implements Decoder {
 	private HTTPHeaders headers = null;
 	private String fileName;
 	private int keepReadingBytes = 0;
-	private boolean rotateImages;
-	private boolean transformL33t;
+	private boolean rotateImages = false;
+	private boolean transformL33t = false;
+	private boolean generatingKeep = false;
+	private String keepReadingBytesHexa;
 
 	public DecoderImpl(int buffSize) {
 		headers = new HTTPPacket();
@@ -142,8 +144,10 @@ public class DecoderImpl implements Decoder {
 				else {
 
 					fileName = "/tmp/prueba/"
-							+ path[path.length - 1].substring(0, 6) + "."
-							+ headers.getHeader("Content-Type").split("/")[1];
+							+ path[path.length - 1].substring(0, 6)
+							+ "."
+							+ headers.getHeader("Content-Type").split("/")[1]
+									.split(";")[0];
 				}
 			}
 			try {
@@ -184,20 +188,21 @@ public class DecoderImpl implements Decoder {
 	@Override
 	public byte[] getRotatedImage() {
 		Transformations im = new Transformations();
-//		InputStream is = null;
-//		try {
-//			is = new BufferedInputStream(new FileInputStream((fileName)));
-//		} catch (FileNotFoundException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
+		// InputStream is = null;
+		// try {
+		// is = new BufferedInputStream(new FileInputStream((fileName)));
+		// } catch (FileNotFoundException e) {
+		// // TODO Auto-generated catch block
+		// e.printStackTrace();
+		// }
+
 		byte[] modified = im.rotate(fileName, 180);
-//		try {
-//			is.close();
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
+		// try {
+		// is.close();
+		// } catch (IOException e) {
+		// // TODO Auto-generated catch block
+		// e.printStackTrace();
+		// }
 		fileName = null;
 		return modified;
 	}
@@ -207,9 +212,9 @@ public class DecoderImpl implements Decoder {
 		Transformations im = new Transformations();
 		InputStream is = null;
 		try {
+			System.out.println(fileName);
 			is = new BufferedInputStream(new FileInputStream((fileName)));
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		byte[] modified = null;
@@ -243,7 +248,8 @@ public class DecoderImpl implements Decoder {
 
 	@Override
 	public boolean completeHeaders(byte[] bytes, int count) {
-		String read = new String(bytes).substring(0, count);
+		String read = null;
+		read = new String(bytes).substring(0, count);
 		String[] lines = read.split("\r\n");
 
 		for (String line : lines) {
@@ -256,19 +262,20 @@ public class DecoderImpl implements Decoder {
 	}
 
 	@Override
-	public void analize(byte[] bytes, int count) {
+	public synchronized void analize(byte[] bytes, int count) {
 		if (!headers.contentExpected()) {
 			keepReadingBytes = 0;
 			return;
 		}
 		if (isChunked()) {
-			String[] chunks = new String(bytes).substring(0, count).split(
-					"\r\n");
+			String[] chunks = null;
+			chunks = new String(bytes).substring(0, count).split("\r\n");
 			for (int j = 0; j < chunks.length; j++) {
 				if (keepReadingBytes == 0) {
 					Integer sizeLine = null;
 					try {
 						sizeLine = Integer.parseInt(chunks[j], 16);
+						keepReadingBytesHexa = chunks[j];
 					} catch (NumberFormatException e) {
 						sizeLine = 0;
 					}
@@ -276,8 +283,24 @@ public class DecoderImpl implements Decoder {
 						read = false;
 					}
 					keepReadingBytes = sizeLine;
+					generatingKeep = true;
 				} else {
+					if (generatingKeep && j == 0) {
+						try {
+							Integer.parseInt(chunks[0], 16);
+							keepReadingBytesHexa += chunks[0];
+							keepReadingBytes = Integer.parseInt(
+									keepReadingBytesHexa, 16);
+							continue;
+						} catch (NumberFormatException e) {
+						}
+					}
 					keepReadingBytes -= chunks[j].length();
+					if (keepReadingBytes < 0) {
+						System.out
+								.println("ESTO NO DEBERIA PASAR, keepReadingBytes <0");
+					}
+					generatingKeep = false;
 				}
 
 			}
@@ -301,6 +324,10 @@ public class DecoderImpl implements Decoder {
 		headers = new HTTPPacket();
 		fileName = null;
 		keepReadingBytes = 0;
+		generatingKeep = false;
+		keepReadingBytesHexa = "";
+		rotateImages = false;
+		transformL33t = false;
 	}
 
 	@Override

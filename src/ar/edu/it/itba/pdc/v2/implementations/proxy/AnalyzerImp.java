@@ -1,5 +1,7 @@
 package ar.edu.it.itba.pdc.v2.implementations.proxy;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -96,6 +98,7 @@ public class AnalyzerImp implements Analyzer {
 				decoder.analizeRestrictions();
 				boolean applyTransform = decoder.getRotateImages()
 						|| decoder.getTransformL33t();
+				boolean data = false;
 				if (responseHeaders.getReadBytes() < totalCount) {
 					byte[] extra = decoder.getExtra(resp.array(), totalCount);
 					decoder.analize(extra,
@@ -106,6 +109,7 @@ public class AnalyzerImp implements Analyzer {
 						clientOs.write(extra, 0,
 								totalCount - responseHeaders.getReadBytes());
 					}
+					data=true;
 				}
 				resp.clear();
 				keepReading = decoder.keepReading();
@@ -118,10 +122,15 @@ public class AnalyzerImp implements Analyzer {
 						clientOs.write(buf, 0, receivedMsg);
 					}
 					keepReading = decoder.keepReading();
+					data=true;
 				}
-				if (applyTransform) {
+				if (applyTransform && data) {
 					if (decoder.getRotateImages()) {
 						byte[] rotated = decoder.getRotatedImage();
+						File f = new File("/tmp/prueba/prueba.jpeg");
+						FileOutputStream fw = new FileOutputStream("/tmp/prueba/prueba.jpeg", true);
+						fw.write(rotated, 0, rotated.length);
+						fw.close();
 						clientOs.write(rotated, 0, rotated.length);
 					}
 					if (decoder.getTransformL33t()) {

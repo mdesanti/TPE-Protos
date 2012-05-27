@@ -1,5 +1,6 @@
 package ar.edu.it.itba.pdc.v2.implementations.utils;
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,7 +28,8 @@ public class HTTPPacket implements HTTPHeaders {
 	 * */
 	public void parseHeaders(byte[] data, int count) {
 
-		String s = new String(data).substring(0, count);
+		String s = null;
+		s = new String(data).substring(0, count);
 		String headers[] = s.split("\r\n");
 		String startLine = headers[0];
 
@@ -107,7 +109,7 @@ public class HTTPPacket implements HTTPHeaders {
 						value += header[j];
 
 				}
-					headers.put(headerKey, value);
+				headers.put(headerKey, value);
 			}
 		}
 		if (!completeHeaders) {
