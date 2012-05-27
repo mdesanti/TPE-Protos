@@ -2,7 +2,6 @@ package ar.edu.it.itba.pdc.v2.implementations.proxy;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 
