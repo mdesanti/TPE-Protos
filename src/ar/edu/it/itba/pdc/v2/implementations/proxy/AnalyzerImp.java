@@ -1,6 +1,5 @@
 package ar.edu.it.itba.pdc.v2.implementations.proxy;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -8,6 +7,7 @@ import java.net.Socket;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 
+import ar.edu.it.itba.pdc.v2.implementations.RebuiltHeader;
 import ar.edu.it.itba.pdc.v2.implementations.utils.DecoderImpl;
 import ar.edu.it.itba.pdc.v2.interfaces.Analyzer;
 import ar.edu.it.itba.pdc.v2.interfaces.ConnectionManager;
@@ -28,13 +28,17 @@ public class AnalyzerImp implements Analyzer {
 
 		Decoder decoder = new DecoderImpl(BUFFSIZE);
 		ByteBuffer resp = ByteBuffer.allocate(BUFFSIZE);
-		int receivedMsg, totalCount = 0;
+		int receivedMsg = 0, totalCount = 0;
 		byte[] buf = new byte[BUFFSIZE];
 		boolean keepReading = true;
+
+		// Parse request headers
 		HTTPHeaders headers;
 		decoder.parseHeaders(buffer.array(), count);
 		headers = decoder.getHeaders();
 
+		// Rebuilt the headers according to proxy rules and implementations
+		RebuiltHeader rh = decoder.rebuildHeaders();
 
 		Socket externalServer;
 		String host = decoder.getHeader("Host").replace(" ", "");
@@ -47,14 +51,15 @@ public class AnalyzerImp implements Analyzer {
 			externalOs = externalServer.getOutputStream();
 			clientIs = socket.getInputStream();
 			clientOs = socket.getOutputStream();
-			externalOs.write(buffer.array(), 0, headers.getReadBytes());
-			
+
+			// Sends rebuilt header to server
+			externalOs.write(rh.getHeader(), 0, rh.getSize());
+
+			// If client sends something in the body..
 			if (headers.getReadBytes() < count) {
 				byte[] extra = decoder.getExtra(buffer.array(), count);
-				externalOs.write(extra, 0,
-						count - headers.getReadBytes());
-				decoder.analize(extra,
-						count - headers.getReadBytes());
+				externalOs.write(extra, 0, count - headers.getReadBytes());
+				decoder.analize(extra, count - headers.getReadBytes());
 			} else {
 				decoder.analize(buffer.array(), count);
 			}
@@ -62,11 +67,11 @@ public class AnalyzerImp implements Analyzer {
 			// if client continues to send info, read it and send it to server
 			while (decoder.keepReading()
 					&& ((receivedMsg = clientIs.read(buf)) != -1)) {
-				// totalCount += receivedMsg;
 				decoder.decode(buf, receivedMsg);
 				externalOs.write(buf, 0, receivedMsg);
 			}
-			// read response from server and write it to client
+
+			// Reads response from server and write it to client
 			try {
 				decoder.reset();
 				keepReading = true;
@@ -78,30 +83,44 @@ public class AnalyzerImp implements Analyzer {
 					keepReading = !decoder.completeHeaders(resp.array(),
 							resp.array().length);
 				}
-				// parse headers and decide what to do
+				// Parse response heaaders
 				decoder.parseHeaders(resp.array(), totalCount);
 
 				headers = decoder.getHeaders();
 
-				// sends only headers to server
+				// Sends only headers to client
 				clientOs.write(resp.array(), 0, headers.getReadBytes());
 
+				// Sends the rest of the body to client...
+				boolean isImage = false;
 				if (headers.getReadBytes() < totalCount) {
 					byte[] extra = decoder.getExtra(resp.array(), totalCount);
-					clientOs.write(extra, 0,
+					decoder.analize(extra, totalCount - headers.getReadBytes());
+					isImage = decoder.applyRestrictions(extra,
 							totalCount - headers.getReadBytes());
-					decoder.analize(extra,
-							totalCount - headers.getReadBytes());
+					if (!isImage) {
+						clientOs.write(extra, 0,
+								totalCount - headers.getReadBytes());
+					}
 				}
 				resp.clear();
 				keepReading = decoder.keepReading();
 				while (keepReading
 						&& ((receivedMsg = externalIs.read(buf)) != -1)) {
 					totalCount += receivedMsg;
-					clientOs.write(buf, 0, receivedMsg);
 					decoder.analize(buf, receivedMsg);
+					decoder.applyRestrictions(buf, receivedMsg);
+					if (!isImage){
+						clientOs.write(buf, 0, receivedMsg);
+					}
 					keepReading = decoder.keepReading();
 				}
+				if(isImage){
+					byte[] rotated = decoder.getRotatedImage();
+					clientOs.write(rotated, 0, rotated.length);
+				}
+				
+
 				connectionManager.releaseConnection(externalServer);
 				System.out.println("TERMINO");
 			} catch (IOException e) {
@@ -111,7 +130,7 @@ public class AnalyzerImp implements Analyzer {
 
 		} catch (IOException e) {
 			System.out.println(e.getMessage());
-		} catch(BufferOverflowException e) {
+		} catch (BufferOverflowException e) {
 			e.printStackTrace();
 		}
 

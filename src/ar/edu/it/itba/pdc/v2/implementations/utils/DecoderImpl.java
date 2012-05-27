@@ -1,10 +1,15 @@
 package ar.edu.it.itba.pdc.v2.implementations.utils;
 
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
-import com.sun.org.apache.xalan.internal.xsltc.compiler.sym;
-
+import ar.edu.it.itba.pdc.Implementations.proxy.utils.Transformations;
 import ar.edu.it.itba.pdc.v2.implementations.RebuiltHeader;
 import ar.edu.it.itba.pdc.v2.interfaces.Decoder;
 import ar.edu.it.itba.pdc.v2.interfaces.HTTPHeaders;
@@ -98,42 +103,60 @@ public class DecoderImpl implements Decoder {
 	}
 
 	@Override
-	public void applyRestrictions(byte[] bytes, int count) {
+	public boolean applyRestrictions(byte[] bytes, int count) {
 
 		String contentType = headers.getHeader("Content-Type");
 
 		if (contentType == null)
-			return;
+			return false;
 
 		if (contentType.contains("image/")) {
-			// String extension = contentType.split("/")[1];
-			// if (fileName == null)
-			// fileName = "/tmp/prueba" + time + "." + extension;
-			// try {
-			// FileOutputStream fw = new FileOutputStream(fileName, true);
-			// // String data = "fruta";
-			// String data = headers.getBody(bytes, count);
-			// fw.write(data.getBytes());
-			// fw.close();
-			// if (!keepReading()) {
-			// Transformations im = new Transformations();
-			// InputStream is = new BufferedInputStream(
-			// new FileInputStream((fileName)));
-			// byte[] modified = im.rotate(is, 180);
-			// is.close();
-			// OutputStream os = new BufferedOutputStream(
-			// new FileOutputStream("/tmp/rotated.jpeg"));
-			// os.write(modified);
-			// os.close();
-			// fileName = null;
-			// }
-			// } catch (IOException e) {
-			// // TODO Auto-generated catch block
-			// e.printStackTrace();
-			// }
+			String extension = contentType.split("/")[1];
+			if (fileName == null)
+				fileName = "/tmp/prueba" + time + "." + extension;
+			try {
+				FileOutputStream fw = new FileOutputStream(fileName, true);
+				fw.write(bytes);
+				fw.close();
+//				if (!keepReading()) {
 
+					// is.close();
+					// OutputStream os = new BufferedOutputStream(
+					// new FileOutputStream("/tmp/rotated"+time+"."+extension));
+					// os.write(modified);
+					// os.close();
+					// fileName = null;
+//				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+			return true;
 		}
+		return false;
 
+	}
+
+	@Override
+	public byte[] getRotatedImage() {
+		Transformations im = new Transformations();
+		InputStream is = null;
+		try {
+			is = new BufferedInputStream(new FileInputStream((fileName)));
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		byte[] modified = im.rotate(is, 180);
+		try {
+			is.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		fileName = null;
+		return modified;
 	}
 
 	@Override
@@ -184,7 +207,6 @@ public class DecoderImpl implements Decoder {
 					}
 					keepReadingBytes = sizeLine;
 				} else {
-					System.out.println(chunks[j].length());
 					keepReadingBytes -= chunks[j].length();
 				}
 
@@ -224,8 +246,7 @@ public class DecoderImpl implements Decoder {
 		Map<String, String> allHeaders = headers.getAllHeaders();
 		String sb = "";
 
-		allHeaders.remove("Content-Encoding");
-		// allHeaders.put("Via", " mu0Proxy");
+		allHeaders.remove("Accept-Encoding");
 		sb += allHeaders.get("Method") + " ";
 		sb += allHeaders.get("RequestedURI") + " ";
 		sb += allHeaders.get("HTTPVersion") + "\r\n";
@@ -236,8 +257,9 @@ public class DecoderImpl implements Decoder {
 		for (String key : allHeaders.keySet()) {
 			sb += (key + ":" + allHeaders.get(key) + "\r\n");
 		}
+		allHeaders.put("Via", " mu0Proxy");
+		sb += "Via:" + allHeaders.get("Via") + "\r\n";
 		sb += ("\r\n");
-
 		return new RebuiltHeader(sb.getBytes(), sb.length());
 	}
 

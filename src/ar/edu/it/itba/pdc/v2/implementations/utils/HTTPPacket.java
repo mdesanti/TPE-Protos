@@ -92,9 +92,22 @@ public class HTTPPacket implements HTTPHeaders {
 				headerBytes += 2;
 			} else {
 				headerBytes += lines[i].length() + 2;
-				String[] headerValue = lines[i].split(":");
-				// headerValue[1] = headerValue[1].replaceAll(" ", "");
-				headers.put(headerValue[0], headerValue[1]);
+				char[] header = lines[i].toCharArray();
+				String headerKey = "";
+				String value = "";
+				boolean first = true;
+				for (int j = 0; j < header.length; j++) {
+					if (header[j] == ':' && first) {
+						first = false;
+						continue;
+					}
+					if (first)
+						headerKey += header[j];
+					else
+						value += header[j];
+
+				}
+					headers.put(headerKey, value);
 			}
 		}
 		if (!completeHeaders) {
