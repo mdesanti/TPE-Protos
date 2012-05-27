@@ -1,5 +1,7 @@
 package ar.edu.it.itba.pdc.v2.implementations.proxy;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -31,11 +33,12 @@ public class AnalyzerImp implements Analyzer {
 		int receivedMsg = 0, totalCount = 0;
 		byte[] buf = new byte[BUFFSIZE];
 		boolean keepReading = true;
+		HTTPHeaders requestHeaders, responseHeaders;
 
 		// Parse request headers
-		HTTPHeaders requestHeaders, responseHeaders;
 		decoder.parseHeaders(buffer.array(), count);
 		requestHeaders = decoder.getHeaders();
+
 		// Rebuilt the headers according to proxy rules and implementations
 		RebuiltHeader rh = decoder.rebuildHeaders();
 
@@ -57,7 +60,8 @@ public class AnalyzerImp implements Analyzer {
 			// If client sends something in the body..
 			if (requestHeaders.getReadBytes() < count) {
 				byte[] extra = decoder.getExtra(buffer.array(), count);
-				externalOs.write(extra, 0, count - requestHeaders.getReadBytes());
+				externalOs.write(extra, 0,
+						count - requestHeaders.getReadBytes());
 				decoder.analize(extra, count - requestHeaders.getReadBytes());
 			} else {
 				decoder.analize(buffer.array(), count);
@@ -71,10 +75,11 @@ public class AnalyzerImp implements Analyzer {
 			}
 
 			// Reads response from server and write it to client
+			decoder.reset();
+			keepReading = true;
+			totalCount = 0;
 			try {
-				decoder.reset();
-				keepReading = true;
-				// read headers
+				// Read headers
 				while (keepReading
 						&& ((receivedMsg = externalIs.read(buf)) != -1)) {
 					totalCount += receivedMsg;
@@ -84,22 +89,27 @@ public class AnalyzerImp implements Analyzer {
 				}
 				// Parse response heaaders
 				decoder.parseHeaders(resp.array(), totalCount);
-
 				responseHeaders = decoder.getHeaders();
+				
 				// Sends only headers to client
 				clientOs.write(resp.array(), 0, responseHeaders.getReadBytes());
 
 				// Sends the rest of the body to client...
-				boolean isImage = false;
+				decoder.analizeRestrictions();
+				boolean applyTransform = decoder.getRotateImages()
+						|| decoder.getTransformL33t();
+				boolean data = false;
 				if (responseHeaders.getReadBytes() < totalCount) {
 					byte[] extra = decoder.getExtra(resp.array(), totalCount);
-					decoder.analize(extra, totalCount - responseHeaders.getReadBytes());
-					isImage = decoder.applyRestrictions(extra,
-							totalCount - responseHeaders.getReadBytes(),requestHeaders);
-					if (!isImage) {
+					decoder.analize(extra,
+							totalCount - responseHeaders.getReadBytes());
+					decoder.applyRestrictions(extra, totalCount
+							- responseHeaders.getReadBytes(), requestHeaders);
+					if (!applyTransform) {
 						clientOs.write(extra, 0,
 								totalCount - responseHeaders.getReadBytes());
 					}
+					data=true;
 				}
 				resp.clear();
 				keepReading = decoder.keepReading();
@@ -107,17 +117,27 @@ public class AnalyzerImp implements Analyzer {
 						&& ((receivedMsg = externalIs.read(buf)) != -1)) {
 					totalCount += receivedMsg;
 					decoder.analize(buf, receivedMsg);
-					decoder.applyRestrictions(buf, receivedMsg,requestHeaders);
-					if (!isImage){
+					decoder.applyRestrictions(buf, receivedMsg, requestHeaders);
+					if (!applyTransform) {
 						clientOs.write(buf, 0, receivedMsg);
 					}
 					keepReading = decoder.keepReading();
+					data=true;
 				}
-				if(isImage){
-					byte[] rotated = decoder.getRotatedImage();
-					clientOs.write(rotated, 0, rotated.length);
+				if (applyTransform && data) {
+					if (decoder.getRotateImages()) {
+						byte[] rotated = decoder.getRotatedImage();
+						File f = new File("/tmp/prueba/prueba.jpeg");
+						FileOutputStream fw = new FileOutputStream("/tmp/prueba/prueba.jpeg", true);
+						fw.write(rotated, 0, rotated.length);
+						fw.close();
+						clientOs.write(rotated, 0, rotated.length);
+					}
+					if (decoder.getTransformL33t()) {
+						byte[] transformed = decoder.getTransformed();
+						clientOs.write(transformed, 0, transformed.length);
+					}
 				}
-				
 
 				connectionManager.releaseConnection(externalServer);
 //				System.out.println("TERMINO");
