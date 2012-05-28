@@ -1,7 +1,5 @@
 package ar.edu.it.itba.pdc.v2.implementations.proxy;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -12,6 +10,7 @@ import java.nio.ByteBuffer;
 import ar.edu.it.itba.pdc.v2.implementations.RebuiltHeader;
 import ar.edu.it.itba.pdc.v2.implementations.utils.DecoderImpl;
 import ar.edu.it.itba.pdc.v2.interfaces.Analyzer;
+import ar.edu.it.itba.pdc.v2.interfaces.Configurator;
 import ar.edu.it.itba.pdc.v2.interfaces.ConnectionManager;
 import ar.edu.it.itba.pdc.v2.interfaces.Decoder;
 import ar.edu.it.itba.pdc.v2.interfaces.HTTPHeaders;
@@ -20,9 +19,12 @@ public class AnalyzerImp implements Analyzer {
 
 	private ConnectionManager connectionManager;
 	private static int BUFFSIZE = 5 * 1024;
+	private Configurator configurator;
 
-	public AnalyzerImp(ConnectionManager connectionManager) {
+	public AnalyzerImp(ConnectionManager connectionManager,
+			Configurator configurator) {
 		this.connectionManager = connectionManager;
+		this.configurator = configurator;
 	}
 
 	public void analyze(ByteBuffer buffer, int count, Socket socket) {
@@ -89,14 +91,14 @@ public class AnalyzerImp implements Analyzer {
 				// Parse response heaaders
 				decoder.parseHeaders(resp.array(), totalCount);
 				responseHeaders = decoder.getHeaders();
-				
+
 				// Sends only headers to client
 				clientOs.write(resp.array(), 0, responseHeaders.getReadBytes());
 
 				// Sends the rest of the body to client...
-//				decoder.analizeRestrictions();
-				boolean applyTransform = decoder.getRotateImages()
-						|| decoder.getTransformL33t();
+
+				decoder.setConfigurator(configurator);
+				boolean applyTransform = decoder.applyTransformations();
 				boolean data = false;
 				if (responseHeaders.getReadBytes() < totalCount) {
 					byte[] extra = decoder.getExtra(resp.array(), totalCount);
@@ -108,7 +110,7 @@ public class AnalyzerImp implements Analyzer {
 						clientOs.write(extra, 0,
 								totalCount - responseHeaders.getReadBytes());
 					}
-					data=true;
+					data = true;
 				}
 				resp.clear();
 				keepReading = decoder.keepReading();
@@ -121,25 +123,22 @@ public class AnalyzerImp implements Analyzer {
 						clientOs.write(buf, 0, receivedMsg);
 					}
 					keepReading = decoder.keepReading();
-					data=true;
+					data = true;
 				}
 				if (applyTransform && data) {
-					if (decoder.getRotateImages()) {
+					if (configurator.applyRotations() && decoder.isImage()) {
 						byte[] rotated = decoder.getRotatedImage();
-						File f = new File("/tmp/prueba/prueba.jpeg");
-						FileOutputStream fw = new FileOutputStream("/tmp/prueba/prueba.jpeg", true);
-						fw.write(rotated, 0, rotated.length);
-						fw.close();
 						clientOs.write(rotated, 0, rotated.length);
 					}
-					if (decoder.getTransformL33t()) {
+					if (configurator.applyTextTransformation()
+							&& decoder.isText()) {
 						byte[] transformed = decoder.getTransformed();
 						clientOs.write(transformed, 0, transformed.length);
 					}
 				}
 
 				connectionManager.releaseConnection(externalServer);
-//				System.out.println("TERMINO");
+				// System.out.println("TERMINO");
 			} catch (IOException e) {
 				connectionManager.releaseConnection(externalServer);
 				System.out.println(e.getMessage());
@@ -152,5 +151,4 @@ public class AnalyzerImp implements Analyzer {
 		}
 
 	}
-
 }

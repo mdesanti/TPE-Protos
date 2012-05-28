@@ -9,6 +9,7 @@ import org.apache.log4j.Logger;
 
 import ar.edu.it.itba.pdc.v2.implementations.utils.DecoderImpl;
 import ar.edu.it.itba.pdc.v2.interfaces.Analyzer;
+import ar.edu.it.itba.pdc.v2.interfaces.Configurator;
 import ar.edu.it.itba.pdc.v2.interfaces.ConnectionHandler;
 import ar.edu.it.itba.pdc.v2.interfaces.ConnectionManager;
 import ar.edu.it.itba.pdc.v2.interfaces.Decoder;
@@ -19,20 +20,23 @@ public class Attend implements Runnable {
 	private ConnectionHandler handler;
 	private ConnectionManager connectionManager;
 	private Analyzer analyzer;
+	private Configurator configurator;
 
 	public Attend(Socket socket, ConnectionHandler handler,
-			ConnectionManager connectionManager, Analyzer analyzer) {
+			ConnectionManager connectionManager, Analyzer analyzer,
+			Configurator configurator) {
 		this.handler = handler;
 		this.socket = socket;
 		this.connectionManager = connectionManager;
 		this.analyzer = analyzer;
+		this.configurator = configurator;
 	}
 
 	public void run() {
 		Logger attend = Logger.getLogger("server.attend");
 		Decoder decoder = new DecoderImpl(20 * 1024);
 		byte[] buffer = new byte[500];
-		analyzer = new AnalyzerImp(connectionManager);
+		analyzer = new AnalyzerImp(connectionManager, configurator);
 		ByteBuffer req = ByteBuffer.allocate(20 * 1024);
 		String s = socket.getRemoteSocketAddress().toString();
 		while (!socket.isClosed()) {
@@ -61,6 +65,6 @@ public class Attend implements Runnable {
 			}
 		}
 
-//		System.out.printf("Se desconecto %s\n", s);
+		// System.out.printf("Se desconecto %s\n", s);
 	}
 }

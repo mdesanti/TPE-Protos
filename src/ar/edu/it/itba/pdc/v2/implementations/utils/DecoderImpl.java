@@ -12,6 +12,7 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 
 import ar.edu.it.itba.pdc.v2.implementations.RebuiltHeader;
+import ar.edu.it.itba.pdc.v2.interfaces.Configurator;
 import ar.edu.it.itba.pdc.v2.interfaces.Decoder;
 import ar.edu.it.itba.pdc.v2.interfaces.HTTPHeaders;
 
@@ -22,10 +23,11 @@ public class DecoderImpl implements Decoder {
 	private HTTPHeaders headers = null;
 	private String fileName;
 	private int keepReadingBytes = 0;
-	private boolean rotateImages = false;
-	private boolean transformL33t = false;
+	private boolean isImage = false;
+	private boolean isText = false;
 	private boolean generatingKeep = false;
 	private String keepReadingBytesHexa;
+	private Configurator configurator;
 
 	public DecoderImpl(int buffSize) {
 		headers = new HTTPPacket();
@@ -84,7 +86,6 @@ public class DecoderImpl implements Decoder {
 		return buffer.array();
 	}
 
-	
 	public boolean keepReading() {
 		return read;
 	}
@@ -94,43 +95,32 @@ public class DecoderImpl implements Decoder {
 				&& (headers.getHeader("Transfer-Encoding").contains("chunked"));
 	}
 
-	
 	public int getBufferSize() {
 		return index;
 	}
 
-	
 	public String getHeader(String header) {
 		return headers.getHeader(header);
 	}
 
-	
-	public void analizeRestrictions() {
+	private void analizeMediaType() {
 		if (headers.getHeader("Content-Type") != null) {
-			rotateImages = headers.getHeader("Content-Type").contains("image/");
-			transformL33t = headers.getHeader("Content-Type").contains(
-					"text/plain");
+			isImage = headers.getHeader("Content-Type").contains("image/");
+			isText = headers.getHeader("Content-Type").contains("text/plain");
 		}
 	}
 
-	public boolean getRotateImages() {
-		return rotateImages;
+	public boolean applyTransformations() {
+		this.analizeMediaType();
+		return configurator.applyTransformation() && (isImage || isText);
 	}
 
-	public boolean getTransformL33t() {
-		return transformL33t;
-	}
-
-	
 	public void applyRestrictions(byte[] bytes, int count,
 			HTTPHeaders requestHeaders) {
 
-		// String contentType = headers.getHeader("Content-Type");
+		this.analizeMediaType();
 
-		// if (contentType == null)
-		// return false;
-
-		if (rotateImages) {
+		if (isImage && configurator.applyRotations()) {
 			if (fileName == null) {
 				String path[] = requestHeaders.getHeader("RequestedURI").split(
 						"/");
@@ -156,7 +146,7 @@ public class DecoderImpl implements Decoder {
 				e.printStackTrace();
 			}
 
-		} else if (transformL33t) {
+		} else if (isText && configurator.applyTextTransformation()) {
 			if (fileName == null) {
 				String path[] = requestHeaders.getHeader("RequestedURI").split(
 						"/");
@@ -182,7 +172,14 @@ public class DecoderImpl implements Decoder {
 
 	}
 
-	
+	public boolean isImage() {
+		return isImage;
+	}
+
+	public boolean isText() {
+		return isText;
+	}
+
 	public byte[] getRotatedImage() {
 		Transformations im = new Transformations();
 		// InputStream is = null;
@@ -204,7 +201,6 @@ public class DecoderImpl implements Decoder {
 		return modified;
 	}
 
-	
 	public byte[] getTransformed() {
 		Transformations im = new Transformations();
 		InputStream is = null;
@@ -231,19 +227,16 @@ public class DecoderImpl implements Decoder {
 		return modified;
 	}
 
-	
 	public void applyTransformations(byte[] bytes, int count) {
 		// TODO Auto-generated method stub
 
 	}
 
-	
 	public void applyFilters() {
 		// TODO Auto-generated method stub
 
 	}
 
-	
 	public boolean completeHeaders(byte[] bytes, int count) {
 		String read = null;
 		read = new String(bytes).substring(0, count);
@@ -258,7 +251,6 @@ public class DecoderImpl implements Decoder {
 		return false;
 	}
 
-	
 	public synchronized void analize(byte[] bytes, int count) {
 		if (!headers.contentExpected()) {
 			keepReadingBytes = 0;
@@ -314,7 +306,6 @@ public class DecoderImpl implements Decoder {
 		}
 	}
 
-	
 	public void reset() {
 		read = true;
 		index = 0;
@@ -323,21 +314,18 @@ public class DecoderImpl implements Decoder {
 		keepReadingBytes = 0;
 		generatingKeep = false;
 		keepReadingBytesHexa = "";
-		rotateImages = false;
-		transformL33t = false;
+		isImage = false;
+		isText = false;
 	}
 
-	
 	public void parseHeaders(byte[] data, int count) {
 		headers.parseHeaders(data, count);
 	}
 
-	
 	public HTTPHeaders getHeaders() {
 		return headers;
 	}
 
-	
 	public RebuiltHeader rebuildHeaders() {
 		Map<String, String> allHeaders = headers.getAllHeaders();
 		String sb = "";
@@ -358,6 +346,11 @@ public class DecoderImpl implements Decoder {
 		// sb += "Via:" + allHeaders.get("Via") + "\r\n";
 		sb += ("\r\n");
 		return new RebuiltHeader(sb.getBytes(), sb.length());
+	}
+
+	public void setConfigurator(Configurator configurator) {
+		this.configurator = configurator;
+
 	}
 
 }

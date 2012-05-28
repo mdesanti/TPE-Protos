@@ -54,6 +54,10 @@ public class ConfiguratorImpl implements Configurator {
 		return handler.applyTextTransformation();
 	}
 
+	public boolean applyTransformation() {
+		return applyRotations() || applyTextTransformation();
+	}
+
 	public int getMaxSize() {
 		return handler.getMaxSize();
 	}
