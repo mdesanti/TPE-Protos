@@ -7,10 +7,11 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.Set;
-import java.util.regex.Pattern;
 
 import javax.ws.rs.core.MediaType;
+
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import ar.edu.it.itba.pdc.v2.interfaces.ConfiguratorConnectionDecoderInt;
 import ar.edu.it.itba.pdc.v2.interfaces.ConnectionHandler;
@@ -29,6 +30,8 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 	}
 
 	public void handle(Socket socket) throws IOException {
+		Logger configHandler = Logger.getLogger("proxy.configurator.handler");
+		configHandler.setLevel(Level.INFO);
 		byte[] buffer = new byte[maxMessageLength];
 		ByteBuffer cumBuffer = ByteBuffer.allocate(maxMessageLength);
 		int receivedLength = 0, total = 0;
@@ -47,9 +50,11 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 				cumBuffer.put(buffer, cumBuffer.position(), receivedLength);
 				keepReading = reachedEnd(buffer);
 			}
+			configHandler.info("Received line from client: " + new String(cumBuffer.array()).substring(0, total));
 
 			String answer = decoder.decode(new String(cumBuffer.array())
 					.substring(0, total));
+			configHandler.info("Responding " + answer + " to client");
 
 			os.write(answer.getBytes());
 			cumBuffer.clear();
@@ -57,7 +62,9 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 			receivedLength = 0;
 			total = 0;
 		}
+		configHandler.info("Client closed connection. Closing socket, reseting decoder and exiting handler");
 		socket.close();
+		decoder.reset();
 	}
 
 	private boolean reachedEnd(byte[] data) {

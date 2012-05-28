@@ -11,6 +11,8 @@ import java.util.regex.PatternSyntaxException;
 
 import javax.ws.rs.core.MediaType;
 
+import org.apache.log4j.Logger;
+
 import ar.edu.it.itba.pdc.v2.interfaces.ConfiguratorConnectionDecoderInt;
 
 public class ConfiguratorConnectionDecoder implements
@@ -25,6 +27,7 @@ public class ConfiguratorConnectionDecoder implements
 	private Set<String> blockedMediaType;
 	private Set<String> blockedURIs;
 	private int maxSize = -1;
+	private Logger decoderLog = Logger.getLogger("proxy.configurator.handler");
 
 	public ConfiguratorConnectionDecoder() {
 		reply = new HashMap<String, String>();
@@ -44,9 +47,11 @@ public class ConfiguratorConnectionDecoder implements
 			String[] credentials = s.split(":");
 			if (credentials.length == 2 && credentials[0].equals("admin")
 					&& credentials[1].equals("pdc2012")) {
+				decoderLog.info("Admin logged in");
 				logged = true;
 				return reply.get("LOG_IN_OK");
 			} else {
+				decoderLog.info("Log in failed. Closing connection");
 				closeConnection = true;
 				return reply.get("LOGIN_ERROR");
 			}
@@ -56,14 +61,16 @@ public class ConfiguratorConnectionDecoder implements
 				return analyzeBlockCommand(args);
 			} else if (args[0].equals("UNBLOCK")) {
 				return analyzeUnblockCommand(args);
-			} else if (args[0].equals("TRANSFORM")) {
+			} else if (args[0].equals("TRANSFORMATIONS")) {
 				if (args.length != 2) {
 					return reply.get("WRONG_COMMAND");
 				}
 				if (args[1].equals("ON")) {
+					decoderLog.info("Transformations turned on");
 					applyTransformations = true;
 					return reply.get("TRANSF_ON");
 				} else if (args[1].equals("OFF")) {
+					decoderLog.info("Transformations turned off");
 					applyTransformations = false;
 					return reply.get("TRANSF_OFF");
 				} else {
@@ -74,15 +81,18 @@ public class ConfiguratorConnectionDecoder implements
 					return reply.get("WRONG_COMMAND");
 				}
 				if (args[1].equals("ON")) {
+					decoderLog.info("Rotations turned on");
 					applyRotations = true;
 					return reply.get("ROT_ON");
 				} else if (args[1].equals("OFF")) {
+					decoderLog.info("Rotations turned off");
 					applyRotations = false;
 					return reply.get("ROT_OFF");
 				} else {
 					return reply.get("WRONG_PARAMETERS");
 				}
-			} else if (args[0].equals("GET") && args[1].equals("CONF")) {
+			} else if (args.length == 3 && args[0].equals("GET")
+					&& args[1].equals("CONF")) {
 				if (args.length != 3) {
 					return reply.get("WRONG_COMMAND");
 				}
@@ -118,8 +128,11 @@ public class ConfiguratorConnectionDecoder implements
 					return reply.get("WRONG_PARAMETERS");
 				}
 			} else if (args[0].equals("EXIT")) {
+				decoderLog.info("EXIT command received. Closing connection");
 				closeConnection = true;
 				return "Bye bye\n";
+			} else if (args[0].equals("HELP")) {
+				return printHelp();
 			} else {
 				return reply.get("WRONG_COMMAND");
 			}
@@ -135,7 +148,8 @@ public class ConfiguratorConnectionDecoder implements
 			InetAddress addr;
 			try {
 				addr = InetAddress.getByName(arg);
-				synchronized (blockedAddresses) {					
+				decoderLog.info("Blocking " + addr.toString());
+				synchronized (blockedAddresses) {
 					blockedAddresses.add(addr);
 				}
 				return "200 - " + arg + " blocked\n";
@@ -147,7 +161,8 @@ public class ConfiguratorConnectionDecoder implements
 			if (mt == null) {
 				return "400 - Invalid media type\n";
 			}
-			synchronized (blockedMediaType) {				
+			decoderLog.info("Blocking " + mt.toString());
+			synchronized (blockedMediaType) {
 				blockedMediaType.add(mt.toString());
 			}
 			return "200 - " + mt.toString() + " blocked\n";
@@ -155,6 +170,7 @@ public class ConfiguratorConnectionDecoder implements
 			try {
 				Integer max = Integer.parseInt(arg);
 				maxSize = max;
+				decoderLog.info("Blocking files bigger than " + max);
 				return "200 - Sizes bigger than " + maxSize
 						+ " are now blocked\n";
 			} catch (NumberFormatException e) {
@@ -163,6 +179,7 @@ public class ConfiguratorConnectionDecoder implements
 		} else if (type.equals("URI")) {
 			try {
 				Pattern p = Pattern.compile(arg);
+				decoderLog.info("Blocking " + p.toString());
 				synchronized (blockedURIs) {
 					blockedURIs.add(p.pattern());
 				}
@@ -184,6 +201,7 @@ public class ConfiguratorConnectionDecoder implements
 			InetAddress addr;
 			try {
 				addr = InetAddress.getByName(arg);
+				decoderLog.info("Unblocking " + addr.toString());
 				synchronized (blockedAddresses) {
 					blockedAddresses.remove(addr);
 				}
@@ -196,6 +214,7 @@ public class ConfiguratorConnectionDecoder implements
 			if (mt == null) {
 				return "400 - Invalid media type\n";
 			}
+			decoderLog.info("Unblocking " + mt.toString());
 			synchronized (blockedMediaType) {
 				blockedMediaType.remove(mt.toString());
 			}
@@ -207,6 +226,7 @@ public class ConfiguratorConnectionDecoder implements
 				if (max == -1) {
 					return "200 - All sizes are permited\n";
 				}
+				decoderLog.info("Unblocking files bigger than" + max);
 				return "200 - Sizes bigger than " + maxSize
 						+ " are now blocked\n";
 			} catch (NumberFormatException e) {
@@ -218,6 +238,7 @@ public class ConfiguratorConnectionDecoder implements
 				synchronized (blockedURIs) {
 					blockedURIs.remove(p.pattern());
 				}
+				decoderLog.info("Unblocking " + p.toString());
 				return "200 - " + p.pattern() + " unblocked\n";
 			} catch (PatternSyntaxException e) {
 				return "400 - Invalid pattern\n";
@@ -246,6 +267,17 @@ public class ConfiguratorConnectionDecoder implements
 		reply.put("TRANSF_OFF", "200 - Transformations are off\n");
 		reply.put("ROT_ON", "200 - Rotations are on\n");
 		reply.put("ROT_OFF", "200 - Rotations are off\n");
+	}
+	
+	private String printHelp() {
+		decoderLog.info("HELP command received");
+		StringBuffer sb = new StringBuffer();
+		sb.append("Available commands: BLOCK - UNBLOCK - TRANSFORMATIONS - ROTATIONS - GET\n");
+		sb.append("BLOCK or UNBLOCK usage: (BLOCK | UNBLOCK)SP(IP|URI|MTYPE|SIZE)SP(VALUE)\n");
+		sb.append("TRANSFORMATIONS or ROTATIONS usage: (TRANSFORMATIONS|ROTATIONS)SP(ON|OFF)\n");
+		sb.append("GET usage: GET SP (ROTATIONS|TRANSFORMATIONS|BLOCK)\n");
+		
+		return sb.toString();
 	}
 
 	public Object[] getBlockedAddresses() {
@@ -276,6 +308,10 @@ public class ConfiguratorConnectionDecoder implements
 
 	public boolean applyTransformations() {
 		return applyTransformations;
+	}
+
+	public void reset() {
+		closeConnection = false;
 	}
 
 }
