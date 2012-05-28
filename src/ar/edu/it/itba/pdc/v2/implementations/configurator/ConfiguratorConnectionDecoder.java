@@ -235,16 +235,22 @@ public class ConfiguratorConnectionDecoder implements ConfiguratorConnectionDeco
 		reply.put("ROT_OFF", "200 - Rotations are off\n");
 	}
 	
-	public Set<InetAddress> getBlockedAddresses() {
-		return blockedAddresses;
+	public InetAddress[] getBlockedAddresses() {
+		synchronized (blockedAddresses) {
+			return (InetAddress[]) blockedAddresses.toArray();
+		}
 	}
 	
-	public Set<String> getBlockedMediaType() {
-		return blockedMediaType;
+	public String[] getBlockedMediaType() {
+		synchronized (blockedMediaType) {			
+			return (String[]) blockedMediaType.toArray();
+		}
 	}
 	
-	public Set<String> getBlockedURIs() {
-		return blockedURIs;
+	public String[] getBlockedURIs() {
+		synchronized (blockedURIs) {			
+			return (String[]) blockedURIs.toArray();
+		}
 	}
 	
 	public int getMaxSize() {

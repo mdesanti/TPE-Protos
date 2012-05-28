@@ -78,7 +78,7 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 	}
 
 	public boolean isAccepted(InetAddress addr) {
-		Set<InetAddress> set = decoder.getBlockedAddresses();
+		InetAddress[] set = decoder.getBlockedAddresses();
 		for (InetAddress blocked : set) {
 			if (blocked.equals(addr))
 				return false;
@@ -87,7 +87,7 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 	}
 
 	public boolean isAccepted(String str) {
-		Set<String> set = decoder.getBlockedURIs();
+		String[] set = decoder.getBlockedURIs();
 		for (String blocked : set) {
 			if (str.matches(blocked)) {
 				return false;
@@ -97,9 +97,9 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 	}
 
 	public boolean isAccepted(MediaType mtype) {
-		Set<String> set = decoder.getBlockedMediaType();
+		String[] set = decoder.getBlockedMediaType();
 		for (String blocked : set) {
-			if (mtype.equals(blocked)) {
+			if (mtype.toString().equals(blocked)) {
 				return false;
 			}
 		}

@@ -9,11 +9,11 @@ public interface ConfiguratorConnectionDecoderInt {
 	
 	public boolean closeConnection();
 	
-	public Set<InetAddress> getBlockedAddresses();
+	public InetAddress[] getBlockedAddresses();
 	
-	public Set<String> getBlockedMediaType();
+	public String[] getBlockedMediaType();
 	
-	public Set<String> getBlockedURIs();
+	public String[] getBlockedURIs();
 	
 	public int getMaxSize();
 	
