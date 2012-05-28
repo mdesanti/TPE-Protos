@@ -21,16 +21,16 @@ public class ConfiguratorConnectionDecoder implements ConfiguratorConnectionDeco
 	private boolean applyRotations = false;
 	private Map<String, String> reply;
 	private Set<InetAddress> blockedAddresses;
-	private Set<MediaType> blockedMediaType;
-	private Set<Pattern> blockedURIs;
+	private Set<String> blockedMediaType;
+	private Set<String> blockedURIs;
 	private int maxSize = -1;
 
 	public ConfiguratorConnectionDecoder() {
 		reply = new HashMap<String, String>();
 		fillReply();
 		blockedAddresses = new TreeSet<InetAddress>();
-		blockedMediaType = new TreeSet<MediaType>();
-		blockedURIs = new TreeSet<Pattern>();
+		blockedMediaType = new TreeSet<String>();
+		blockedURIs = new TreeSet<String>();
 	}
 
 	public boolean closeConnection() {
@@ -38,6 +38,7 @@ public class ConfiguratorConnectionDecoder implements ConfiguratorConnectionDeco
 	}
 
 	public String decode(String s) {
+		s = s.replace("\n", "");
 		if (!logged) {
 			String[] credentials = s.split(":");
 			if (credentials.length == 2 && credentials[0].equals("admin")
@@ -55,6 +56,9 @@ public class ConfiguratorConnectionDecoder implements ConfiguratorConnectionDeco
 			} else if (args[0].equals("UNBLOCK")) {
 				return analyzeUnblockCommand(args);
 			} else if (args[0].equals("TRANSFORM")) {
+				if(args.length != 2) {
+					return reply.get("WRONG_COMMAND");
+				}
 				if (args[1].equals("ON")) {
 					applyTransformations = true;
 					return reply.get("TRANSF_ON");
@@ -65,6 +69,9 @@ public class ConfiguratorConnectionDecoder implements ConfiguratorConnectionDeco
 					return reply.get("WRONG_PARAMETERS");
 				}
 			} else if (args[0].equals("ROTATIONS")) {
+				if(args.length != 2) {
+					return reply.get("WRONG_COMMAND");
+				}
 				if (args[1].equals("ON")) {
 					applyRotations = true;
 					return reply.get("ROT_ON");
@@ -75,6 +82,9 @@ public class ConfiguratorConnectionDecoder implements ConfiguratorConnectionDeco
 					return reply.get("WRONG_PARAMETERS");
 				}
 			} else if (args[0].equals("GET") && args[1].equals("CONF")) {
+				if(args.length != 3) {
+					return reply.get("WRONG_COMMAND");
+				}
 				if (args[2].equals("ROTATIONS")) {
 					if (applyRotations) {
 						return reply.get("ROT_ON");
@@ -91,12 +101,12 @@ public class ConfiguratorConnectionDecoder implements ConfiguratorConnectionDeco
 					StringBuffer sb = new StringBuffer();
 					sb.append("200 - Blocked list:\n");
 					sb.append("Media Types:\n");
-					for(MediaType mt: blockedMediaType) {
+					for(String mt: blockedMediaType) {
 						sb.append("\t" + mt.toString()+"\n");
 					}
 					sb.append("URIs:\n");
-					for(Pattern p: blockedURIs) {
-						sb.append("\t" + p.toString() + "\n");
+					for(String p: blockedURIs) {
+						sb.append("\t" + p + "\n");
 					}
 					sb.append("IP addresses:\n");
 					for(InetAddress addr: blockedAddresses) {
@@ -106,6 +116,9 @@ public class ConfiguratorConnectionDecoder implements ConfiguratorConnectionDeco
 				} else {
 					return reply.get("WRONG_PARAMETERS");
 				}
+			} else if(args[0].equals("EXIT")) {
+				closeConnection = true;
+				return "Bye bye\n";
 			} else {
 				return reply.get("WRONG_COMMAND");
 			}
@@ -113,24 +126,26 @@ public class ConfiguratorConnectionDecoder implements ConfiguratorConnectionDeco
 	}
 
 	private String analyzeBlockCommand(String[] line) {
+		if(line.length != 3)
+			return reply.get("WRONG_COMMAND");
 		String type = line[1];
 		String arg = line[2];
 		if (type.equals("IP")) {
 			InetAddress addr;
 			try {
-				addr = InetAddress.getByAddress(arg.getBytes());
+				addr = InetAddress.getByName(arg);
 				blockedAddresses.add(addr);
 				return "200 - " + arg + " blocked\n";
-			} catch (UnknownHostException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} catch (Exception e) {
+				return reply.get("WRONG_PARAMETERS");
 			}
 		} else if (type.equals("MTYPE")) {
 			MediaType mt = analyzeMediaType(arg);
 			if (mt == null) {
 				return "400 - Invalid media type\n";
 			}
-			blockedMediaType.add(mt);
+			blockedMediaType.add(mt.toString());
+			return "200 - " + mt.toString() + " blocked\n";
 		} else if (type.equals("SIZE")) {
 			try {
 				Integer max = Integer.parseInt(arg);
@@ -143,35 +158,37 @@ public class ConfiguratorConnectionDecoder implements ConfiguratorConnectionDeco
 		} else if (type.equals("URI")) {
 			try {
 				Pattern p = Pattern.compile(arg);
-				blockedURIs.add(p);
+				blockedURIs.add(p.pattern());
+				return "200 - " + arg + " blocked\n";
 			} catch (PatternSyntaxException e) {
 				return "400 - Invalid pattern\n";
 			}
 		} else {
 			return reply.get("WRONG_PARAMETERS");
 		}
-		return null;
 	}
 
 	private String analyzeUnblockCommand(String[] line) {
+		if(line.length != 3)
+			return reply.get("WRONG_COMMAND");
 		String type = line[1];
 		String arg = line[2];
 		if (type.equals("IP")) {
 			InetAddress addr;
 			try {
-				addr = InetAddress.getByAddress(arg.getBytes());
+				addr = InetAddress.getByName(arg);
 				blockedAddresses.remove(addr);
 				return "200 - " + arg + " blocked\n";
 			} catch (UnknownHostException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				return reply.get("WRONG_PARAMETERS");
 			}
 		} else if (type.equals("MTYPE")) {
 			MediaType mt = analyzeMediaType(arg);
 			if (mt == null) {
 				return "400 - Invalid media type\n";
 			}
-			blockedMediaType.remove(mt);
+			blockedMediaType.remove(mt.toString());
+			return "200 - " + mt.getType() + mt.getSubtype() + " unblocked\n";
 		} else if (type.equals("SIZE")) {
 			try {
 				Integer max = Integer.parseInt(arg);
@@ -187,14 +204,14 @@ public class ConfiguratorConnectionDecoder implements ConfiguratorConnectionDeco
 		} else if (type.equals("URI")) {
 			try {
 				Pattern p = Pattern.compile(arg);
-				blockedURIs.remove(p);
+				blockedURIs.remove(p.pattern());
+				return "200 - " + p.pattern() + " unblocked\n";
 			} catch (PatternSyntaxException e) {
 				return "400 - Invalid pattern\n";
 			}
 		} else {
 			return reply.get("WRONG_PARAMETERS");
 		}
-		return null;
 	}
 
 	private MediaType analyzeMediaType(String mtype) {
@@ -222,11 +239,11 @@ public class ConfiguratorConnectionDecoder implements ConfiguratorConnectionDeco
 		return blockedAddresses;
 	}
 	
-	public Set<MediaType> getBlockedMediaType() {
+	public Set<String> getBlockedMediaType() {
 		return blockedMediaType;
 	}
 	
-	public Set<Pattern> getBlockedURIs() {
+	public Set<String> getBlockedURIs() {
 		return blockedURIs;
 	}
 	

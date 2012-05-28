@@ -31,69 +31,75 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 	public void handle(Socket socket) throws IOException {
 		byte[] buffer = new byte[maxMessageLength];
 		ByteBuffer cumBuffer = ByteBuffer.allocate(maxMessageLength);
-		int receivedLength = 0;
+		int receivedLength = 0, total = 0;
 		String send = new String(greeting.getBytes(), acceptedCharset);
 		OutputStream os = socket.getOutputStream();
 		InputStream is = socket.getInputStream();
-		boolean keepReading = true;
+		boolean keepReading = true, firstTime = true;
 
 		while (!decoder.closeConnection()) {
-			os.write(send.getBytes());
-
-			while (keepReading && (receivedLength += is.read(buffer)) != -1) {
+			if (firstTime) {
+				os.write(send.getBytes());
+				firstTime = false;
+			}
+			while (keepReading && (receivedLength = is.read(buffer)) != -1) {
+				total += receivedLength;
 				cumBuffer.put(buffer, cumBuffer.position(), receivedLength);
 				keepReading = reachedEnd(buffer);
 			}
 
-			String answer = decoder.decode(new String(cumBuffer.array(),
-					acceptedCharset));
+			String answer = decoder.decode(new String(cumBuffer.array())
+					.substring(0, total));
 
 			os.write(answer.getBytes());
 			cumBuffer.clear();
 			keepReading = true;
+			receivedLength = 0;
+			total = 0;
 		}
+		socket.close();
 	}
 
 	private boolean reachedEnd(byte[] data) {
-		String dataAsString = new String(data, acceptedCharset);
+		String dataAsString = new String(data);
 		return dataAsString.contains("\r\n");
 	}
-	
+
 	public boolean applyRotations() {
 		return decoder.applyRotations();
 	}
-	
+
 	public boolean applyTextTransformation() {
 		return decoder.applyTransformations();
 	}
-	
+
 	public int getMaxSize() {
 		return decoder.getMaxSize();
 	}
-	
+
 	public boolean isAccepted(InetAddress addr) {
 		Set<InetAddress> set = decoder.getBlockedAddresses();
-		for(InetAddress blocked: set) {
-			if(blocked.equals(addr))
+		for (InetAddress blocked : set) {
+			if (blocked.equals(addr))
 				return false;
 		}
 		return true;
 	}
-	
+
 	public boolean isAccepted(String str) {
-		Set<Pattern> set = decoder.getBlockedURIs();
-		for(Pattern blocked: set) {
-			if(blocked.matcher(str).matches()) {
+		Set<String> set = decoder.getBlockedURIs();
+		for (String blocked : set) {
+			if (str.matches(blocked)) {
 				return false;
 			}
 		}
 		return true;
 	}
-	
+
 	public boolean isAccepted(MediaType mtype) {
-		Set<MediaType> set = decoder.getBlockedMediaType();
-		for(MediaType blocked: set) {
-			if(mtype.equals(blocked)) {
+		Set<String> set = decoder.getBlockedMediaType();
+		for (String blocked : set) {
+			if (mtype.equals(blocked)) {
 				return false;
 			}
 		}
