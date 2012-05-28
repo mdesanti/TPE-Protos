@@ -37,10 +37,9 @@ public interface Decoder {
 
 	public RebuiltHeader rebuildHeaders();
 
-	public void analizeRestrictions();
-
-	public boolean getRotateImages();
-
-	public boolean getTransformL33t();
+	public void setConfigurator(Configurator configurator);
+	public boolean applyTransformations();
+	public boolean isImage();
+	public boolean isText();
 
 }
