@@ -82,7 +82,8 @@ public class ConfiguratorConnectionDecoder implements
 				} else {
 					return reply.get("WRONG_PARAMETERS");
 				}
-			} else if (args[0].equals("GET") && args[1].equals("CONF")) {
+			} else if (args.length == 3 && args[0].equals("GET")
+					&& args[1].equals("CONF")) {
 				if (args.length != 3) {
 					return reply.get("WRONG_COMMAND");
 				}
@@ -120,6 +121,8 @@ public class ConfiguratorConnectionDecoder implements
 			} else if (args[0].equals("EXIT")) {
 				closeConnection = true;
 				return "Bye bye\n";
+			} else if (args[0].equals("HELP")) {
+				return printHelp();
 			} else {
 				return reply.get("WRONG_COMMAND");
 			}
@@ -135,7 +138,7 @@ public class ConfiguratorConnectionDecoder implements
 			InetAddress addr;
 			try {
 				addr = InetAddress.getByName(arg);
-				synchronized (blockedAddresses) {					
+				synchronized (blockedAddresses) {
 					blockedAddresses.add(addr);
 				}
 				return "200 - " + arg + " blocked\n";
@@ -147,7 +150,7 @@ public class ConfiguratorConnectionDecoder implements
 			if (mt == null) {
 				return "400 - Invalid media type\n";
 			}
-			synchronized (blockedMediaType) {				
+			synchronized (blockedMediaType) {
 				blockedMediaType.add(mt.toString());
 			}
 			return "200 - " + mt.toString() + " blocked\n";
@@ -247,6 +250,16 @@ public class ConfiguratorConnectionDecoder implements
 		reply.put("ROT_ON", "200 - Rotations are on\n");
 		reply.put("ROT_OFF", "200 - Rotations are off\n");
 	}
+	
+	private String printHelp() {
+		StringBuffer sb = new StringBuffer();
+		sb.append("Available commands: BLOCK - UNBLOCK - TRANSFORMATIONS - ROTATIONS - GET\n");
+		sb.append("BLOCK or UNBLOCK usage: (BLOCK | UNBLOCK)SP(IP|URI|MTYPE|SIZE)SP(VALUE)\n");
+		sb.append("TRANSFORMATIONS or ROTATIONS usage: (TRANSFORMATIONS|ROTATIONS)SP(ON|OFF)\n");
+		sb.append("GET usage: GET SP (ROTATIONS|TRANSFORMATIONS|BLOCK)\n");
+		
+		return sb.toString();
+	}
 
 	public InetAddress[] getBlockedAddresses() {
 		synchronized (blockedAddresses) {
@@ -277,7 +290,7 @@ public class ConfiguratorConnectionDecoder implements
 	public boolean applyTransformations() {
 		return applyTransformations;
 	}
-	
+
 	public void reset() {
 		closeConnection = false;
 	}

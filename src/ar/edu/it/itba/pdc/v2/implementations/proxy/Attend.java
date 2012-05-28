@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 
+import org.apache.log4j.Logger;
+
 import ar.edu.it.itba.pdc.v2.implementations.utils.DecoderImpl;
 import ar.edu.it.itba.pdc.v2.interfaces.Analyzer;
 import ar.edu.it.itba.pdc.v2.interfaces.ConnectionHandler;
@@ -27,13 +29,12 @@ public class Attend implements Runnable {
 	}
 
 	public void run() {
-
+		Logger attend = Logger.getLogger("server.attend");
 		Decoder decoder = new DecoderImpl(20 * 1024);
 		byte[] buffer = new byte[500];
 		analyzer = new AnalyzerImp(connectionManager);
 		ByteBuffer req = ByteBuffer.allocate(20 * 1024);
 		String s = socket.getRemoteSocketAddress().toString();
-//		System.out.printf("Se conecto %s - Thread nro: %d\n", s, Thread.currentThread().getId());
 		while (!socket.isClosed()) {
 			try {
 				int receivedMsg = 0, totalCount = 0;
@@ -43,6 +44,7 @@ public class Attend implements Runnable {
 				boolean keepReading = true;
 
 				// read until headers are complete
+				attend.debug("Before reading headers from client");
 				while (keepReading
 						&& ((receivedMsg = clientIs.read(buffer)) != -1)) {
 					totalCount += receivedMsg;
@@ -50,9 +52,9 @@ public class Attend implements Runnable {
 					keepReading = !decoder.completeHeaders(req.array(),
 							req.array().length);
 				}
-
+				attend.debug("Headers completely read. Sending to analyzer");
 				analyzer.analyze(req, totalCount, socket);
-
+				attend.debug("Analyzer returned. Closing socket");
 				socket.close();
 
 			} catch (IOException e) {

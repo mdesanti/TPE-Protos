@@ -16,6 +16,7 @@ import ar.edu.it.itba.pdc.Implementations.proxy.utils.AttachmentImpl;
 import ar.edu.it.itba.pdc.Interfaces.Attachment;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
 import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;
+import ar.edu.it.itba.pdc.v2.implementations.monitor.DataStorageImpl;
 import ar.edu.it.itba.pdc.v2.implementations.utils.DecoderImpl;
 import ar.edu.it.itba.pdc.v2.interfaces.Decoder;
 
@@ -27,6 +28,7 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 	private Map<SocketChannel, Decoder> decoders = new HashMap<SocketChannel, Decoder>();
 	private ProxyWorker worker;
 	private TCPSelector caller;
+	private DataStorageImpl storage = DataStorageImpl.getInstance();
 
 	public ProxyClientSelectorProtocol() {
 	}
@@ -49,7 +51,8 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 		ByteBuffer buf = ByteBuffer.allocate(bufSize);
 
 		// Get the decoder that parsed the request
-		Decoder decoder = decoders.get(((Attachment) key.attachment()).getFrom());
+		Decoder decoder = decoders.get(((Attachment) key.attachment())
+				.getFrom());
 
 		if (decoder == null) {
 			decoder = new DecoderImpl(bufSize);
@@ -70,24 +73,28 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 			// HTTPHeaders headers = decoder.getHeaders();
 			// TODO: here we should analyze if the request is accepted by the
 			// proxy
+			storage.addTotalBytes(bytesRead);
+			storage.addProxyServerBytes(bytesRead);
+
 			System.out
 					.println(Calendar.getInstance().getTime().toString()
 							+ "-> Response from external server to proxy. Server address: "
 							+ clntChan.socket().getInetAddress());
-			
+
 			boolean keepReading = decoder.keepReading();
 			String connection = decoder.getHeader("Connection");
-//			if(connection != null && connection.contains("close")) {
-//				clntChan.close();
-//				return;
-//			}
-			worker.sendData(caller, ((Attachment)key.attachment()).getFrom(), write,
-					bytesRead, keepReading);
+			// if(connection != null && connection.contains("close")) {
+			// clntChan.close();
+			// return;
+			// }
+			worker.sendData(caller, ((Attachment) key.attachment()).getFrom(),
+					write, bytesRead, keepReading);
 			buf.clear();
 			if (keepReading) {
 				key.interestOps(SelectionKey.OP_READ);
 			} else {
-				decoders.put(((Attachment) key.attachment()).getFrom(), new DecoderImpl(bufSize));
+				decoders.put(((Attachment) key.attachment()).getFrom(),
+						new DecoderImpl(bufSize));
 			}
 		}
 	}
@@ -100,11 +107,14 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 		ByteBuffer buf = map.get(key.channel()).peek();
 		// buf.flip(); // Prepare buffer for writing
 		SocketChannel clntChan = (SocketChannel) key.channel();
-		if(buf == null) {
+		if (buf == null) {
 			return;
 		}
 		clntChan.write(buf);
-		AttachmentImpl att = (AttachmentImpl)key.attachment();
+		AttachmentImpl att = (AttachmentImpl) key.attachment();
+
+		storage.addTotalBytes(buf.toString().length());
+		storage.addProxyServerBytes(buf.toString().length());
 
 		System.out
 				.println(Calendar.getInstance().getTime().toString()

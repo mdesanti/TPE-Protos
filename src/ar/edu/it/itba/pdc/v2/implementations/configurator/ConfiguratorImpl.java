@@ -13,15 +13,16 @@ public class ConfiguratorImpl implements Configurator {
 
 	private int port = 9092;
 	private static int maxMessageLength = 512;
-	
+
 	private ConfiguratorConnectionHandler handler;
 	private ConfiguratorConnectionDecoder decoder;
 
 	public ConfiguratorImpl() {
 		this.decoder = new ConfiguratorConnectionDecoder();
-		this.handler = new ConfiguratorConnectionHandler(maxMessageLength, decoder);
+		this.handler = new ConfiguratorConnectionHandler(maxMessageLength,
+				decoder);
 	}
-	
+
 	public void run() {
 		ServerSocket socketServer = null;
 		try {
@@ -32,8 +33,8 @@ public class ConfiguratorImpl implements Configurator {
 							port);
 			return;
 		}
-		
-		while(true) {
+
+		while (true) {
 			Socket socket;
 			try {
 				socket = socketServer.accept();
@@ -44,27 +45,27 @@ public class ConfiguratorImpl implements Configurator {
 			}
 		}
 	}
-	
+
 	public boolean applyRotations() {
 		return handler.applyRotations();
 	}
-	
+
 	public boolean applyTextTransformation() {
 		return handler.applyTextTransformation();
 	}
-	
+
 	public int getMaxSize() {
 		return handler.getMaxSize();
 	}
-	
+
 	public boolean isAccepted(InetAddress addr) {
 		return handler.isAccepted(addr);
 	}
-	
+
 	public boolean isAccepted(String str) {
 		return handler.isAccepted(str);
 	}
-	
+
 	public boolean isAccepted(MediaType str) {
 		return handler.isAccepted(str);
 	}
