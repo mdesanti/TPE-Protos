@@ -1,28 +1,29 @@
 package ar.edu.it.itba.pdc.v2.implementations.configurator;
 
+import java.awt.PageAttributes.MediaType;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import javax.ws.rs.core.MediaType;
-
+import ar.edu.it.itba.pdc.v2.implementations.monitor.DataStorageImpl;
 import ar.edu.it.itba.pdc.v2.interfaces.Configurator;
-import ar.edu.it.itba.pdc.v2.interfaces.ConnectionHandler;
+import ar.edu.it.itba.pdc.v2.interfaces.DataStorage;
 
 public class ConfiguratorImpl implements Configurator {
 
 	private int port = 9092;
 	private static int maxMessageLength = 512;
-	
+
 	private ConfiguratorConnectionHandler handler;
 	private ConfiguratorConnectionDecoder decoder;
 
 	public ConfiguratorImpl() {
 		this.decoder = new ConfiguratorConnectionDecoder();
-		this.handler = new ConfiguratorConnectionHandler(maxMessageLength, decoder);
+		this.handler = new ConfiguratorConnectionHandler(maxMessageLength,
+				decoder);
 	}
-	
+
 	public void run() {
 		ServerSocket socketServer = null;
 		try {
@@ -33,8 +34,8 @@ public class ConfiguratorImpl implements Configurator {
 							port);
 			return;
 		}
-		
-		while(true) {
+
+		while (true) {
 			Socket socket;
 			try {
 				socket = socketServer.accept();
@@ -45,32 +46,32 @@ public class ConfiguratorImpl implements Configurator {
 			}
 		}
 	}
-	
+
 	public boolean applyRotations() {
 		// TODO Auto-generated method stub
 		return false;
 	}
-	
+
 	public boolean applyTextTransformation() {
 		// TODO Auto-generated method stub
 		return false;
 	}
-	
+
 	public int getMaxSize() {
 		// TODO Auto-generated method stub
 		return 0;
 	}
-	
+
 	public boolean isAccepted(InetAddress addr) {
 		// TODO Auto-generated method stub
 		return false;
 	}
-	
+
 	public boolean isAccepted(String str) {
 		// TODO Auto-generated method stub
 		return false;
 	}
-	
+
 	public boolean isAccepted(MediaType str) {
 		// TODO Auto-generated method stub
 		return false;
