@@ -95,7 +95,7 @@ public class AnalyzerImp implements Analyzer {
 				clientOs.write(resp.array(), 0, responseHeaders.getReadBytes());
 
 				// Sends the rest of the body to client...
-				decoder.analizeRestrictions();
+//				decoder.analizeRestrictions();
 				boolean applyTransform = decoder.getRotateImages()
 						|| decoder.getTransformL33t();
 				boolean data = false;

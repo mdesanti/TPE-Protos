@@ -345,6 +345,8 @@ public class DecoderImpl implements Decoder {
 		String sb = "";
 
 		allHeaders.remove("Accept-Encoding");
+		allHeaders.remove("Proxy-Connection");
+		allHeaders.put("Accept-Encoding", "identity");
 		sb += allHeaders.get("Method") + " ";
 		sb += allHeaders.get("RequestedURI") + " ";
 		sb += allHeaders.get("HTTPVersion") + "\r\n";

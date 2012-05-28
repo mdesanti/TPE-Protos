@@ -1,6 +1,8 @@
 package ar.edu.it.itba.pdc.v2.implementations.monitor;
 
-public class MonitorDecoder {
+import ar.edu.it.itba.pdc.v2.interfaces.ConnectionDecoder;
+
+public class MonitorDecoder implements ConnectionDecoder {
 	
 	private final String invalidParams = "Invalid parameters\n";
 	
@@ -9,6 +11,11 @@ public class MonitorDecoder {
 
 	public String decode(String s) {
 		return null;
+	}
+	
+	@Override
+	public boolean closeConnection() {
+		return false;
 	}
 	
 }
