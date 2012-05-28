@@ -148,6 +148,7 @@ public class ConfiguratorConnectionDecoder implements
 			InetAddress addr;
 			try {
 				addr = InetAddress.getByName(arg);
+				decoderLog.info("Blocking " + addr.toString());
 				synchronized (blockedAddresses) {
 					blockedAddresses.add(addr);
 				}
@@ -160,6 +161,7 @@ public class ConfiguratorConnectionDecoder implements
 			if (mt == null) {
 				return "400 - Invalid media type\n";
 			}
+			decoderLog.info("Blocking " + mt.toString());
 			synchronized (blockedMediaType) {
 				blockedMediaType.add(mt.toString());
 			}
@@ -168,6 +170,7 @@ public class ConfiguratorConnectionDecoder implements
 			try {
 				Integer max = Integer.parseInt(arg);
 				maxSize = max;
+				decoderLog.info("Blocking files bigger than " + max);
 				return "200 - Sizes bigger than " + maxSize
 						+ " are now blocked\n";
 			} catch (NumberFormatException e) {
@@ -176,6 +179,7 @@ public class ConfiguratorConnectionDecoder implements
 		} else if (type.equals("URI")) {
 			try {
 				Pattern p = Pattern.compile(arg);
+				decoderLog.info("Blocking " + p.toString());
 				synchronized (blockedURIs) {
 					blockedURIs.add(p.pattern());
 				}
@@ -197,6 +201,7 @@ public class ConfiguratorConnectionDecoder implements
 			InetAddress addr;
 			try {
 				addr = InetAddress.getByName(arg);
+				decoderLog.info("Unblocking " + addr.toString());
 				synchronized (blockedAddresses) {
 					blockedAddresses.remove(addr);
 				}
@@ -209,6 +214,7 @@ public class ConfiguratorConnectionDecoder implements
 			if (mt == null) {
 				return "400 - Invalid media type\n";
 			}
+			decoderLog.info("Unblocking " + mt.toString());
 			synchronized (blockedMediaType) {
 				blockedMediaType.remove(mt.toString());
 			}
@@ -220,6 +226,7 @@ public class ConfiguratorConnectionDecoder implements
 				if (max == -1) {
 					return "200 - All sizes are permited\n";
 				}
+				decoderLog.info("Unblocking files bigger than" + max);
 				return "200 - Sizes bigger than " + maxSize
 						+ " are now blocked\n";
 			} catch (NumberFormatException e) {
@@ -231,6 +238,7 @@ public class ConfiguratorConnectionDecoder implements
 				synchronized (blockedURIs) {
 					blockedURIs.remove(p.pattern());
 				}
+				decoderLog.info("Unblocking " + p.toString());
 				return "200 - " + p.pattern() + " unblocked\n";
 			} catch (PatternSyntaxException e) {
 				return "400 - Invalid pattern\n";
@@ -262,6 +270,7 @@ public class ConfiguratorConnectionDecoder implements
 	}
 	
 	private String printHelp() {
+		decoderLog.info("HELP command received");
 		StringBuffer sb = new StringBuffer();
 		sb.append("Available commands: BLOCK - UNBLOCK - TRANSFORMATIONS - ROTATIONS - GET\n");
 		sb.append("BLOCK or UNBLOCK usage: (BLOCK | UNBLOCK)SP(IP|URI|MTYPE|SIZE)SP(VALUE)\n");
