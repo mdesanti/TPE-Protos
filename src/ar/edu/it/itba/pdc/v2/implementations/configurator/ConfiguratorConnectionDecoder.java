@@ -6,24 +6,31 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
-import ar.edu.it.itba.pdc.v2.interfaces.ConnectionDecoder;
+import javax.ws.rs.core.MediaType;
 
-public class ConfiguratorConnectionDecoder implements ConnectionDecoder {
+import ar.edu.it.itba.pdc.v2.interfaces.ConfiguratorConnectionDecoderInt;
+
+public class ConfiguratorConnectionDecoder implements ConfiguratorConnectionDecoderInt {
 
 	private boolean logged = false;
 	private boolean closeConnection = false;
 	private boolean applyTransformations = false;
-	private boolean applyRotations =  false;
+	private boolean applyRotations = false;
 	private Map<String, String> reply;
 	private Set<InetAddress> blockedAddresses;
-	private Set<String> blockedMediaType;
+	private Set<MediaType> blockedMediaType;
+	private Set<Pattern> blockedURIs;
+	private int maxSize = -1;
 
 	public ConfiguratorConnectionDecoder() {
 		reply = new HashMap<String, String>();
 		fillReply();
 		blockedAddresses = new TreeSet<InetAddress>();
-		blockedMediaType = new TreeSet<String>();
+		blockedMediaType = new TreeSet<MediaType>();
+		blockedURIs = new TreeSet<Pattern>();
 	}
 
 	public boolean closeConnection() {
@@ -45,7 +52,7 @@ public class ConfiguratorConnectionDecoder implements ConnectionDecoder {
 			String[] args = s.split(" ");
 			if (args[0].equals("BLOCK")) {
 				return analyzeBlockCommand(args);
-			}else if(args[0].equals("UNBLOCK")){
+			} else if (args[0].equals("UNBLOCK")) {
 				return analyzeUnblockCommand(args);
 			} else if (args[0].equals("TRANSFORM")) {
 				if (args[1].equals("ON")) {
@@ -67,29 +74,48 @@ public class ConfiguratorConnectionDecoder implements ConnectionDecoder {
 				} else {
 					return reply.get("WRONG_PARAMETERS");
 				}
-			} else if(args[0].equals("GET")) {
-				if(args[1].equals("ROTATIONS")) {
-					if(applyRotations) {
+			} else if (args[0].equals("GET") && args[1].equals("CONF")) {
+				if (args[2].equals("ROTATIONS")) {
+					if (applyRotations) {
 						return reply.get("ROT_ON");
 					} else {
 						return reply.get("ROT_OFF");
 					}
-				} else if(args[1].equals("TRANSFORMATIONS")) {
-					if(applyTransformations) {
+				} else if (args[2].equals("TRANSFORMATIONS")) {
+					if (applyTransformations) {
 						return reply.get("TRANSF_ON");
 					} else {
 						return reply.get("TRANSF_OFF");
 					}
+				} else if(args[2].equals("BLOCK")) {
+					StringBuffer sb = new StringBuffer();
+					sb.append("200 - Blocked list:\n");
+					sb.append("Media Types:\n");
+					for(MediaType mt: blockedMediaType) {
+						sb.append("\t" + mt.toString()+"\n");
+					}
+					sb.append("URIs:\n");
+					for(Pattern p: blockedURIs) {
+						sb.append("\t" + p.toString() + "\n");
+					}
+					sb.append("IP addresses:\n");
+					for(InetAddress addr: blockedAddresses) {
+						sb.append("\t" + addr.toString() + "\n");
+					}
+					return sb.toString();
+				} else {
+					return reply.get("WRONG_PARAMETERS");
 				}
+			} else {
+				return reply.get("WRONG_COMMAND");
 			}
 		}
-		return s;
 	}
-	
+
 	private String analyzeBlockCommand(String[] line) {
 		String type = line[1];
 		String arg = line[2];
-		if(type.equals("IP")) {
+		if (type.equals("IP")) {
 			InetAddress addr;
 			try {
 				addr = InetAddress.getByAddress(arg.getBytes());
@@ -99,19 +125,86 @@ public class ConfiguratorConnectionDecoder implements ConnectionDecoder {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-		} else if(type.equals("MTYPE")) {
-//			blockedMediaType
+		} else if (type.equals("MTYPE")) {
+			MediaType mt = analyzeMediaType(arg);
+			if (mt == null) {
+				return "400 - Invalid media type\n";
+			}
+			blockedMediaType.add(mt);
+		} else if (type.equals("SIZE")) {
+			try {
+				Integer max = Integer.parseInt(arg);
+				maxSize = max;
+				return "200 - Sizes bigger than " + maxSize
+						+ " are now blocked\n";
+			} catch (NumberFormatException e) {
+				return "400 - Invalid size\n";
+			}
+		} else if (type.equals("URI")) {
+			try {
+				Pattern p = Pattern.compile(arg);
+				blockedURIs.add(p);
+			} catch (PatternSyntaxException e) {
+				return "400 - Invalid pattern\n";
+			}
+		} else {
+			return reply.get("WRONG_PARAMETERS");
 		}
-		return arg;
-		
-	}
-	
-	private String analyzeUnblockCommand(String[] s){
 		return null;
 	}
-	
-	private boolean analyzeMediaType(String mtype) {
-		return applyRotations;
+
+	private String analyzeUnblockCommand(String[] line) {
+		String type = line[1];
+		String arg = line[2];
+		if (type.equals("IP")) {
+			InetAddress addr;
+			try {
+				addr = InetAddress.getByAddress(arg.getBytes());
+				blockedAddresses.remove(addr);
+				return "200 - " + arg + " blocked\n";
+			} catch (UnknownHostException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} else if (type.equals("MTYPE")) {
+			MediaType mt = analyzeMediaType(arg);
+			if (mt == null) {
+				return "400 - Invalid media type\n";
+			}
+			blockedMediaType.remove(mt);
+		} else if (type.equals("SIZE")) {
+			try {
+				Integer max = Integer.parseInt(arg);
+				maxSize = max;
+				if(max == -1) {
+					return "200 - All sizes are permited\n";
+				}
+				return "200 - Sizes bigger than " + maxSize
+						+ " are now blocked\n";
+			} catch (NumberFormatException e) {
+				return "400 - Invalid size\n";
+			}
+		} else if (type.equals("URI")) {
+			try {
+				Pattern p = Pattern.compile(arg);
+				blockedURIs.remove(p);
+			} catch (PatternSyntaxException e) {
+				return "400 - Invalid pattern\n";
+			}
+		} else {
+			return reply.get("WRONG_PARAMETERS");
+		}
+		return null;
+	}
+
+	private MediaType analyzeMediaType(String mtype) {
+		MediaType media;
+		try {
+			media = MediaType.valueOf(mtype);
+		} catch (IllegalArgumentException e) {
+			return null;
+		}
+		return media;
 	}
 
 	private void fillReply() {
@@ -124,5 +217,30 @@ public class ConfiguratorConnectionDecoder implements ConnectionDecoder {
 		reply.put("ROT_ON", "200 - Rotations are on\n");
 		reply.put("ROT_OFF", "200 - Rotations are off\n");
 	}
+	
+	public Set<InetAddress> getBlockedAddresses() {
+		return blockedAddresses;
+	}
+	
+	public Set<MediaType> getBlockedMediaType() {
+		return blockedMediaType;
+	}
+	
+	public Set<Pattern> getBlockedURIs() {
+		return blockedURIs;
+	}
+	
+	public int getMaxSize() {
+		return maxSize;
+	}
+	
+	public boolean applyRotations() {
+		return applyRotations;
+	}
+	
+	public boolean applyTransformations() {
+		return applyTransformations;
+	}
+	
 
 }

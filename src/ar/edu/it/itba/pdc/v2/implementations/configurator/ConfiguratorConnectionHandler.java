@@ -3,22 +3,27 @@ package ar.edu.it.itba.pdc.v2.implementations.configurator;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Set;
+import java.util.regex.Pattern;
 
-import ar.edu.it.itba.pdc.v2.interfaces.ConnectionDecoder;
+import javax.ws.rs.core.MediaType;
+
+import ar.edu.it.itba.pdc.v2.interfaces.ConfiguratorConnectionDecoderInt;
 import ar.edu.it.itba.pdc.v2.interfaces.ConnectionHandler;
 
-public class ConfiguratorConnecionHandler implements ConnectionHandler {
+public class ConfiguratorConnectionHandler implements ConnectionHandler {
 
 	private int maxMessageLength;
 	private static String greeting = "Hello, please authenticate\n";
-	private ConnectionDecoder decoder;
+	private ConfiguratorConnectionDecoderInt decoder;
 	private static Charset acceptedCharset = Charset.forName("ISO-8859-1");
 
-	public ConfiguratorConnecionHandler(int maxMessageLength,
-			ConnectionDecoder decoder) {
+	public ConfiguratorConnectionHandler(int maxMessageLength,
+			ConfiguratorConnectionDecoderInt decoder) {
 		this.maxMessageLength = maxMessageLength;
 		this.decoder = decoder;
 	}
@@ -52,6 +57,47 @@ public class ConfiguratorConnecionHandler implements ConnectionHandler {
 	private boolean reachedEnd(byte[] data) {
 		String dataAsString = new String(data, acceptedCharset);
 		return dataAsString.contains("\r\n");
+	}
+	
+	public boolean applyRotations() {
+		return decoder.applyRotations();
+	}
+	
+	public boolean applyTextTransformation() {
+		return decoder.applyTransformations();
+	}
+	
+	public int getMaxSize() {
+		return decoder.getMaxSize();
+	}
+	
+	public boolean isAccepted(InetAddress addr) {
+		Set<InetAddress> set = decoder.getBlockedAddresses();
+		for(InetAddress blocked: set) {
+			if(blocked.equals(addr))
+				return false;
+		}
+		return true;
+	}
+	
+	public boolean isAccepted(String str) {
+		Set<Pattern> set = decoder.getBlockedURIs();
+		for(Pattern blocked: set) {
+			if(blocked.matcher(str).matches()) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	public boolean isAccepted(MediaType mtype) {
+		Set<MediaType> set = decoder.getBlockedMediaType();
+		for(MediaType blocked: set) {
+			if(mtype.equals(blocked)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 }
