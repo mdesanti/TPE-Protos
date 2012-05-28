@@ -1,14 +1,13 @@
 package ar.edu.it.itba.pdc.v2.implementations.configurator;
 
-import java.awt.PageAttributes.MediaType;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import ar.edu.it.itba.pdc.v2.implementations.monitor.DataStorageImpl;
+import javax.ws.rs.core.MediaType;
+
 import ar.edu.it.itba.pdc.v2.interfaces.Configurator;
-import ar.edu.it.itba.pdc.v2.interfaces.DataStorage;
 
 public class ConfiguratorImpl implements Configurator {
 
@@ -53,6 +52,10 @@ public class ConfiguratorImpl implements Configurator {
 
 	public boolean applyTextTransformation() {
 		return handler.applyTextTransformation();
+	}
+
+	public boolean applyTransformation() {
+		return applyRotations() || applyTextTransformation();
 	}
 
 	public int getMaxSize() {

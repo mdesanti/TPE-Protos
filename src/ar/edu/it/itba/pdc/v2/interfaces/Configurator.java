@@ -18,6 +18,8 @@ public interface Configurator extends Runnable {
 	
 	public int getMaxSize();
 	
+	public boolean applyTransformation();
+	
 	
 	
 	
