@@ -78,18 +78,18 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 	}
 
 	public boolean isAccepted(InetAddress addr) {
-		InetAddress[] set = decoder.getBlockedAddresses();
-		for (InetAddress blocked : set) {
-			if (blocked.equals(addr))
+		Object[] set = decoder.getBlockedAddresses();
+		for (Object blocked : set) {
+			if (blocked.equals((InetAddress)addr))
 				return false;
 		}
 		return true;
 	}
 
 	public boolean isAccepted(String str) {
-		String[] set = decoder.getBlockedURIs();
-		for (String blocked : set) {
-			if (str.matches(blocked)) {
+		Object[] set = decoder.getBlockedURIs();
+		for (Object blocked : set) {
+			if (str.matches((String)blocked)) {
 				return false;
 			}
 		}
@@ -97,9 +97,9 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 	}
 
 	public boolean isAccepted(MediaType mtype) {
-		String[] set = decoder.getBlockedMediaType();
-		for (String blocked : set) {
-			if (mtype.toString().equals(blocked)) {
+		Object[] set = decoder.getBlockedMediaType();
+		for (Object blocked : set) {
+			if (mtype.toString().equals((String)blocked)) {
 				return false;
 			}
 		}

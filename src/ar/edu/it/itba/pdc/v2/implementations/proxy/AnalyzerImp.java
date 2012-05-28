@@ -1,7 +1,5 @@
 package ar.edu.it.itba.pdc.v2.implementations.proxy;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -9,6 +7,9 @@ import java.net.Socket;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 
+import javax.ws.rs.core.MediaType;
+
+import ar.edu.it.itba.pdc.v2.implementations.HTML;
 import ar.edu.it.itba.pdc.v2.implementations.RebuiltHeader;
 import ar.edu.it.itba.pdc.v2.implementations.utils.DecoderImpl;
 import ar.edu.it.itba.pdc.v2.interfaces.Analyzer;
@@ -32,16 +33,51 @@ public class AnalyzerImp implements Analyzer {
 	public void analyze(ByteBuffer buffer, int count, Socket socket) {
 
 		Decoder decoder = new DecoderImpl(BUFFSIZE);
+		decoder.setConfigurator(configurator);
 		ByteBuffer resp = ByteBuffer.allocate(BUFFSIZE);
 		int receivedMsg = 0, totalCount = 0;
 		byte[] buf = new byte[BUFFSIZE];
 		boolean keepReading = true;
 		HTTPHeaders requestHeaders, responseHeaders;
+		InputStream externalIs, clientIs;
+		OutputStream externalOs, clientOs;
 
 		// Parse request headers
 		decoder.parseHeaders(buffer.array(), count);
 		requestHeaders = decoder.getHeaders();
+		if (!configurator.isAccepted(decoder.getHeader("RequestedURI").replace(
+				" ", ""))) {
+			try {
+				clientOs = socket.getOutputStream();
 
+				RebuiltHeader newHeader = decoder.generateBlockedHeader("URI");
+				HTML html = decoder.generateBlockedHTML("URI");
+				clientOs.write(newHeader.getHeader(), 0, newHeader.getSize());
+				clientOs.write(html.getHTML(), 0, html.getSize());
+			} catch (IOException e) {
+				System.out.println(e.getMessage());
+			}
+
+			return;
+		}
+
+		if (decoder.getHeader("Content-Type") != null
+				&& !configurator.isAccepted(MediaType.valueOf(decoder.getHeader("Content-Type")
+						.replace(" ", "")))) {
+			try {
+				clientOs = socket.getOutputStream();
+
+				RebuiltHeader newHeader = decoder
+						.generateBlockedHeader("CONTENT-TYPE");
+				HTML html = decoder.generateBlockedHTML("CONTENT-TYPE");
+				clientOs.write(newHeader.getHeader(), 0, newHeader.getSize());
+				clientOs.write(html.getHTML(), 0, html.getSize());
+			} catch (IOException e) {
+				System.out.println(e.getMessage());
+			}
+
+			return;
+		}
 		// Rebuilt the headers according to proxy rules and implementations
 		RebuiltHeader rh = decoder.rebuildHeaders();
 
@@ -49,8 +85,7 @@ public class AnalyzerImp implements Analyzer {
 		String host = decoder.getHeader("Host").replace(" ", "");
 		while ((externalServer = connectionManager.getConnection(host)) == null)
 			;
-		InputStream externalIs, clientIs;
-		OutputStream externalOs, clientOs;
+
 		try {
 			externalIs = externalServer.getInputStream();
 			externalOs = externalServer.getOutputStream();
@@ -94,6 +129,24 @@ public class AnalyzerImp implements Analyzer {
 				decoder.parseHeaders(resp.array(), totalCount);
 				responseHeaders = decoder.getHeaders();
 
+				if (decoder.getHeader("Content-Type") != null
+						&& !configurator.isAccepted(MediaType.valueOf(decoder.getHeader("Content-Type")
+								.replace(" ", "")))) {
+					try {
+						clientOs = socket.getOutputStream();
+
+						RebuiltHeader newHeader = decoder
+								.generateBlockedHeader("CONTENT-TYPE");
+						HTML html = decoder.generateBlockedHTML("CONTENT-TYPE");
+						clientOs.write(newHeader.getHeader(), 0, newHeader.getSize());
+						clientOs.write(html.getHTML(), 0, html.getSize());
+					} catch (IOException e) {
+						System.out.println(e.getMessage());
+					}
+
+					return;
+				}
+				
 				// Sends only headers to client
 				clientOs.write(resp.array(), 0, responseHeaders.getReadBytes());
 

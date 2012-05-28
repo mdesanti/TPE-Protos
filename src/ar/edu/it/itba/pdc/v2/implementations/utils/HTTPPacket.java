@@ -147,5 +147,9 @@ public class HTTPPacket implements HTTPHeaders {
 	public Map<String, String> getAllHeaders() {
 		return headers;
 	}
+	
+	public void addHeader(String name, String value) {
+		headers.put(name, value);
+	}
 
 }

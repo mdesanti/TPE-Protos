@@ -1,5 +1,6 @@
 package ar.edu.it.itba.pdc.v2.interfaces;
 
+import ar.edu.it.itba.pdc.v2.implementations.HTML;
 import ar.edu.it.itba.pdc.v2.implementations.RebuiltHeader;
 
 public interface Decoder {
@@ -38,8 +39,15 @@ public interface Decoder {
 	public RebuiltHeader rebuildHeaders();
 
 	public void setConfigurator(Configurator configurator);
+
 	public boolean applyTransformations();
+
 	public boolean isImage();
+
 	public boolean isText();
+
+	public RebuiltHeader generateBlockedHeader(String cause);
+	
+	public HTML generateBlockedHTML(String cause);
 
 }

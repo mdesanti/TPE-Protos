@@ -11,6 +11,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
+import ar.edu.it.itba.pdc.v2.implementations.HTML;
 import ar.edu.it.itba.pdc.v2.implementations.RebuiltHeader;
 import ar.edu.it.itba.pdc.v2.interfaces.Configurator;
 import ar.edu.it.itba.pdc.v2.interfaces.Decoder;
@@ -351,6 +352,56 @@ public class DecoderImpl implements Decoder {
 	public void setConfigurator(Configurator configurator) {
 		this.configurator = configurator;
 
+	}
+
+	public RebuiltHeader generateBlockedHeader(String cause) {
+		HTTPHeaders newHeaders = new HTTPPacket();
+		if (cause.equals("URI")) {
+			newHeaders.addHeader("StatusCode", "666");
+			newHeaders.addHeader("Reason", "Blocked URL");
+		} else if (cause.equals("CONTENT-TYPE")) {
+			newHeaders.addHeader("StatusCode", "777");
+			newHeaders.addHeader("Reason", "Blocked MediaType");
+		}
+		newHeaders.addHeader("HTTPVersion", "HTTP/1.1");
+		newHeaders.addHeader("Via", " mu0");
+		newHeaders.addHeader("Content-Type", " text/html; charset=iso-8859-1");
+		newHeaders.addHeader("Connection", " close");
+
+		Map<String, String> allHeaders = newHeaders.getAllHeaders();
+		String sb = "";
+
+		sb += allHeaders.get("HTTPVersion") + " ";
+		sb += allHeaders.get("StatusCode") + " ";
+		sb += allHeaders.get("Reason") + "\r\n";
+
+		for (String key : allHeaders.keySet()) {
+			if (!key.equals("HTTPVersion") && !key.equals("StatusCode")
+					&& !key.equals("Reason"))
+				sb += (key + ":" + allHeaders.get(key) + "\r\n");
+		}
+		sb += ("\r\n");
+		return new RebuiltHeader(sb.getBytes(), sb.length());
+	}
+
+	public HTML generateBlockedHTML(String cause) {
+		String html = "";
+		if (cause.equals("URI")) {
+			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
+					+ "<html><head>" + "<title>666 URL bloqueada</title>"
+					+ "</head><body>" + "<h1>URL Bloqueada</h1>"
+					+ "<p>Su proxy bloqueo esta url<br />" + "</p>"
+					+ "</body></html>";
+
+		} else if (cause.equals("CONTENT-TYPE")) {
+			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
+					+ "<html><head>" + "<title>777 MediaType bloqueada</title>"
+					+ "</head><body>" + "<h1>MediaType Bloqueada</h1>"
+					+ "<p>Su proxy bloqueo este tipo de archivos<br />"
+					+ "</p>" + "</body></html>";
+
+		}
+		return new HTML(html.getBytes(), html.length());
 	}
 
 }
