@@ -4,13 +4,13 @@ import ar.edu.it.itba.pdc.v2.interfaces.DataStorage;
 
 public class DataStorageImpl implements DataStorage {
 
-	private Integer totalBytes;
-	private Integer clientToProxyBytes;
-	private Integer proxyToServersBytes;
-	private Integer blocks;
-	private Integer transformations;
-	private Integer clientOpenConections;
-	private Integer serversOpenConections;
+	private long totalBytes;
+	private long clientToProxyBytes;
+	private long proxyToServersBytes;
+	private long blocks;
+	private long transformations;
+	private long clientOpenConections;
+	private long serversOpenConections;
 	private static DataStorageImpl INSTANCE = new DataStorageImpl();
 
 	private DataStorageImpl() {
@@ -24,78 +24,79 @@ public class DataStorageImpl implements DataStorage {
 	}
 
 	@Override
-	public int getTotalBytes() {
+	public long getTotalBytes() {
 		return totalBytes;
 	}
 
 	@Override
-	public int getClientToProxyBytes() {
+	public long getClientProxyBytes() {
 
 		return clientToProxyBytes;
 	}
 
 	@Override
-	public int getProxyToServersBytes() {
+	public long getProxyServersBytes() {
 		return proxyToServersBytes;
 	}
 
 	@Override
-	public int getBlocks() {
+	public long getBlocks() {
 		return blocks;
 	}
 
 	@Override
-	public int getTransformations() {
+	public long getTransformations() {
 		return transformations;
 	}
 
 	@Override
-	public int getClientOpenConections() {
+	public long getClientOpenConections() {
 		return clientOpenConections;
 	}
 
 	@Override
-	public int getServersOpenConections() {
+	public long getServersOpenConections() {
 		return serversOpenConections;
 	}
 
-	public DataStorageImpl getInstance() {
+	public static DataStorageImpl getInstance() {
 		return INSTANCE;
 	}
 
 	@Override
-	public synchronized void addTotalBytes(int bytes) {
-		this.totalBytes += bytes;
+	public synchronized void addTotalBytes(long bytes) {
+
+		DataStorageImpl.getInstance().totalBytes += bytes;
 	}
 
 	@Override
-	public synchronized void addClientToProxyBytes(int bytes) {
-		this.clientToProxyBytes += bytes;
+	public synchronized void addClientProxyBytes(long bytes) {
+		DataStorageImpl.getInstance().clientToProxyBytes += bytes;
 	}
 
 	@Override
-	public synchronized void addProxyToServerBytes(int bytes) {
-		this.proxyToServersBytes += bytes;
+	public synchronized void addProxyServerBytes(long bytes) {
+		DataStorageImpl.getInstance().proxyToServersBytes += bytes;
 	}
 
 	@Override
-	public synchronized void addBlocks(int blocks) {
+	public synchronized void addBlock() {
 		this.blocks += blocks;
 	}
 
 	@Override
-	public synchronized void addTransformations(int transformations) {
-		this.transformations += transformations;
+	public synchronized void addTransformation() {
+		this.transformations++;
 	}
 
 	@Override
-	public synchronized void addClientOpenConeccion(int clientOpenConections) {
-		this.clientOpenConections += clientOpenConections;
+	public synchronized void addClientOpenConeccion(long clientOpenConections) {
+		DataStorageImpl.getInstance().clientOpenConections += clientOpenConections;
 	}
 
 	@Override
-	public synchronized void addServerOpenConection(int serverOpenConection) {
-		this.serversOpenConections += serverOpenConection;
+	public synchronized void addServerOpenConection(long serverOpenConection) {
+		DataStorageImpl.getInstance().serversOpenConections += serverOpenConection;
 	}
 
 	@Override

@@ -2,31 +2,31 @@ package ar.edu.it.itba.pdc.v2.interfaces;
 
 public interface DataStorage {
 
-	public int getTotalBytes();
+	public long getTotalBytes();
 
-	public void addTotalBytes(int bytes);
+	public void addTotalBytes(long bytes);
 
-	public int getClientToProxyBytes();
+	public long getClientProxyBytes();
 
-	public void addClientToProxyBytes(int bytes);
+	public void addClientProxyBytes(long bytes);
 
-	public int getProxyToServersBytes();
+	public long getProxyServersBytes();
 
-	public void addProxyToServerBytes(int bytes);
+	public void addProxyServerBytes(long bytes);
 
-	public int getBlocks();
+	public long getBlocks();
 
-	public void addBlocks(int blocks);
+	public void addBlock();
 
-	public int getTransformations();
+	public long getTransformations();
 
-	public void addTransformations(int transformations);
+	public void addTransformation();
 
-	public int getClientOpenConections();
+	public long getClientOpenConections();
 
-	public void addClientOpenConeccion(int clientOpenConections);
+	public void addClientOpenConeccion(long clientOpenConections);
 
-	public int getServersOpenConections();
+	public long getServersOpenConections();
 
-	public void addServerOpenConection(int serverOpenConection);
+	public void addServerOpenConection(long serverOpenConection);
 }

@@ -14,6 +14,7 @@ import java.util.Queue;
 import ar.edu.it.itba.pdc.Implementations.proxy.TCPSelector;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
 import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;
+import ar.edu.it.itba.pdc.v2.implementations.monitor.DataStorageImpl;
 import ar.edu.it.itba.pdc.v2.implementations.utils.DecoderImpl;
 import ar.edu.it.itba.pdc.v2.interfaces.Decoder;
 
@@ -26,6 +27,7 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 	private Map<SocketChannel, Decoder> responseDecoders = new HashMap<SocketChannel, Decoder>();
 	private ProxyWorker worker;
 	private TCPSelector caller;
+	private DataStorageImpl storage = DataStorageImpl.getInstance();
 
 	public ProxyServerSelectorProtocol() {
 	}
@@ -36,9 +38,9 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		clntChan.configureBlocking(false); // Must be nonblocking to register
 		// Register the selector with new channel for read and attach byte
 		// buffer
-		 System.out.println(Calendar.getInstance().getTime().toString()
-		 + "-> Connection accepted. Client address: "
-		 + clntChan.socket().getInetAddress());
+		System.out.println(Calendar.getInstance().getTime().toString()
+				+ "-> Connection accepted. Client address: "
+				+ clntChan.socket().getInetAddress());
 		requestDecoders.put(clntChan, new DecoderImpl(bufSize));
 		responseDecoders.put(clntChan, new DecoderImpl(bufSize));
 		clntChan.register(key.selector(), SelectionKey.OP_READ);
@@ -67,9 +69,13 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 			// HTTPHeaders headers = decoder.getHeaders();
 			// TODO: here we should analyze if the request is accepted by the
 			// proxy
-			 System.out.println(Calendar.getInstance().getTime().toString()
-			 + "-> Request from client to proxy. URL: " + decoder.getHeader("RequestedURI") + "  Client address: "
-			 + clntChan.socket().getInetAddress());
+			storage.addTotalBytes(bytesRead);
+			storage.addClientProxyBytes(bytesRead);
+
+			System.out.println(Calendar.getInstance().getTime().toString()
+					+ "-> Request from client to proxy. URL: "
+					+ decoder.getHeader("RequestedURI") + "  Client address: "
+					+ clntChan.socket().getInetAddress());
 			boolean isMultipart = decoder.keepReading();
 			worker.sendData(caller, clntChan, write, bytesRead, isMultipart);
 			buf.clear();
@@ -93,12 +99,17 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 			clntChan.close();
 			return;
 		}
-		
+
 		decoder.decode(buf.array(), buf.array().length);
 		decoder.applyRestrictions(buf.array(), buf.array().length);
-		 System.out.println(Calendar.getInstance().getTime().toString()
-		 + "-> Response from proxy to client with status " + decoder.getHeader("StatusCode") + ". Client address: "
-		 + clntChan.socket().getInetAddress());
+
+		storage.addTotalBytes(buf.array().length);
+		storage.addClientProxyBytes(buf.array().length);
+
+		System.out.println(Calendar.getInstance().getTime().toString()
+				+ "-> Response from proxy to client with status "
+				+ decoder.getHeader("StatusCode") + ". Client address: "
+				+ clntChan.socket().getInetAddress());
 		try {
 			clntChan.write(buf);
 		} catch (IOException e) {
