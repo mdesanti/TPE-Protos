@@ -48,32 +48,26 @@ public class ConfiguratorImpl implements Configurator {
 	}
 
 	public boolean applyRotations() {
-		// TODO Auto-generated method stub
-		return false;
+		return handler.applyRotations();
 	}
 
 	public boolean applyTextTransformation() {
-		// TODO Auto-generated method stub
-		return false;
+		return handler.applyTextTransformation();
 	}
 
 	public int getMaxSize() {
-		// TODO Auto-generated method stub
-		return 0;
+		return handler.getMaxSize();
 	}
 
 	public boolean isAccepted(InetAddress addr) {
-		// TODO Auto-generated method stub
-		return false;
+		return handler.isAccepted(addr);
 	}
 
 	public boolean isAccepted(String str) {
-		// TODO Auto-generated method stub
-		return false;
+		return handler.isAccepted(str);
 	}
 
 	public boolean isAccepted(MediaType str) {
-		// TODO Auto-generated method stub
-		return false;
+		return handler.isAccepted(str);
 	}
 }
