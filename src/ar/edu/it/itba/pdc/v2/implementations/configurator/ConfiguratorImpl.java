@@ -7,6 +7,9 @@ import java.net.Socket;
 
 import javax.ws.rs.core.MediaType;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 import ar.edu.it.itba.pdc.v2.interfaces.Configurator;
 
 public class ConfiguratorImpl implements Configurator {
@@ -24,9 +27,12 @@ public class ConfiguratorImpl implements Configurator {
 	}
 
 	public void run() {
+		Logger configLog = Logger.getLogger("proxy.configurator");
+		configLog.setLevel(Level.INFO);
 		ServerSocket socketServer = null;
 		try {
 			socketServer = new ServerSocket(port);
+			configLog.info("Configurator is listenting on port " + port);
 		} catch (IOException e) {
 			System.out
 					.printf("Could not initiate Configurator. Proxy will run without it. Please check that the port %d is available\n",
@@ -38,6 +44,7 @@ public class ConfiguratorImpl implements Configurator {
 			Socket socket;
 			try {
 				socket = socketServer.accept();
+				configLog.info("Accepted connection from " + socket.getInetAddress());
 				handler.handle(socket);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block

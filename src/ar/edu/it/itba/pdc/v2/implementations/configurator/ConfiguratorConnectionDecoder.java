@@ -11,6 +11,8 @@ import java.util.regex.PatternSyntaxException;
 
 import javax.ws.rs.core.MediaType;
 
+import org.apache.log4j.Logger;
+
 import ar.edu.it.itba.pdc.v2.interfaces.ConfiguratorConnectionDecoderInt;
 
 public class ConfiguratorConnectionDecoder implements
@@ -25,6 +27,7 @@ public class ConfiguratorConnectionDecoder implements
 	private Set<String> blockedMediaType;
 	private Set<String> blockedURIs;
 	private int maxSize = -1;
+	private Logger decoderLog = Logger.getLogger("proxy.configurator.handler");
 
 	public ConfiguratorConnectionDecoder() {
 		reply = new HashMap<String, String>();
@@ -44,9 +47,11 @@ public class ConfiguratorConnectionDecoder implements
 			String[] credentials = s.split(":");
 			if (credentials.length == 2 && credentials[0].equals("admin")
 					&& credentials[1].equals("pdc2012")) {
+				decoderLog.info("Admin logged in");
 				logged = true;
 				return reply.get("LOG_IN_OK");
 			} else {
+				decoderLog.info("Log in failed. Closing connection");
 				closeConnection = true;
 				return reply.get("LOGIN_ERROR");
 			}
@@ -56,14 +61,16 @@ public class ConfiguratorConnectionDecoder implements
 				return analyzeBlockCommand(args);
 			} else if (args[0].equals("UNBLOCK")) {
 				return analyzeUnblockCommand(args);
-			} else if (args[0].equals("TRANSFORM")) {
+			} else if (args[0].equals("TRANSFORMATIONS")) {
 				if (args.length != 2) {
 					return reply.get("WRONG_COMMAND");
 				}
 				if (args[1].equals("ON")) {
+					decoderLog.info("Transformations turned on");
 					applyTransformations = true;
 					return reply.get("TRANSF_ON");
 				} else if (args[1].equals("OFF")) {
+					decoderLog.info("Transformations turned off");
 					applyTransformations = false;
 					return reply.get("TRANSF_OFF");
 				} else {
@@ -74,9 +81,11 @@ public class ConfiguratorConnectionDecoder implements
 					return reply.get("WRONG_COMMAND");
 				}
 				if (args[1].equals("ON")) {
+					decoderLog.info("Rotations turned on");
 					applyRotations = true;
 					return reply.get("ROT_ON");
 				} else if (args[1].equals("OFF")) {
+					decoderLog.info("Rotations turned off");
 					applyRotations = false;
 					return reply.get("ROT_OFF");
 				} else {
@@ -119,6 +128,7 @@ public class ConfiguratorConnectionDecoder implements
 					return reply.get("WRONG_PARAMETERS");
 				}
 			} else if (args[0].equals("EXIT")) {
+				decoderLog.info("EXIT command received. Closing connection");
 				closeConnection = true;
 				return "Bye bye\n";
 			} else if (args[0].equals("HELP")) {

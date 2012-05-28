@@ -33,7 +33,7 @@ public class Attend implements Runnable {
 	}
 
 	public void run() {
-		Logger attend = Logger.getLogger("server.attend");
+		Logger attend = Logger.getLogger("proxy.server.attend");
 		Decoder decoder = new DecoderImpl(20 * 1024);
 		byte[] buffer = new byte[500];
 		analyzer = new AnalyzerImp(connectionManager, configurator);
