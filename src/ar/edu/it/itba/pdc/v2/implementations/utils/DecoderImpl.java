@@ -362,6 +362,9 @@ public class DecoderImpl implements Decoder {
 		} else if (cause.equals("CONTENT-TYPE")) {
 			newHeaders.addHeader("StatusCode", "777");
 			newHeaders.addHeader("Reason", "Blocked MediaType");
+		} else if (cause.equals("IP")) {
+			newHeaders.addHeader("StatusCode", "888");
+			newHeaders.addHeader("Reason", "Blocked IP");
 		}
 		newHeaders.addHeader("HTTPVersion", "HTTP/1.1");
 		newHeaders.addHeader("Via", " mu0");
@@ -398,6 +401,13 @@ public class DecoderImpl implements Decoder {
 					+ "<html><head>" + "<title>777 MediaType bloqueada</title>"
 					+ "</head><body>" + "<h1>MediaType Bloqueada</h1>"
 					+ "<p>Su proxy bloqueo este tipo de archivos<br />"
+					+ "</p>" + "</body></html>";
+
+		} else if (cause.equals("IP")) {
+			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
+					+ "<html><head>" + "<title>888 IP bloqueada</title>"
+					+ "</head><body>" + "<h1>IP Bloqueada</h1>"
+					+ "<p>Su proxy bloqueo esta IP<br />"
 					+ "</p>" + "</body></html>";
 
 		}

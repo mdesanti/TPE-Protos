@@ -3,7 +3,9 @@ package ar.edu.it.itba.pdc.v2.implementations.proxy;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 
@@ -61,9 +63,32 @@ public class AnalyzerImp implements Analyzer {
 			return;
 		}
 
+		try {
+			if (!configurator.isAccepted(InetAddress.getByName("http://"
+					+ decoder.getHeader("Host").replace(" ", "")))) {
+				try {
+					clientOs = socket.getOutputStream();
+
+					RebuiltHeader newHeader = decoder
+							.generateBlockedHeader("IP");
+					HTML html = decoder.generateBlockedHTML("IP");
+					clientOs.write(newHeader.getHeader(), 0,
+							newHeader.getSize());
+					clientOs.write(html.getHTML(), 0, html.getSize());
+				} catch (IOException e) {
+					System.out.println(e.getMessage());
+				}
+
+				return;
+			}
+		} catch (UnknownHostException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
 		if (decoder.getHeader("Content-Type") != null
-				&& !configurator.isAccepted(MediaType.valueOf(decoder.getHeader("Content-Type")
-						.replace(" ", "")))) {
+				&& !configurator.isAccepted(MediaType.valueOf(decoder
+						.getHeader("Content-Type").replace(" ", "")))) {
 			try {
 				clientOs = socket.getOutputStream();
 
@@ -130,15 +155,16 @@ public class AnalyzerImp implements Analyzer {
 				responseHeaders = decoder.getHeaders();
 
 				if (decoder.getHeader("Content-Type") != null
-						&& !configurator.isAccepted(MediaType.valueOf(decoder.getHeader("Content-Type")
-								.replace(" ", "")))) {
+						&& !configurator.isAccepted(MediaType.valueOf(decoder
+								.getHeader("Content-Type").replace(" ", "")))) {
 					try {
 						clientOs = socket.getOutputStream();
 
 						RebuiltHeader newHeader = decoder
 								.generateBlockedHeader("CONTENT-TYPE");
 						HTML html = decoder.generateBlockedHTML("CONTENT-TYPE");
-						clientOs.write(newHeader.getHeader(), 0, newHeader.getSize());
+						clientOs.write(newHeader.getHeader(), 0,
+								newHeader.getSize());
 						clientOs.write(html.getHTML(), 0, html.getSize());
 					} catch (IOException e) {
 						System.out.println(e.getMessage());
@@ -146,7 +172,7 @@ public class AnalyzerImp implements Analyzer {
 
 					return;
 				}
-				
+
 				// Sends only headers to client
 				clientOs.write(resp.array(), 0, responseHeaders.getReadBytes());
 
