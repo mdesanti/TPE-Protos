@@ -58,6 +58,7 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 			total = 0;
 		}
 		socket.close();
+		decoder.reset();
 	}
 
 	private boolean reachedEnd(byte[] data) {

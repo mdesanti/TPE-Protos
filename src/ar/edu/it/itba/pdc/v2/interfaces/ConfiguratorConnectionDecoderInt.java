@@ -20,4 +20,6 @@ public interface ConfiguratorConnectionDecoderInt {
 	public boolean applyRotations();
 	
 	public boolean applyTransformations();
+	
+	public void reset();
 }

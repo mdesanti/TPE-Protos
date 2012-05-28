@@ -8,7 +8,6 @@ import java.net.Socket;
 import javax.ws.rs.core.MediaType;
 
 import ar.edu.it.itba.pdc.v2.interfaces.Configurator;
-import ar.edu.it.itba.pdc.v2.interfaces.ConnectionHandler;
 
 public class ConfiguratorImpl implements Configurator {
 

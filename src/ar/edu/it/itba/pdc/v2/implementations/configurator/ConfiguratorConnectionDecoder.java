@@ -277,5 +277,9 @@ public class ConfiguratorConnectionDecoder implements
 	public boolean applyTransformations() {
 		return applyTransformations;
 	}
+	
+	public void reset() {
+		closeConnection = false;
+	}
 
 }
