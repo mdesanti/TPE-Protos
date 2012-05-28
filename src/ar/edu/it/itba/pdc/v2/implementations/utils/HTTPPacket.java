@@ -119,22 +119,22 @@ public class HTTPPacket implements HTTPHeaders {
 
 	}
 
-	@Override
+	
 	public String getHeader(String header) {
 		return this.headers.get(header);
 	}
 
-	@Override
+	
 	public int getReadBytes() {
 		return headerBytes;
 	}
 
-	@Override
+	
 	public boolean contentExpected() {
 		return contentExpected;
 	}
 
-	@Override
+	
 	public void dumpHeaders() {
 		for (String h : headers.keySet()) {
 			System.out.print(h + ": ");
@@ -143,7 +143,7 @@ public class HTTPPacket implements HTTPHeaders {
 
 	}
 
-	@Override
+	
 	public Map<String, String> getAllHeaders() {
 		return headers;
 	}

@@ -23,7 +23,6 @@ public class ConfiguratorConnecionHandler implements ConnectionHandler {
 		this.decoder = decoder;
 	}
 
-	@Override
 	public void handle(Socket socket) throws IOException {
 		byte[] buffer = new byte[maxMessageLength];
 		ByteBuffer cumBuffer = ByteBuffer.allocate(maxMessageLength);

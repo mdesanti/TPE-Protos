@@ -1,14 +1,11 @@
 package ar.edu.it.itba.pdc.v2.implementations.configurator;
 
-import java.awt.PageAttributes.MediaType;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import javax.ws.rs.core.MediaType;
-
-import com.sun.source.tree.Tree;
 
 import ar.edu.it.itba.pdc.v2.interfaces.ConnectionDecoder;
 
@@ -29,7 +26,6 @@ public class ConfiguratorConnectionDecoder implements ConnectionDecoder {
 		blockedMediaType = new TreeSet<String>();
 	}
 
-	@Override
 	public boolean closeConnection() {
 		return closeConnection;
 	}
@@ -87,27 +83,35 @@ public class ConfiguratorConnectionDecoder implements ConnectionDecoder {
 				}
 			}
 		}
+		return s;
 	}
 	
 	private String analyzeBlockCommand(String[] line) {
 		String type = line[1];
 		String arg = line[2];
 		if(type.equals("IP")) {
-			InetAddress addr = InetAddress.getByAddress(arg.getBytes());
-			blockedAddresses.add(addr);
-			return "200 - " + arg + " blocked\n";
+			InetAddress addr;
+			try {
+				addr = InetAddress.getByAddress(arg.getBytes());
+				blockedAddresses.add(addr);
+				return "200 - " + arg + " blocked\n";
+			} catch (UnknownHostException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		} else if(type.equals("MTYPE")) {
-			blockedMediaType
+//			blockedMediaType
 		}
+		return arg;
 		
 	}
 	
-	private String analyzeBlockCommand(String[] s){
+	private String analyzeUnblockCommand(String[] s){
 		return null;
 	}
 	
 	private boolean analyzeMediaType(String mtype) {
-		MediaType.
+		return applyRotations;
 	}
 
 	private void fillReply() {

@@ -25,7 +25,6 @@ public class AnalyzerImp implements Analyzer {
 		this.connectionManager = connectionManager;
 	}
 
-	@Override
 	public void analyze(ByteBuffer buffer, int count, Socket socket) {
 
 		Decoder decoder = new DecoderImpl(BUFFSIZE);

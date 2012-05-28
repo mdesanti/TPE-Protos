@@ -31,7 +31,6 @@ public class DecoderImpl implements Decoder {
 		headers = new HTTPPacket();
 	}
 
-	@Override
 	public void decode(byte[] bytes, int count) {
 
 		// headers.parse(bytes, count);
@@ -64,7 +63,6 @@ public class DecoderImpl implements Decoder {
 
 	}
 
-	@Override
 	public byte[] getExtra(byte[] data, int count) {
 		String read = null;
 		read = new String(data).substring(0, count);
@@ -86,7 +84,7 @@ public class DecoderImpl implements Decoder {
 		return buffer.array();
 	}
 
-	@Override
+	
 	public boolean keepReading() {
 		return read;
 	}
@@ -96,17 +94,17 @@ public class DecoderImpl implements Decoder {
 				&& (headers.getHeader("Transfer-Encoding").contains("chunked"));
 	}
 
-	@Override
+	
 	public int getBufferSize() {
 		return index;
 	}
 
-	@Override
+	
 	public String getHeader(String header) {
 		return headers.getHeader(header);
 	}
 
-	@Override
+	
 	public void analizeRestrictions() {
 		if (headers.getHeader("Content-Type") != null) {
 			rotateImages = headers.getHeader("Content-Type").contains("image/");
@@ -123,7 +121,7 @@ public class DecoderImpl implements Decoder {
 		return transformL33t;
 	}
 
-	@Override
+	
 	public void applyRestrictions(byte[] bytes, int count,
 			HTTPHeaders requestHeaders) {
 
@@ -184,7 +182,7 @@ public class DecoderImpl implements Decoder {
 
 	}
 
-	@Override
+	
 	public byte[] getRotatedImage() {
 		Transformations im = new Transformations();
 		// InputStream is = null;
@@ -206,7 +204,7 @@ public class DecoderImpl implements Decoder {
 		return modified;
 	}
 
-	@Override
+	
 	public byte[] getTransformed() {
 		Transformations im = new Transformations();
 		InputStream is = null;
@@ -233,19 +231,19 @@ public class DecoderImpl implements Decoder {
 		return modified;
 	}
 
-	@Override
+	
 	public void applyTransformations(byte[] bytes, int count) {
 		// TODO Auto-generated method stub
 
 	}
 
-	@Override
+	
 	public void applyFilters() {
 		// TODO Auto-generated method stub
 
 	}
 
-	@Override
+	
 	public boolean completeHeaders(byte[] bytes, int count) {
 		String read = null;
 		read = new String(bytes).substring(0, count);
@@ -260,7 +258,7 @@ public class DecoderImpl implements Decoder {
 		return false;
 	}
 
-	@Override
+	
 	public synchronized void analize(byte[] bytes, int count) {
 		if (!headers.contentExpected()) {
 			keepReadingBytes = 0;
@@ -316,7 +314,7 @@ public class DecoderImpl implements Decoder {
 		}
 	}
 
-	@Override
+	
 	public void reset() {
 		read = true;
 		index = 0;
@@ -329,17 +327,17 @@ public class DecoderImpl implements Decoder {
 		transformL33t = false;
 	}
 
-	@Override
+	
 	public void parseHeaders(byte[] data, int count) {
 		headers.parseHeaders(data, count);
 	}
 
-	@Override
+	
 	public HTTPHeaders getHeaders() {
 		return headers;
 	}
 
-	@Override
+	
 	public RebuiltHeader rebuildHeaders() {
 		Map<String, String> allHeaders = headers.getAllHeaders();
 		String sb = "";

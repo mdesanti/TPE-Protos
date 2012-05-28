@@ -17,7 +17,6 @@ public class Configurator implements Runnable {
 		this.handler = handler;
 	}
 	
-	@Override
 	public void run() {
 		ServerSocket socketServer = null;
 		try {

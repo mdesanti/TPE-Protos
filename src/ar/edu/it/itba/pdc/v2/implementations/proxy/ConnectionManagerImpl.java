@@ -20,7 +20,6 @@ public class ConnectionManagerImpl implements ConnectionManager{
 		connections = new HashMap<String, ConnectionStatus>();
 	}
 	
-	@Override
 	public synchronized Socket getConnection(String host) {
 		try {
 			URL url = new URL("http://" + host);
@@ -50,7 +49,6 @@ public class ConnectionManagerImpl implements ConnectionManager{
 		
 	}
 	
-	@Override
 	public synchronized void releaseConnection(Socket socket) {
 //		connections.get(socket.getInetAddress().getHostName()).releaseConnection();
 		

@@ -13,7 +13,6 @@ public class MonitorDecoder implements ConnectionDecoder {
 		return null;
 	}
 	
-	@Override
 	public boolean closeConnection() {
 		return false;
 	}

@@ -7,7 +7,6 @@ import ar.edu.it.itba.pdc.v2.interfaces.ConnectionHandler;
 
 public class ClientHandler implements ConnectionHandler {
 
-	@Override
 	public void handle(Socket socket) throws IOException {
 
 	}

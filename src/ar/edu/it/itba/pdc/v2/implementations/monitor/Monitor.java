@@ -12,7 +12,6 @@ public class Monitor implements Runnable {
 	private static int TIMEOUT = 500;
 	private static int BUFFSIZE = 1024;
 
-	@Override
 	public void run() {
 		try {
 			Selector selector = null;
