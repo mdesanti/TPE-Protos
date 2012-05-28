@@ -51,7 +51,7 @@ public class ConfiguratorImpl implements Configurator {
 	}
 	
 	public boolean applyTextTransformation() {
-		return handler.applyTextTransformation()
+		return handler.applyTextTransformation();
 	}
 	
 	public int getMaxSize() {
@@ -67,6 +67,6 @@ public class ConfiguratorImpl implements Configurator {
 	}
 	
 	public boolean isAccepted(MediaType str) {
-		return handler.isAccepted(mtype);
+		return handler.isAccepted(str);
 	}
 }
