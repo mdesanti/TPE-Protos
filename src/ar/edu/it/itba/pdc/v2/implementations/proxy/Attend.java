@@ -33,7 +33,8 @@ public class Attend implements Runnable {
 		analyzer = new AnalyzerImp(connectionManager);
 		ByteBuffer req = ByteBuffer.allocate(20 * 1024);
 		String s = socket.getRemoteSocketAddress().toString();
-//		System.out.printf("Se conecto %s - Thread nro: %d\n", s, Thread.currentThread().getId());
+		// System.out.printf("Se conecto %s - Thread nro: %d\n", s,
+		// Thread.currentThread().getId());
 		while (!socket.isClosed()) {
 			try {
 				int receivedMsg = 0, totalCount = 0;
@@ -50,7 +51,6 @@ public class Attend implements Runnable {
 					keepReading = !decoder.completeHeaders(req.array(),
 							req.array().length);
 				}
-
 				analyzer.analyze(req, totalCount, socket);
 
 				socket.close();
@@ -59,6 +59,7 @@ public class Attend implements Runnable {
 			}
 		}
 
-//		System.out.printf("Se desconecto %s\n", s);
+		// System.out.printf("Se desconecto %s\n", s);
 	}
+
 }
