@@ -3,18 +3,14 @@ package ar.edu.it.itba.pdc.v2.implementations.proxy;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 
-import javax.ws.rs.core.MediaType;
-
-import ar.edu.it.itba.pdc.v2.implementations.HTML;
 import ar.edu.it.itba.pdc.v2.implementations.RebuiltHeader;
 import ar.edu.it.itba.pdc.v2.implementations.utils.DecoderImpl;
 import ar.edu.it.itba.pdc.v2.interfaces.Analyzer;
+import ar.edu.it.itba.pdc.v2.interfaces.BlockAnalizer;
 import ar.edu.it.itba.pdc.v2.interfaces.Configurator;
 import ar.edu.it.itba.pdc.v2.interfaces.ConnectionManager;
 import ar.edu.it.itba.pdc.v2.interfaces.Decoder;
@@ -34,6 +30,7 @@ public class AnalyzerImp implements Analyzer {
 
 	public void analyze(ByteBuffer buffer, int count, Socket socket) {
 
+		BlockAnalizer blockAnalizer = new BlockAnalizerImpl(configurator);
 		Decoder decoder = new DecoderImpl(BUFFSIZE);
 		decoder.setConfigurator(configurator);
 		ByteBuffer resp = ByteBuffer.allocate(BUFFSIZE);
@@ -47,62 +44,15 @@ public class AnalyzerImp implements Analyzer {
 		// Parse request headers
 		decoder.parseHeaders(buffer.array(), count);
 		requestHeaders = decoder.getHeaders();
-		if (!configurator.isAccepted(decoder.getHeader("RequestedURI").replace(
-				" ", ""))) {
-			try {
-				clientOs = socket.getOutputStream();
-
-				RebuiltHeader newHeader = decoder.generateBlockedHeader("URI");
-				HTML html = decoder.generateBlockedHTML("URI");
-				clientOs.write(newHeader.getHeader(), 0, newHeader.getSize());
-				clientOs.write(html.getHTML(), 0, html.getSize());
-			} catch (IOException e) {
-				System.out.println(e.getMessage());
-			}
-
-			return;
-		}
 
 		try {
-			if (!configurator.isAccepted(InetAddress.getByName("http://"
-					+ decoder.getHeader("Host").replace(" ", "")))) {
-				try {
-					clientOs = socket.getOutputStream();
-
-					RebuiltHeader newHeader = decoder
-							.generateBlockedHeader("IP");
-					HTML html = decoder.generateBlockedHTML("IP");
-					clientOs.write(newHeader.getHeader(), 0,
-							newHeader.getSize());
-					clientOs.write(html.getHTML(), 0, html.getSize());
-				} catch (IOException e) {
-					System.out.println(e.getMessage());
-				}
-
+			clientOs = socket.getOutputStream();
+			if (blockAnalizer.analizeRequest(decoder, clientOs))
 				return;
-			}
-		} catch (UnknownHostException e1) {
-			// TODO Auto-generated catch block
+		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
 
-		if (decoder.getHeader("Content-Type") != null
-				&& !configurator.isAccepted(MediaType.valueOf(decoder
-						.getHeader("Content-Type").replace(" ", "")))) {
-			try {
-				clientOs = socket.getOutputStream();
-
-				RebuiltHeader newHeader = decoder
-						.generateBlockedHeader("CONTENT-TYPE");
-				HTML html = decoder.generateBlockedHTML("CONTENT-TYPE");
-				clientOs.write(newHeader.getHeader(), 0, newHeader.getSize());
-				clientOs.write(html.getHTML(), 0, html.getSize());
-			} catch (IOException e) {
-				System.out.println(e.getMessage());
-			}
-
-			return;
-		}
 		// Rebuilt the headers according to proxy rules and implementations
 		RebuiltHeader rh = decoder.rebuildHeaders();
 
@@ -154,25 +104,8 @@ public class AnalyzerImp implements Analyzer {
 				decoder.parseHeaders(resp.array(), totalCount);
 				responseHeaders = decoder.getHeaders();
 
-				if (decoder.getHeader("Content-Type") != null
-						&& !configurator.isAccepted(MediaType.valueOf(decoder
-								.getHeader("Content-Type").replace(" ", "")))) {
-					try {
-						clientOs = socket.getOutputStream();
-
-						RebuiltHeader newHeader = decoder
-								.generateBlockedHeader("CONTENT-TYPE");
-						HTML html = decoder.generateBlockedHTML("CONTENT-TYPE");
-						clientOs.write(newHeader.getHeader(), 0,
-								newHeader.getSize());
-						clientOs.write(html.getHTML(), 0, html.getSize());
-					} catch (IOException e) {
-						System.out.println(e.getMessage());
-					}
-
+				if(blockAnalizer.analizeResponse(decoder, clientOs))
 					return;
-				}
-
 				// Sends only headers to client
 				clientOs.write(resp.array(), 0, responseHeaders.getReadBytes());
 
@@ -206,6 +139,9 @@ public class AnalyzerImp implements Analyzer {
 					keepReading = decoder.keepReading();
 					data = true;
 				}
+				if(blockAnalizer.analizeChunkedSize(decoder,clientOs, totalCount)){
+					return;
+				}
 				if (applyTransform && data) {
 					if (configurator.applyRotations() && decoder.isImage()) {
 						byte[] rotated = decoder.getRotatedImage();
@@ -231,5 +167,13 @@ public class AnalyzerImp implements Analyzer {
 			e.printStackTrace();
 		}
 
+	}
+	
+	private void analizeRequest(){
+		
+	}
+	
+	private void analizeResponse(){
+		
 	}
 }

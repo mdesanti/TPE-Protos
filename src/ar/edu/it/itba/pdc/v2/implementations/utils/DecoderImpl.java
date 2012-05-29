@@ -365,6 +365,9 @@ public class DecoderImpl implements Decoder {
 		} else if (cause.equals("IP")) {
 			newHeaders.addHeader("StatusCode", "888");
 			newHeaders.addHeader("Reason", "Blocked IP");
+		} else if (cause.equals("MAXSIZE")) {
+			newHeaders.addHeader("StatusCode", "999");
+			newHeaders.addHeader("Reason", "Blocked File Size");
 		}
 		newHeaders.addHeader("HTTPVersion", "HTTP/1.1");
 		newHeaders.addHeader("Via", " mu0");
@@ -407,8 +410,15 @@ public class DecoderImpl implements Decoder {
 			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
 					+ "<html><head>" + "<title>888 IP bloqueada</title>"
 					+ "</head><body>" + "<h1>IP Bloqueada</h1>"
-					+ "<p>Su proxy bloqueo esta IP<br />"
-					+ "</p>" + "</body></html>";
+					+ "<p>Su proxy bloqueo esta IP<br />" + "</p>"
+					+ "</body></html>";
+
+		} else if (cause.equals("MAXSIZE")) {
+			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
+					+ "<html><head>" + "<title>999 Tamano de archivo bloqueado</title>"
+					+ "</head><body>" + "<h1>Tamano de archivo Bloqueada</h1>"
+					+ "<p>Su proxy bloqueo archivos de este tamano<br />" + "</p>"
+					+ "</body></html>";
 
 		}
 		return new HTML(html.getBytes(), html.length());
