@@ -49,6 +49,7 @@ public class Attend implements Runnable {
 
 				// read until headers are complete
 				attend.debug("Before reading headers from client");
+				attend.info("Reading headers from client");
 				while (keepReading
 						&& ((receivedMsg = clientIs.read(buffer)) != -1)) {
 					totalCount += receivedMsg;

@@ -10,7 +10,7 @@ public interface HTTPHeaders {
 	
 	public boolean contentExpected();
 	
-	public void dumpHeaders();
+	public String dumpHeaders();
 	
 	public void parseHeaders(byte[] data, int count);
 	

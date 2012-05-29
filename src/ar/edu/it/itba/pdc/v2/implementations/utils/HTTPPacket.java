@@ -135,11 +135,13 @@ public class HTTPPacket implements HTTPHeaders {
 	}
 
 	
-	public void dumpHeaders() {
+	public String dumpHeaders() {
+		StringBuffer sb = new StringBuffer();
 		for (String h : headers.keySet()) {
-			System.out.print(h + ": ");
-			System.out.println(headers.get(h));
+			sb.append(h + ": ");
+			sb.append(headers.get(h));
 		}
+		return sb.toString();
 
 	}
 
