@@ -1,6 +1,5 @@
 package ar.edu.it.itba.pdc.v2.implementations.monitor;
 
-import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,36 +17,34 @@ public class MonitorDecoder implements ConnectionDecoder {
 	}
 
 	public String decode(String s) {
-		String[] args = s.split("\n");
-		String[] commandUsed = (args[0]).split("=");
-		String[] commandOpt = (args[1]).split("=");
-		if (!commandUsed[0].equals("comando"))
+		String[] args = s.split(" ");
+		String method = args[0];
+		String option = args[1];
+		String filter = args[2];
+		// System.out.println(method + "!" + option + "!" + filter + "!");
+		if (!method.equals("GET"))
 			return options.get("BAD_REQUEST");
-		if (commandUsed[1].equals(commandOpt[0]))
-			return options.get("PARAM_MATCH");
-		if (commandUsed[1].equals("comando-bytes"))
-			return analizeComandoBytes(commandOpt[1]);
-		if (commandUsed[1].equals("comando-count"))
-			return analizeComandoCount(commandOpt[1]);
-		if (commandUsed[1].equals("comando-cons"))
-			return analizeComandoCons(commandOpt[1]);
+		if (option.equals("BYTES"))
+			return analizeComandoBytes(filter);
+		if (option.equals("COUNT"))
+			return analizeComandoCount(filter);
+		if (option.equals("CONS"))
+			return analizeComandoCons(filter);
 
 		return null;
 	}
 
-	private String analizeComandoBytes(String options) {
+	private String analizeComandoBytes(String filter) {
 		try {
-			String[] args = options.split(" ");
-			if (!(args[0].equals("GET")) | !(args[1].equals("BYTES")))
-				return this.options.get("BAD_REQUEST");
-			if (args[2].equals("ALL"))
-				return this.options.get("OK") + "\ncomando-bytes="
+
+			if (filter.equals("ALL"))
+				return this.options.get("OK") + "\ncomando-bytes(ALL)="
 						+ storage.getTotalBytes();
-			if (args[2].equals("CP"))
-				return this.options.get("OK") + "\n comando-bytes="
+			if (filter.equals("CP"))
+				return this.options.get("OK") + "\n comando-bytes(CP)="
 						+ storage.getClientProxyBytes();
-			if (args[2].equals("PS"))
-				return this.options.get("OK") + "\n comando-bytes="
+			if (filter.equals("PS"))
+				return this.options.get("OK") + "\n comando-bytes(CS)="
 						+ storage.getProxyServersBytes();
 
 			return this.options.get("BAD_REQUEST");
@@ -58,29 +55,23 @@ public class MonitorDecoder implements ConnectionDecoder {
 		}
 	}
 
-	private String analizeComandoCount(String options) {
-		String[] args = options.split(" ");
-		if (!(args[0].equals("GET")) | !(args[1].equals("COUNT")))
-			return this.options.get("BAD_REQUEST");
-		if (args[2].equals("BLOCK"))
-			return this.options.get("OK") + "\ncomando-count="
+	private String analizeComandoCount(String filter) {
+		if (filter.equals("BLOCK"))
+			return this.options.get("OK") + "\ncomando-count(BLOCK)="
 					+ storage.getBlocks();
-		if (args[2].equals("TRANS"))
-			return this.options.get("OK") + "\ncomando-count="
+		if (filter.equals("TRANS"))
+			return this.options.get("OK") + "\ncomando-count(TRANS)="
 					+ storage.getTransformations();
 
 		return this.options.get("BAD_REQUEST");
 	}
 
-	private String analizeComandoCons(String options) {
-		String[] args = options.split(" ");
-		if (!(args[0].equals("GET")) | !(args[1].equals("CONS")))
-			return this.options.get("BAD_REQUEST");
-		if (args[2].equals("C"))
-			return this.options.get("OK") + "\ncomando-cons="
+	private String analizeComandoCons(String filter) {
+		if (filter.equals("C"))
+			return this.options.get("OK") + "\ncomando-cons(C)="
 					+ storage.getClientOpenConections();
-		if (args[2].equals("S"))
-			return this.options.get("OK") + "\ncomando-count="
+		if (filter.equals("S"))
+			return this.options.get("OK") + "\ncomando-count(S)="
 					+ storage.getServersOpenConections();
 
 		return this.options.get("BAD_REQUEST");
@@ -92,8 +83,9 @@ public class MonitorDecoder implements ConnectionDecoder {
 		options.put("LOG_IN_OK", "200 - Welcome\n");
 		options.put("LOGIN_ERROR", "400 - Wrong username and/or password\n");
 		options.put("BAD_REQUEST", "401 - Bad request\n");
-		options.put("PARAM_MATCH",
-				"401 - The specified command does not match the used command\n");
+		options
+				.put("PARAM_MATCH",
+						"401 - The specified command does not match the used command\n");
 		options.put("OK", "200 - OK");
 	}
 

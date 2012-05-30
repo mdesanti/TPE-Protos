@@ -28,7 +28,7 @@ public class MonitorHandler {
 		// Register the selector with new channel for read and attach byte
 		// buffer
 		ByteBuffer buf = ByteBuffer.allocate(bufSize);
-		buf.put(new String("- Hello, for command list send \"help\"\n").getBytes());
+		buf.put(("- Hello, for command list send \"help\"\n").getBytes());
 		clntChan.register(key.selector(), SelectionKey.OP_WRITE, buf);
 
 	}
@@ -37,15 +37,15 @@ public class MonitorHandler {
 		SocketChannel clntChan = (SocketChannel) key.channel();
 		ByteBuffer buf = (ByteBuffer) key.attachment();
 		long bytesRead = clntChan.read(buf);
-		if(bytesRead == -1) {
+		if (bytesRead == -1) {
 			clntChan.close();
 			return;
 		}
 		String s = new String(buf.array());
 		s = decoder.decode(s);
-		ByteBuffer resp = ByteBuffer.allocate(bufSize);
-		resp.put(s.getBytes());
-		key.attach(resp);
+		buf.clear();
+		buf.put(s.getBytes());
+		key.attach(buf);
 		key.interestOps(SelectionKey.OP_WRITE);
 
 	}
@@ -56,10 +56,11 @@ public class MonitorHandler {
 		buf.flip(); // Prepare buffer for writing
 		SocketChannel clntChan = (SocketChannel) key.channel();
 		clntChan.write(buf);
-		if (!buf.hasRemaining()) { // Buffer completely written?
+		 if (!buf.hasRemaining()) { // Buffer completely written?
 			// Nothing left, so no longer interested in writes
 			key.interestOps(SelectionKey.OP_READ);
 		}
+		buf.clear();
 		buf.compact(); // Make room for more data to be read in
 
 	}
