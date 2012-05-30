@@ -58,15 +58,15 @@ public class DataStorageImpl implements DataStorage {
 
 	public synchronized void addTotalBytes(long bytes) {
 
-		DataStorageImpl.getInstance().totalBytes += bytes;
+		totalBytes += bytes;
 	}
 
 	public synchronized void addClientProxyBytes(long bytes) {
-		DataStorageImpl.getInstance().clientToProxyBytes += bytes;
+		clientToProxyBytes += bytes;
 	}
 
 	public synchronized void addProxyServerBytes(long bytes) {
-		DataStorageImpl.getInstance().proxyToServersBytes += bytes;
+		proxyToServersBytes += bytes;
 	}
 
 	public synchronized void addBlock() {
@@ -78,11 +78,11 @@ public class DataStorageImpl implements DataStorage {
 	}
 
 	public synchronized void addClientOpenConeccion(long clientOpenConections) {
-		DataStorageImpl.getInstance().clientOpenConections += clientOpenConections;
+		clientOpenConections += clientOpenConections;
 	}
 
 	public synchronized void addServerOpenConection(long serverOpenConection) {
-		DataStorageImpl.getInstance().serversOpenConections += serverOpenConection;
+		serversOpenConections += serverOpenConection;
 	}
 
 	public Object clone() throws CloneNotSupportedException {
