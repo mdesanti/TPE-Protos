@@ -66,15 +66,18 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 		return decoder.generateBlockedHTML(cause);
 	}
 
-	private boolean analizeBlockAll(OutputStream clientOs) {
-		return configurator.blockAll();
+	private boolean analizeBlockAll(OutputStream clientOs) throws IOException {
+		if (configurator.blockAll()) {
+			generateProxyResponse(clientOs, "ALL");
+			return true;
+		}
+		return false;
 	}
 
 	private boolean analizeBlockIP(OutputStream clientOs) throws IOException {
 		try {
 			URL url = new URL("http://" + decoder
 					.getHeader("Host").replace(" ", ""));
-			int port = (url.getPort() == -1) ?80:url.getPort();
 			if (!configurator.isAccepted(InetAddress.getByName(url.getHost()))) {
 				generateProxyResponse(clientOs, "IP");
 

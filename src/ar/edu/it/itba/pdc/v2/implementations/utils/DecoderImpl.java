@@ -386,6 +386,10 @@ public class DecoderImpl implements Decoder {
 			newHeaders.addHeader("StatusCode", "999");
 			newHeaders.addHeader("Reason", "Blocked File Size");
 		}
+		 else if (cause.equals("ALL")) {
+				newHeaders.addHeader("StatusCode", "1234");
+				newHeaders.addHeader("Reason", "All Blocked");
+			}
 		newHeaders.addHeader("HTTPVersion", "HTTP/1.1");
 		newHeaders.addHeader("Via", " mu0");
 		newHeaders.addHeader("Content-Type", " text/html; charset=iso-8859-1");
@@ -417,11 +421,9 @@ public class DecoderImpl implements Decoder {
 					+ "</body></html>";
 
 		} else if (cause.equals("CONTENT-TYPE")) {
-			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
-					+ "<html><head>" + "<title>777 MediaType bloqueada</title>"
-					+ "</head><body>" + "<h1>MediaType Bloqueada</h1>"
+			html = "<h1>MediaType Bloqueada</h1>"
 					+ "<p>Su proxy bloqueo este tipo de archivos<br />"
-					+ "</p>" + "</body></html>";
+					+ "</p>";
 
 		} else if (cause.equals("IP")) {
 			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
@@ -439,6 +441,15 @@ public class DecoderImpl implements Decoder {
 					+ "</p>" + "</body></html>";
 
 		}
+		 else if (cause.equals("ALL")) {
+				html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
+						+ "<html><head>"
+						+ "<title>1234 Se bloqueo todo</title>"
+						+ "</head><body>" + "<h1>Todo bloqueado</h1>"
+						+ "<p>Su proxy bloqueo todo<br />"
+						+ "</p>" + "</body></html>";
+
+			}
 		return new HTML(html.getBytes(), html.length());
 	}
 
