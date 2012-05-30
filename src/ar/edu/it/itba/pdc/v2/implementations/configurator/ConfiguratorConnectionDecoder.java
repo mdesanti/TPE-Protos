@@ -143,7 +143,7 @@ public class ConfiguratorConnectionDecoder implements
 	private String analyzeBlockCommand(String[] line) {
 		if (line.length == 2 && line[1].equals("ALL")) {
 			blockAll = true;
-			return "200 - All access blocked";
+			return "200 - All access blocked\n";
 		}
 		if (line.length != 3)
 			return reply.get("WRONG_COMMAND");
@@ -200,7 +200,7 @@ public class ConfiguratorConnectionDecoder implements
 	private String analyzeUnblockCommand(String[] line) {
 		if (line.length == 2 && line[1].equals("ALL")) {
 			blockAll = false;
-			return "200 - All access unblocked";
+			return "200 - All access unblocked\n";
 		}
 		if (line.length != 3)
 			return reply.get("WRONG_COMMAND");
