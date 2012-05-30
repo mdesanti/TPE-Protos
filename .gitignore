@@ -2,5 +2,4 @@ bin
 bin/*
 target/*
 .classpath
-.projetc
 *.class
