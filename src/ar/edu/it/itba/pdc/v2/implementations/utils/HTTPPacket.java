@@ -1,6 +1,8 @@
 package ar.edu.it.itba.pdc.v2.implementations.utils;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,7 +30,9 @@ public class HTTPPacket implements HTTPHeaders {
 	 * */
 	public void parseHeaders(byte[] data, int count) {
 
-		String s = null;
+		CharBuffer cb = Charset.forName("ISO-8859-1").decode(ByteBuffer.wrap(data, 0, count));
+		String s = new String(cb.array());
+		System.out.println(s);
 		s = new String(data).substring(0, count);
 		String headers[] = s.split("\r\n");
 		String startLine = headers[0];
@@ -55,6 +59,9 @@ public class HTTPPacket implements HTTPHeaders {
 		headers.put("HTTPVersion", httpVersion);
 
 		parseHeaders(lines);
+		if(args[0].equals("GET") || args[0].equals("HEAD")) {
+			contentExpected = false;
+		}
 
 	}
 

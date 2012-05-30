@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.util.Map;
 
 import ar.edu.it.itba.pdc.v2.implementations.HTML;
@@ -255,11 +257,15 @@ public class DecoderImpl implements Decoder {
 	public synchronized void analize(byte[] bytes, int count) {
 		if (!headers.contentExpected()) {
 			keepReadingBytes = 0;
+			read = false;
 			return;
 		}
+		CharBuffer charBuf = Charset.forName("UTF-8").decode(ByteBuffer.wrap(bytes, 0, count));
+		String converted = new String(charBuf.array());
+		System.out.println(converted);
 		if (isChunked()) {
 			String[] chunks = null;
-			chunks = new String(bytes).substring(0, count).split("\r\n");
+			chunks = converted.split("\r\n");
 			for (int j = 0; j < chunks.length; j++) {
 				if (keepReadingBytes == 0) {
 					Integer sizeLine = null;
@@ -285,7 +291,7 @@ public class DecoderImpl implements Decoder {
 						} catch (NumberFormatException e) {
 						}
 					}
-					keepReadingBytes -= chunks[j].length();
+					keepReadingBytes -= chunks[j].getBytes().length;
 					if (keepReadingBytes < 0) {
 						System.out
 								.println("ESTO NO DEBERIA PASAR, keepReadingBytes <0");
@@ -303,7 +309,7 @@ public class DecoderImpl implements Decoder {
 			if (keepReadingBytes == 0)
 				read = false;
 		} else {
-			read = false;
+			read = true;
 		}
 	}
 
