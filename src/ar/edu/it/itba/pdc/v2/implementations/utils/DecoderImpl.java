@@ -130,11 +130,16 @@ public class DecoderImpl implements Decoder {
 				File f = new File("/tmp/prueba");
 				f.mkdir();
 				if (path[path.length - 1].length() < 10)
-					fileName = "/tmp/prueba/" + path[path.length - 1];
+					fileName = "/tmp/prueba/"
+							+ String.valueOf(System.currentTimeMillis())
+							+ Thread.currentThread().getId()
+							+ path[path.length - 1];
 				else {
 
 					fileName = "/tmp/prueba/"
 							+ path[path.length - 1].substring(0, 6)
+							+ String.valueOf(System.currentTimeMillis())
+							+ Thread.currentThread().getId()
 							+ "."
 							+ headers.getHeader("Content-Type").split("/")[1]
 									.split(";")[0];
@@ -183,7 +188,7 @@ public class DecoderImpl implements Decoder {
 		return isText;
 	}
 
-	public synchronized byte[] getRotatedImage() {
+	public synchronized byte[] getRotatedImage() throws IOException {
 		Transformations im = new Transformations();
 		// InputStream is = null;
 		// try {
@@ -260,7 +265,17 @@ public class DecoderImpl implements Decoder {
 			read = false;
 			return;
 		}
-		CharBuffer charBuf = Charset.forName("UTF-8").decode(ByteBuffer.wrap(bytes, 0, count));
+		String[] array = null;
+		String charset;
+		if (headers.getHeader("Content-Type") != null) {
+			array = headers.getHeader("Content-Type").split(";");
+		}
+		if (array != null && array.length >= 2)
+			charset = array[1].split("=")[1];
+		else
+			charset = "ISO-8859-1";
+		CharBuffer charBuf = Charset.forName(charset).decode(
+				ByteBuffer.wrap(bytes, 0, count));
 		String converted = new String(charBuf.array());
 		if (isChunked()) {
 			String[] chunks = null;
@@ -374,6 +389,10 @@ public class DecoderImpl implements Decoder {
 			newHeaders.addHeader("StatusCode", "999");
 			newHeaders.addHeader("Reason", "Blocked File Size");
 		}
+		 else if (cause.equals("ALL")) {
+				newHeaders.addHeader("StatusCode", "1234");
+				newHeaders.addHeader("Reason", "All Blocked");
+			}
 		newHeaders.addHeader("HTTPVersion", "HTTP/1.1");
 		newHeaders.addHeader("Via", " mu0");
 		newHeaders.addHeader("Content-Type", " text/html; charset=iso-8859-1");
@@ -405,11 +424,9 @@ public class DecoderImpl implements Decoder {
 					+ "</body></html>";
 
 		} else if (cause.equals("CONTENT-TYPE")) {
-			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
-					+ "<html><head>" + "<title>777 MediaType bloqueada</title>"
-					+ "</head><body>" + "<h1>MediaType Bloqueada</h1>"
+			html = "<h1>MediaType Bloqueada</h1>"
 					+ "<p>Su proxy bloqueo este tipo de archivos<br />"
-					+ "</p>" + "</body></html>";
+					+ "</p>";
 
 		} else if (cause.equals("IP")) {
 			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
@@ -420,15 +437,25 @@ public class DecoderImpl implements Decoder {
 
 		} else if (cause.equals("MAXSIZE")) {
 			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
-					+ "<html><head>" + "<title>999 Tamano de archivo bloqueado</title>"
+					+ "<html><head>"
+					+ "<title>999 Tamano de archivo bloqueado</title>"
 					+ "</head><body>" + "<h1>Tamano de archivo Bloqueada</h1>"
-					+ "<p>Su proxy bloqueo archivos de este tamano<br />" + "</p>"
-					+ "</body></html>";
+					+ "<p>Su proxy bloqueo archivos de este tamano<br />"
+					+ "</p>" + "</body></html>";
 
 		}
+		 else if (cause.equals("ALL")) {
+				html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
+						+ "<html><head>"
+						+ "<title>1234 Se bloqueo todo</title>"
+						+ "</head><body>" + "<h1>Todo bloqueado</h1>"
+						+ "<p>Su proxy bloqueo todo<br />"
+						+ "</p>" + "</body></html>";
+
+			}
 		return new HTML(html.getBytes(), html.length());
 	}
-	
+
 	public RebuiltHeader modifiedContentLength(int contentLength) {
 		Map<String, String> allHeaders = headers.getAllHeaders();
 		String sb = "";

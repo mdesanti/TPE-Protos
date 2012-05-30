@@ -48,8 +48,8 @@ public class Attend implements Runnable {
 				boolean keepReading = true;
 
 				// read until headers are complete
-//				attend.debug("Before reading headers from client");
-//				attend.info("Reading headers from client");
+				attend.debug("Before reading headers from client");
+				attend.info("Reading headers from client");
 				while (keepReading
 						&& ((receivedMsg = clientIs.read(buffer)) != -1)) {
 					totalCount += receivedMsg;
@@ -57,12 +57,13 @@ public class Attend implements Runnable {
 					keepReading = !decoder.completeHeaders(req.array(),
 							req.array().length);
 				}
-//				attend.debug("Headers completely read. Sending to analyzer");
+				attend.debug("Headers completely read. Sending to analyzer");
 				analyzer.analyze(req, totalCount, socket);
-//				attend.debug("Analyzer returned. Closing socket");
+				attend.debug("Analyzer returned. Closing socket");
 				socket.close();
 
 			} catch (IOException e) {
+				return;
 			}
 		}
 

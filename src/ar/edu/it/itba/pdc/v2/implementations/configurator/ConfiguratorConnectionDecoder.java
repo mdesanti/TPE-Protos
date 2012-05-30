@@ -22,6 +22,7 @@ public class ConfiguratorConnectionDecoder implements
 	private boolean closeConnection = false;
 	private boolean applyTransformations = false;
 	private boolean applyRotations = false;
+	private boolean blockAll = false;
 	private Map<String, String> reply;
 	private Set<InetAddress> blockedAddresses;
 	private Set<String> blockedMediaType;
@@ -140,6 +141,10 @@ public class ConfiguratorConnectionDecoder implements
 	}
 
 	private String analyzeBlockCommand(String[] line) {
+		if (line.length == 2 && line[1].equals("ALL")) {
+			blockAll = true;
+			return "200 - All access blocked\n";
+		}
 		if (line.length != 3)
 			return reply.get("WRONG_COMMAND");
 		String type = line[1];
@@ -193,6 +198,10 @@ public class ConfiguratorConnectionDecoder implements
 	}
 
 	private String analyzeUnblockCommand(String[] line) {
+		if (line.length == 2 && line[1].equals("ALL")) {
+			blockAll = false;
+			return "200 - All access unblocked\n";
+		}
 		if (line.length != 3)
 			return reply.get("WRONG_COMMAND");
 		String type = line[1];
@@ -268,7 +277,7 @@ public class ConfiguratorConnectionDecoder implements
 		reply.put("ROT_ON", "200 - Rotations are on\n");
 		reply.put("ROT_OFF", "200 - Rotations are off\n");
 	}
-	
+
 	private String printHelp() {
 		decoderLog.info("HELP command received");
 		StringBuffer sb = new StringBuffer();
@@ -276,25 +285,25 @@ public class ConfiguratorConnectionDecoder implements
 		sb.append("BLOCK or UNBLOCK usage: (BLOCK | UNBLOCK)SP(IP|URI|MTYPE|SIZE)SP(VALUE)\n");
 		sb.append("TRANSFORMATIONS or ROTATIONS usage: (TRANSFORMATIONS|ROTATIONS)SP(ON|OFF)\n");
 		sb.append("GET usage: GET SP (ROTATIONS|TRANSFORMATIONS|BLOCK)\n");
-		
+
 		return sb.toString();
 	}
 
 	public Object[] getBlockedAddresses() {
 		synchronized (blockedAddresses) {
-			return  blockedAddresses.toArray();
+			return blockedAddresses.toArray();
 		}
 	}
 
 	public Object[] getBlockedMediaType() {
 		synchronized (blockedMediaType) {
-			return  blockedMediaType.toArray();
+			return blockedMediaType.toArray();
 		}
 	}
 
 	public Object[] getBlockedURIs() {
 		synchronized (blockedURIs) {
-			return  blockedURIs.toArray();
+			return blockedURIs.toArray();
 		}
 	}
 
@@ -312,6 +321,10 @@ public class ConfiguratorConnectionDecoder implements
 
 	public void reset() {
 		closeConnection = false;
+	}
+
+	public boolean blockAll() {
+		return blockAll;
 	}
 
 }

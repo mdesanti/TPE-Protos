@@ -80,4 +80,8 @@ public class ConfiguratorImpl implements Configurator {
 	public boolean isAccepted(MediaType str) {
 		return handler.isAccepted(str);
 	}
+	
+	public boolean blockAll() {
+		return decoder.blockAll();
+	}
 }
