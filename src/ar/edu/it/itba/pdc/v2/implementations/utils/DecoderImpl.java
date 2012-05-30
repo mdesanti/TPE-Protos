@@ -183,7 +183,7 @@ public class DecoderImpl implements Decoder {
 		return isText;
 	}
 
-	public byte[] getRotatedImage() {
+	public synchronized byte[] getRotatedImage() {
 		Transformations im = new Transformations();
 		// InputStream is = null;
 		// try {
@@ -262,7 +262,6 @@ public class DecoderImpl implements Decoder {
 		}
 		CharBuffer charBuf = Charset.forName("UTF-8").decode(ByteBuffer.wrap(bytes, 0, count));
 		String converted = new String(charBuf.array());
-		System.out.println(converted);
 		if (isChunked()) {
 			String[] chunks = null;
 			chunks = converted.split("\r\n");
@@ -428,6 +427,31 @@ public class DecoderImpl implements Decoder {
 
 		}
 		return new HTML(html.getBytes(), html.length());
+	}
+	
+	public RebuiltHeader modifiedContentLength(int contentLength) {
+		Map<String, String> allHeaders = headers.getAllHeaders();
+		String sb = "";
+
+		allHeaders.remove("Accept-Encoding");
+		allHeaders.remove("Proxy-Connection");
+		allHeaders.put("Accept-Encoding", "identity");
+		allHeaders.remove("Content-Length");
+		allHeaders.remove("Transfer-Encoding");
+		allHeaders.put("Content-Length", String.valueOf(contentLength));
+		sb += allHeaders.get("Method") + " ";
+		sb += allHeaders.get("RequestedURI") + " ";
+		sb += allHeaders.get("HTTPVersion") + "\r\n";
+
+		for (String key : allHeaders.keySet()) {
+			if (!key.equals("Method") && !key.equals("RequestedURI")
+					&& !key.equals("HTTPVersion"))
+				sb += (key + ":" + allHeaders.get(key) + "\r\n");
+		}
+		// allHeaders.put("Via", " mu0Proxy");
+		// sb += "Via:" + allHeaders.get("Via") + "\r\n";
+		sb += ("\r\n");
+		return new RebuiltHeader(sb.getBytes(), sb.length());
 	}
 
 }

@@ -32,7 +32,6 @@ public class HTTPPacket implements HTTPHeaders {
 
 		CharBuffer cb = Charset.forName("ISO-8859-1").decode(ByteBuffer.wrap(data, 0, count));
 		String s = new String(cb.array());
-		System.out.println(s);
 		s = new String(data).substring(0, count);
 		String headers[] = s.split("\r\n");
 		String startLine = headers[0];

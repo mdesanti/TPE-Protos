@@ -50,4 +50,6 @@ public interface Decoder {
 	
 	public HTML generateBlockedHTML(String cause);
 
+	public RebuiltHeader modifiedContentLength(int contentLength);
+	
 }

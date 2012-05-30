@@ -47,17 +47,18 @@ public class AnalyzerImp implements Analyzer {
 		// Parse request headers
 		decoder.parseHeaders(buffer.array(), count);
 		requestHeaders = decoder.getHeaders();
-		if(requestHeaders.getHeader("Accept-Ranges") != null) {
-			while(true) {
+		if (requestHeaders.getHeader("Accept-Ranges") != null) {
+			while (true) {
 				System.out.println("ACAAAAAA");
 			}
 		}
-//		analyzeLog.info("Received headers from client " + socket.getInetAddress() + " :" + requestHeaders.dumpHeaders());
+		// analyzeLog.info("Received headers from client " +
+		// socket.getInetAddress() + " :" + requestHeaders.dumpHeaders());
 
 		try {
 			clientOs = socket.getOutputStream();
 			if (blockAnalizer.analizeRequest(decoder, clientOs)) {
-//				analyzeLog.info("Block analyzer blocked request. Returning");
+				// analyzeLog.info("Block analyzer blocked request. Returning");
 				return;
 			}
 		} catch (IOException e1) {
@@ -66,11 +67,12 @@ public class AnalyzerImp implements Analyzer {
 
 		// Rebuilt the headers according to proxy rules and implementations
 		RebuiltHeader rh = decoder.rebuildHeaders();
-//		analyzeLog.info("Rebuilt headers from client " + socket.getInetAddress() + " :" + new String(rh.getHeader()));
+		// analyzeLog.info("Rebuilt headers from client " +
+		// socket.getInetAddress() + " :" + new String(rh.getHeader()));
 
 		Socket externalServer;
 		String host = decoder.getHeader("Host").replace(" ", "");
-//		analyzeLog.info("Requesting for connection to: " + host);
+		// analyzeLog.info("Requesting for connection to: " + host);
 		while ((externalServer = connectionManager.getConnection(host)) == null) {
 			System.out.println("No pudo abrir la conexion");
 		}
@@ -82,14 +84,14 @@ public class AnalyzerImp implements Analyzer {
 			clientOs = socket.getOutputStream();
 
 			// Sends rebuilt header to server
-//			analyzeLog.info("Sending rebuilt headers to server");
+			// analyzeLog.info("Sending rebuilt headers to server");
 			externalOs.write(rh.getHeader(), 0, rh.getSize());
 
 			// If client sends something in the body..
 			if (requestHeaders.getReadBytes() < count) {
 				byte[] extra = decoder.getExtra(buffer.array(), count);
-				externalOs.write(extra, 0,
-						count - requestHeaders.getReadBytes());
+				externalOs.write(extra, 0, count
+						- requestHeaders.getReadBytes());
 				decoder.analize(extra, count - requestHeaders.getReadBytes());
 			} else {
 				decoder.analize(buffer.array(), count);
@@ -98,7 +100,8 @@ public class AnalyzerImp implements Analyzer {
 			// if client continues to send info, read it and send it to server
 			while (decoder.keepReading()
 					&& ((receivedMsg = clientIs.read(buf)) != -1)) {
-//				analyzeLog.info("Reading upload data from client " + socket.getInetAddress());
+				// analyzeLog.info("Reading upload data from client " +
+				// socket.getInetAddress());
 				decoder.decode(buf, receivedMsg);
 				externalOs.write(buf, 0, receivedMsg);
 			}
@@ -109,25 +112,31 @@ public class AnalyzerImp implements Analyzer {
 			totalCount = 0;
 			try {
 				// Read headers
-//				analyzeLog.info("Reading header from server");
+				// analyzeLog.info("Reading header from server");
 				while (keepReading
 						&& ((receivedMsg = externalIs.read(buf)) != -1)) {
 					totalCount += receivedMsg;
 					resp.put(buf, 0, receivedMsg);
-					keepReading = !decoder.completeHeaders(resp.array(),
-							resp.array().length);
+					keepReading = !decoder.completeHeaders(resp.array(), resp
+							.array().length);
 				}
 				// Parse response heaaders
 				decoder.parseHeaders(resp.array(), totalCount);
 				responseHeaders = decoder.getHeaders();
 
-				if(blockAnalizer.analizeResponse(decoder, clientOs)) {
-//					analyzeLog.info("Response blocked by proxy. Closing connection and returning");
+				if (blockAnalizer.analizeResponse(decoder, clientOs)) {
+					// analyzeLog.info("Response blocked by proxy. Closing connection and returning");
 					return;
 				}
 				// Sends only headers to client
-//				analyzeLog.info("Got response from " + host + " with status code " + responseHeaders.getHeader("StatusCode") + " to client " + socket.getInetAddress());
-				clientOs.write(resp.array(), 0, responseHeaders.getReadBytes());
+				// analyzeLog.info("Got response from " + host +
+				// " with status code " +
+				// responseHeaders.getHeader("StatusCode") + " to client " +
+				// socket.getInetAddress());
+
+				if (!configurator.applyRotations())
+					clientOs.write(resp.array(), 0, responseHeaders
+							.getReadBytes());
 
 				// Sends the rest of the body to client...
 
@@ -136,13 +145,13 @@ public class AnalyzerImp implements Analyzer {
 				boolean data = false;
 				if (responseHeaders.getReadBytes() < totalCount) {
 					byte[] extra = decoder.getExtra(resp.array(), totalCount);
-					decoder.analize(extra,
-							totalCount - responseHeaders.getReadBytes());
+					decoder.analize(extra, totalCount
+							- responseHeaders.getReadBytes());
 					decoder.applyRestrictions(extra, totalCount
 							- responseHeaders.getReadBytes(), requestHeaders);
 					if (!applyTransform) {
-						clientOs.write(extra, 0,
-								totalCount - responseHeaders.getReadBytes());
+						clientOs.write(extra, 0, totalCount
+								- responseHeaders.getReadBytes());
 					}
 					data = true;
 				}
@@ -159,12 +168,17 @@ public class AnalyzerImp implements Analyzer {
 					keepReading = decoder.keepReading();
 					data = true;
 				}
-				if(blockAnalizer.analizeChunkedSize(decoder,clientOs, totalCount)){
+				if (blockAnalizer.analizeChunkedSize(decoder, clientOs,
+						totalCount)) {
 					return;
 				}
 				if (applyTransform && data) {
 					if (configurator.applyRotations() && decoder.isImage()) {
+
 						byte[] rotated = decoder.getRotatedImage();
+						RebuiltHeader newHeader = decoder
+								.modifiedContentLength(rotated.length);
+						clientOs.write(newHeader.getHeader(),0,newHeader.getSize());
 						clientOs.write(rotated, 0, rotated.length);
 					}
 					if (configurator.applyTextTransformation()
@@ -188,12 +202,12 @@ public class AnalyzerImp implements Analyzer {
 		}
 
 	}
-	
-	private void analizeRequest(){
-		
+
+	private void analizeRequest() {
+
 	}
-	
-	private void analizeResponse(){
-		
+
+	private void analizeResponse() {
+
 	}
 }
