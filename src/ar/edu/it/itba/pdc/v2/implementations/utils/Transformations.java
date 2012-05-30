@@ -15,15 +15,10 @@ import javax.imageio.ImageIO;
 
 public class Transformations {
 
-	public synchronized byte[] rotate(String fileName, Integer degrees) {
+	public synchronized byte[] rotate(String fileName, Integer degrees) throws IOException {
 		File file = new File(fileName);
 		BufferedImage originalImage = null;
-		try {
-			originalImage = ImageIO.read(file);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		originalImage = ImageIO.read(file);
 		AffineTransform affineTransform = new AffineTransform();
 		affineTransform.rotate(Math.toRadians(degrees),
 				originalImage.getWidth() / 2, originalImage.getHeight() / 2);
@@ -31,13 +26,13 @@ public class Transformations {
 		AffineTransformOp opRotated = new AffineTransformOp(affineTransform,
 				AffineTransformOp.TYPE_BILINEAR);
 		BufferedImage newImage = null;
-		
-		//If 0x0 image
+
+		// If 0x0 image
 		if (originalImage.getHeight() == 1 || originalImage.getWidth() == 1) {
 			newImage = originalImage;
 		} else
 			newImage = opRotated.filter(originalImage, null);
-		
+
 		String[] path = fileName.split("/");
 		File fileNew = new File("/tmp/prueba/R" + path[3]);
 
@@ -50,7 +45,6 @@ public class Transformations {
 			e.printStackTrace();
 		}
 		return out.toByteArray();
-
 
 	}
 

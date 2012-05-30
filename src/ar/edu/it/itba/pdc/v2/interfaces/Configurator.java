@@ -20,6 +20,8 @@ public interface Configurator extends Runnable {
 	
 	public boolean applyTransformation();
 	
+	public boolean blockAll();
+	
 	
 	
 	

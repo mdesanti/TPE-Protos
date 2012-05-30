@@ -67,7 +67,7 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 	}
 
 	private boolean analizeBlockAll(OutputStream clientOs) {
-		return false;
+		return configurator.blockAll();
 	}
 
 	private boolean analizeBlockIP(OutputStream clientOs) throws IOException {

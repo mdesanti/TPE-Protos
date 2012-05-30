@@ -1,5 +1,7 @@
 package ar.edu.it.itba.pdc.v2.interfaces;
 
+import java.io.IOException;
+
 import ar.edu.it.itba.pdc.v2.implementations.HTML;
 import ar.edu.it.itba.pdc.v2.implementations.RebuiltHeader;
 
@@ -20,7 +22,7 @@ public interface Decoder {
 	public void applyRestrictions(byte[] bytes, int count,
 			HTTPHeaders requestHeader);
 
-	public byte[] getRotatedImage();
+	public byte[] getRotatedImage() throws IOException;
 
 	public byte[] getTransformed();
 

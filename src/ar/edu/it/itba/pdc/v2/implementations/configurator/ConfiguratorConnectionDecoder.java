@@ -141,6 +141,10 @@ public class ConfiguratorConnectionDecoder implements
 	}
 
 	private String analyzeBlockCommand(String[] line) {
+		if (line.length == 2 && line[1].equals("ALL")) {
+			blockAll = true;
+			return "200 - All access blocked";
+		}
 		if (line.length != 3)
 			return reply.get("WRONG_COMMAND");
 		String type = line[1];
@@ -188,15 +192,16 @@ public class ConfiguratorConnectionDecoder implements
 			} catch (PatternSyntaxException e) {
 				return "400 - Invalid pattern\n";
 			}
-		} else if (type.equals("ALL")) {
-				blockAll = true;
-				return "200 - All access blocked";
 		} else {
 			return reply.get("WRONG_PARAMETERS");
 		}
 	}
 
 	private String analyzeUnblockCommand(String[] line) {
+		if (line.length == 2 && line[1].equals("ALL")) {
+			blockAll = false;
+			return "200 - All access unblocked";
+		}
 		if (line.length != 3)
 			return reply.get("WRONG_COMMAND");
 		String type = line[1];
@@ -247,11 +252,7 @@ public class ConfiguratorConnectionDecoder implements
 			} catch (PatternSyntaxException e) {
 				return "400 - Invalid pattern\n";
 			}
-		} else if (type.equals("ALL")) {
-			blockAll = false;
-			return "200 - All access unblocked";
-		}
-		else {
+		} else {
 			return reply.get("WRONG_PARAMETERS");
 		}
 	}
@@ -321,7 +322,7 @@ public class ConfiguratorConnectionDecoder implements
 	public void reset() {
 		closeConnection = false;
 	}
-	
+
 	public boolean blockAll() {
 		return blockAll;
 	}

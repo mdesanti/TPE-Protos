@@ -188,7 +188,7 @@ public class DecoderImpl implements Decoder {
 		return isText;
 	}
 
-	public synchronized byte[] getRotatedImage() {
+	public synchronized byte[] getRotatedImage() throws IOException {
 		Transformations im = new Transformations();
 		// InputStream is = null;
 		// try {

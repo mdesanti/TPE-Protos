@@ -7,6 +7,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import ar.edu.it.itba.pdc.v2.implementations.configurator.ConfiguratorImpl;
+import ar.edu.it.itba.pdc.v2.implementations.monitor.Monitor;
 import ar.edu.it.itba.pdc.v2.implementations.proxy.ClientHandler;
 import ar.edu.it.itba.pdc.v2.implementations.proxy.ThreadedSocketServer;
 import ar.edu.it.itba.pdc.v2.interfaces.Configurator;
@@ -22,8 +23,8 @@ public class Start {
 			Configurator configurator = new ConfiguratorImpl();
 			proxy.info("Creating configurator thread");
 			Thread configuratorThread = new Thread(configurator);
-			// Monitor monitor = new Monitor();
-			// Thread monitorThread = new Thread(monitor);
+			Monitor monitor = new Monitor();
+			Thread monitorThread = new Thread(monitor);
 			proxy.info("Instantiating server");
 			ThreadedSocketServer server = new ThreadedSocketServer(9090,
 					InetAddress.getByName("localhost"), new ClientHandler(),
@@ -35,8 +36,10 @@ public class Start {
 			configuratorThread.start();
 			proxy.info("Server thread starting");
 			serverThread.start();
+			monitorThread.start();
 			configuratorThread.join();
 			serverThread.join();
+			monitorThread.join();
 		} catch (final Exception e) {
 			System.out.println("Ocurrio un error");
 			e.printStackTrace();
