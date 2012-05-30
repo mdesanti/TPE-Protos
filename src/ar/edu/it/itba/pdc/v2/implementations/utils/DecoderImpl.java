@@ -265,9 +265,12 @@ public class DecoderImpl implements Decoder {
 			read = false;
 			return;
 		}
-		String[] array = headers.getHeader("Content-Type").split(";");
+		String[] array = null;
 		String charset;
-		if (array.length >= 2)
+		if (headers.getHeader("Content-Type") != null) {
+			array = headers.getHeader("Content-Type").split(";");
+		}
+		if (array != null && array.length >= 2)
 			charset = array[1].split("=")[1];
 		else
 			charset = "ISO-8859-1";
