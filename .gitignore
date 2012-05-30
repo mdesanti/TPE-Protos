@@ -3,3 +3,5 @@ bin/*
 target/*
 .classpath
 *.class
+.project
+.settings/*
