@@ -22,4 +22,6 @@ public interface ConfiguratorConnectionDecoderInt {
 	public boolean applyTransformations();
 	
 	public void reset();
+	
+	public boolean blockAll();
 }
