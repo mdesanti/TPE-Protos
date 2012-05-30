@@ -3,6 +3,7 @@ package ar.edu.it.itba.pdc.v2.implementations.proxy;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.net.URL;
 import java.net.UnknownHostException;
 
 import javax.ws.rs.core.MediaType;
@@ -71,8 +72,10 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 
 	private boolean analizeBlockIP(OutputStream clientOs) throws IOException {
 		try {
-			if (!configurator.isAccepted(InetAddress.getByName(decoder
-					.getHeader("Host").replace(" ", "")))) {
+			URL url = new URL("http://" + decoder
+					.getHeader("Host").replace(" ", ""));
+			int port = (url.getPort() == -1) ?80:url.getPort();
+			if (!configurator.isAccepted(InetAddress.getByName(url.getHost()))) {
 				generateProxyResponse(clientOs, "IP");
 
 				return true;

@@ -260,7 +260,14 @@ public class DecoderImpl implements Decoder {
 			read = false;
 			return;
 		}
-		CharBuffer charBuf = Charset.forName("UTF-8").decode(ByteBuffer.wrap(bytes, 0, count));
+		String[] array = headers.getHeader("Content-Type").split(";");
+		String charset;
+		if (array.length >= 2)
+			charset = array[1].split("=")[1];
+		else
+			charset = "ISO-8859-1";
+		CharBuffer charBuf = Charset.forName(charset).decode(
+				ByteBuffer.wrap(bytes, 0, count));
 		String converted = new String(charBuf.array());
 		if (isChunked()) {
 			String[] chunks = null;
@@ -420,15 +427,16 @@ public class DecoderImpl implements Decoder {
 
 		} else if (cause.equals("MAXSIZE")) {
 			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
-					+ "<html><head>" + "<title>999 Tamano de archivo bloqueado</title>"
+					+ "<html><head>"
+					+ "<title>999 Tamano de archivo bloqueado</title>"
 					+ "</head><body>" + "<h1>Tamano de archivo Bloqueada</h1>"
-					+ "<p>Su proxy bloqueo archivos de este tamano<br />" + "</p>"
-					+ "</body></html>";
+					+ "<p>Su proxy bloqueo archivos de este tamano<br />"
+					+ "</p>" + "</body></html>";
 
 		}
 		return new HTML(html.getBytes(), html.length());
 	}
-	
+
 	public RebuiltHeader modifiedContentLength(int contentLength) {
 		Map<String, String> allHeaders = headers.getAllHeaders();
 		String sb = "";
