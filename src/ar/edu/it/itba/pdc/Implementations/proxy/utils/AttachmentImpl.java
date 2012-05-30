@@ -14,12 +14,10 @@ public class AttachmentImpl implements Attachment {
 		this.multipart = isMultipart;
 	}
 	
-	@Override
 	public SocketChannel getFrom() {
 		return from;
 	}
 	
-	@Override
 	public boolean isMultipart() {
 		return multipart;
 	}

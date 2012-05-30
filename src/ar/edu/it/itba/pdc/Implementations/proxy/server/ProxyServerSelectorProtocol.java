@@ -32,7 +32,6 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 	public ProxyServerSelectorProtocol() {
 	}
 
-	@Override
 	public void handleAccept(SelectionKey key) throws IOException {
 		SocketChannel clntChan = ((ServerSocketChannel) key.channel()).accept();
 		clntChan.configureBlocking(false); // Must be nonblocking to register
@@ -46,7 +45,6 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		clntChan.register(key.selector(), SelectionKey.OP_READ);
 	}
 
-	@Override
 	public void handleRead(SelectionKey key) throws IOException {
 		// Client socket channel has pending data
 		SocketChannel clntChan = (SocketChannel) key.channel();
@@ -87,7 +85,6 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		}
 	}
 
-	@Override
 	public void handleWrite(SelectionKey key,
 			Map<SocketChannel, Queue<ByteBuffer>> map) throws IOException {
 
@@ -145,7 +142,6 @@ public class ProxyServerSelectorProtocol implements TCPProtocol {
 		this.worker = worker;
 	}
 
-	@Override
 	public void setCaller(TCPSelector caller) {
 		this.caller = caller;
 	}

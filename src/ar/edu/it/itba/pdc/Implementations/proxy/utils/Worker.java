@@ -7,7 +7,7 @@ import java.util.Queue;
 import ar.edu.it.itba.pdc.Implementations.proxy.TCPSelector;
 import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
 
-public class Worker implements ProxyWorker{
+public class Worker implements ProxyWorker {
 
 	private Queue<DataEvent> queue = new LinkedList<DataEvent>();
 	private TCPSelector server;
@@ -15,10 +15,9 @@ public class Worker implements ProxyWorker{
 
 	public Worker() {
 	}
-	
-	@Override
+
 	public void run() {
-		if(server == null || client == null)
+		if (server == null || client == null)
 			throw new IllegalThreadStateException();
 		DataEvent dataEvent;
 
@@ -33,15 +32,15 @@ public class Worker implements ProxyWorker{
 				}
 				dataEvent = queue.remove();
 			}
-			TCPSelector rcpt = dataEvent.getSender().equals(server)?client:server;
+			TCPSelector rcpt = dataEvent.getSender().equals(server) ? client
+					: server;
 			rcpt.processEvent(dataEvent);
 		}
 
 	}
 
-	@Override
-	public void sendData(TCPSelector sender, SocketChannel from,
-			byte[] data, long count, boolean multiPart) {
+	public void sendData(TCPSelector sender, SocketChannel from, byte[] data,
+			long count, boolean multiPart) {
 		byte[] copy = new byte[(int) count];
 		System.arraycopy(data, 0, copy, 0, (int) count);
 		synchronized (queue) {
@@ -50,13 +49,11 @@ public class Worker implements ProxyWorker{
 		}
 
 	}
-	
-	@Override
+
 	public void setServer(TCPSelector server) {
 		this.server = server;
 	}
-	
-	@Override
+
 	public void setClient(TCPSelector client) {
 		this.client = client;
 	}

@@ -33,7 +33,6 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 	public ProxyClientSelectorProtocol() {
 	}
 
-	@Override
 	public void handleAccept(SelectionKey key) throws IOException {
 		SocketChannel clntChan = ((ServerSocketChannel) key.channel()).accept();
 		clntChan.configureBlocking(false); // Must be nonblocking to register
@@ -44,7 +43,6 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 				ByteBuffer.allocate(bufSize));
 	}
 
-	@Override
 	public void handleRead(SelectionKey key) throws IOException {
 		// Client socket channel has pending data
 		SocketChannel clntChan = (SocketChannel) key.channel();
@@ -99,7 +97,6 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 		}
 	}
 
-	@Override
 	public void handleWrite(SelectionKey key,
 			Map<SocketChannel, Queue<ByteBuffer>> map) throws IOException {
 		// TODO: peek, do not remove. In case the buffer can not be completely
@@ -141,7 +138,6 @@ public class ProxyClientSelectorProtocol implements TCPProtocol {
 		this.worker = worker;
 	}
 
-	@Override
 	public void setCaller(TCPSelector caller) {
 		this.caller = caller;
 	}

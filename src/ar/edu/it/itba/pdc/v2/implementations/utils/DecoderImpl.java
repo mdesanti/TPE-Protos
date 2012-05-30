@@ -447,9 +447,9 @@ public class DecoderImpl implements Decoder {
 		allHeaders.remove("Content-Length");
 		allHeaders.remove("Transfer-Encoding");
 		allHeaders.put("Content-Length", String.valueOf(contentLength));
-		sb += allHeaders.get("Method") + " ";
-		sb += allHeaders.get("RequestedURI") + " ";
-		sb += allHeaders.get("HTTPVersion") + "\r\n";
+		sb += allHeaders.get("HTTPVersion") + " ";
+		sb += allHeaders.get("StatusCode") + " ";
+		sb += allHeaders.get("Reason") + "\r\n";
 
 		for (String key : allHeaders.keySet()) {
 			if (!key.equals("Method") && !key.equals("RequestedURI")

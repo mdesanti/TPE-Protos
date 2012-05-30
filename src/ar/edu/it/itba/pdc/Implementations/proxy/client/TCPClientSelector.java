@@ -37,7 +37,6 @@ public class TCPClientSelector extends TCPSelector {
 		relations = new HashMap<String, Socket>();
 	}
 
-	@Override
 	public void run() {
 
 		protocol.setCaller(this);
