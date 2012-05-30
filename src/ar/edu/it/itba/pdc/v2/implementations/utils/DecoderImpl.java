@@ -130,11 +130,16 @@ public class DecoderImpl implements Decoder {
 				File f = new File("/tmp/prueba");
 				f.mkdir();
 				if (path[path.length - 1].length() < 10)
-					fileName = "/tmp/prueba/" + path[path.length - 1];
+					fileName = "/tmp/prueba/"
+							+ String.valueOf(System.currentTimeMillis())
+							+ Thread.currentThread().getId()
+							+ path[path.length - 1];
 				else {
 
 					fileName = "/tmp/prueba/"
 							+ path[path.length - 1].substring(0, 6)
+							+ String.valueOf(System.currentTimeMillis())
+							+ Thread.currentThread().getId()
 							+ "."
 							+ headers.getHeader("Content-Type").split("/")[1]
 									.split(";")[0];
