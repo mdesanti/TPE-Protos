@@ -166,13 +166,13 @@ public class AnalyzerImp implements Analyzer {
 					+ " with status code "
 					+ responseHeaders.getHeader("StatusCode") + " to client "
 					+ socket.getInetAddress());
-			if (!configurator.applyRotations())
+			boolean applyTransform = decoder.applyTransformations();
+			if ((!configurator.applyRotations()) || (configurator.applyRotations() && !applyTransform))
 				clientOs.write(resp.array(), 0, responseHeaders.getReadBytes());
 
 			// Sends the rest of the body to client...
 
 			decoder.setConfigurator(configurator);
-			boolean applyTransform = decoder.applyTransformations();
 			boolean data = false;
 			if (responseHeaders.getReadBytes() < totalCount) {
 				byte[] extra = decoder.getExtra(resp.array(), totalCount);
@@ -201,6 +201,7 @@ public class AnalyzerImp implements Analyzer {
 				keepReading = decoder.keepReading();
 				data = true;
 			}
+			System.out.println("SALE WHILE"+keepReading);
 			analyzeLog.info("Response completed from server");
 			if (blockAnalizer.analizeChunkedSize(decoder, clientOs, totalCount)) {
 				return;
