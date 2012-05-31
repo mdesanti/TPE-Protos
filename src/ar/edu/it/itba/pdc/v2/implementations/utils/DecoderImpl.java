@@ -35,7 +35,9 @@ public class DecoderImpl implements Decoder {
 
 	private boolean BUILDING_NUMBER = true;
 	private boolean N_EXPECTED = false;
+	private boolean SECN_EXPECTED = false;
 	private boolean R_EXPECTED = false;
+	private boolean SECR_EXPECTED = false;
 	private boolean READING_CONTENT = false;
 	private boolean FINISHED = false;
 
@@ -277,16 +279,20 @@ public class DecoderImpl implements Decoder {
 		if (isChunked()) {
 			// System.out.println(new String(bytes).substring(0, count));
 			for (int j = 0; j < count; j++) {
-//				byte[] aux3 = new byte[1];
-//				aux3[0] = bytes[j];
-//				if(bytes[j] == '\n') {
-//					System.out.print("N");
-//				}
-//				if(bytes[j] == '\r') {
-//					System.out.print("R");
-//				}
-//				System.out.print(new String(aux3));
+				// byte[] aux3 = new byte[1];
+				// aux3[0] = bytes[j];
+				// if(bytes[j] == '\n') {
+				// System.out.print("N");
+				// }
+				// if(bytes[j] == '\r') {
+				// System.out.print("R");
+				// }
+				// System.out.print(new String(aux3));
 				if (BUILDING_NUMBER && !N_EXPECTED) {
+					if (bytes[j] == 0 && auxIndex == 0) {
+						FINISHED = true;
+						R_EXPECTED = true;
+					}
 					if (bytes[j] == '\r' || bytes[j] == 0) {
 						N_EXPECTED = true;
 					} else {
@@ -327,15 +333,40 @@ public class DecoderImpl implements Decoder {
 					if (keepReadingBytes < 0) {
 						System.out.println("OUCH");
 					}
-				} else if (R_EXPECTED){
+				} else if (R_EXPECTED && !FINISHED) {
 					R_EXPECTED = false;
 					N_EXPECTED = true;
-				} else if(N_EXPECTED){
+				} else if (N_EXPECTED && !FINISHED) {
 					N_EXPECTED = false;
 					BUILDING_NUMBER = true;
-				} else if(FINISHED) {
+				} else if (FINISHED) {
 					read = false;
 					auxIndex = 0;
+					if (R_EXPECTED && bytes[j] == '\r') {
+						R_EXPECTED = false;
+						N_EXPECTED = true;
+					} else if (R_EXPECTED) {
+						R_EXPECTED = false;
+					}
+					if (N_EXPECTED) {
+						N_EXPECTED = false;
+						SECR_EXPECTED = true;
+					}
+					if (SECR_EXPECTED && bytes[j] == '\r') {
+						SECR_EXPECTED = false;
+						SECN_EXPECTED = true;
+					} else if (SECR_EXPECTED) {
+						SECR_EXPECTED = false;
+						R_EXPECTED = true;
+					}
+					if (SECN_EXPECTED) {
+						read = false;
+						auxIndex = 0;
+					}
+					if (bytes[j] == '\r') {
+						N_EXPECTED = true;
+					}
+
 				}
 			}
 		} else if (headers.getHeader("Content-Length") != null) {

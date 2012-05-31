@@ -54,6 +54,14 @@ public class AnalyzerImp implements Analyzer {
 				analizeResponse();
 
 			}
+			totalCount =0;
+			decoder.reset();
+			receivedMsg = 0;
+			keepReading = false;
+			requestHeaders = null;
+			responseHeaders = null;
+			buf = new byte[BUFFSIZE];
+			externalServer = null;
 		} catch (IOException e) {
 			System.out.println(e.getMessage());
 		} catch (BufferOverflowException e) {
@@ -158,7 +166,6 @@ public class AnalyzerImp implements Analyzer {
 					+ " with status code "
 					+ responseHeaders.getHeader("StatusCode") + " to client "
 					+ socket.getInetAddress());
-
 			if (!configurator.applyRotations())
 				clientOs.write(resp.array(), 0, responseHeaders.getReadBytes());
 
@@ -181,7 +188,9 @@ public class AnalyzerImp implements Analyzer {
 			}
 			resp.clear();
 			keepReading = decoder.keepReading();
+			System.out.println("PASA"+keepReading);
 			while (keepReading && ((receivedMsg = externalIs.read(buf)) != -1)) {
+				System.out.println("ENTRA WHILE"+keepReading);
 				analyzeLog.info("Getting response from server"); 
 				totalCount += receivedMsg;
 				decoder.analize(buf, receivedMsg);
