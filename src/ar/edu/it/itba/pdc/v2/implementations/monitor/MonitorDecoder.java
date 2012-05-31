@@ -31,7 +31,7 @@ public class MonitorDecoder implements ConnectionDecoder {
 		if (option.equals("CONS"))
 			return analizeComandoCons(filter);
 
-		return null;
+		return options.get("BAD_REQUEST");
 	}
 
 	private String analizeComandoBytes(String filter) {

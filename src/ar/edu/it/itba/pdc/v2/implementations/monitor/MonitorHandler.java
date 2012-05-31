@@ -41,7 +41,7 @@ public class MonitorHandler {
 			clntChan.close();
 			return;
 		}
-		String s = new String(buf.array());
+			String s = new String(buf.array(), 0, buf.position());
 		s = decoder.decode(s);
 		buf.clear();
 		buf.put(s.getBytes());
@@ -56,12 +56,12 @@ public class MonitorHandler {
 		buf.flip(); // Prepare buffer for writing
 		SocketChannel clntChan = (SocketChannel) key.channel();
 		clntChan.write(buf);
-		 if (!buf.hasRemaining()) { // Buffer completely written?
+		if (!buf.hasRemaining()) { // Buffer completely written?
 			// Nothing left, so no longer interested in writes
 			key.interestOps(SelectionKey.OP_READ);
 		}
 		buf.clear();
-		buf.compact(); // Make room for more data to be read in
+//		buf.compact(); // Make room for more data to be read in
 
 	}
 }
