@@ -31,6 +31,7 @@ public class DecoderImpl implements Decoder {
 	private boolean generatingKeep = true;
 	private Configurator configurator;
 	private byte[] aux;
+	private byte[] aux2 = new byte[20];
 	int auxIndex = 0;
 
 	private boolean BUILDING_NUMBER = true;
@@ -270,36 +271,28 @@ public class DecoderImpl implements Decoder {
 	}
 
 	public synchronized void analize(byte[] bytes, int count) {
-		String str = new String(bytes);
+
 		if (!headers.contentExpected()) {
 			keepReadingBytes = 0;
 			read = false;
 			return;
 		}
 		if (isChunked()) {
-			// System.out.println(new String(bytes).substring(0, count));
 			for (int j = 0; j < count; j++) {
-				// byte[] aux3 = new byte[1];
-				// aux3[0] = bytes[j];
-				// if(bytes[j] == '\n') {
-				// System.out.print("N");
-				// }
-				// if(bytes[j] == '\r') {
-				// System.out.print("R");
-				// }
-				// System.out.print(new String(aux3));
+				aux2[0]=bytes[j];
 				if (BUILDING_NUMBER && !N_EXPECTED) {
-					if (bytes[j] == 0 && auxIndex == 0) {
+					if (bytes[j] == '0' && j+1<count && bytes[j+1]=='\r' && auxIndex == 0) {
 						FINISHED = true;
 						R_EXPECTED = true;
-					}
-					if (bytes[j] == '\r' || bytes[j] == 0) {
+						N_EXPECTED=false;
+						BUILDING_NUMBER = false;
+					} else if (bytes[j] == '\r') {
 						N_EXPECTED = true;
 					} else {
 						aux[auxIndex++] = bytes[j];
 					}
 				} else if (BUILDING_NUMBER && N_EXPECTED) {
-					if (bytes[j] != '\n' && bytes[j] != 0) {
+					if (bytes[j] != '\n' && bytes[j] != '0') {
 						System.out.println("NO DEBERIA PASAR");
 					}
 					Integer sizeLine = null;
@@ -340,31 +333,23 @@ public class DecoderImpl implements Decoder {
 					N_EXPECTED = false;
 					BUILDING_NUMBER = true;
 				} else if (FINISHED) {
-					read = false;
-					auxIndex = 0;
+//					read = false;
+//					auxIndex = 0;
 					if (R_EXPECTED && bytes[j] == '\r') {
 						R_EXPECTED = false;
 						N_EXPECTED = true;
-					} else if (R_EXPECTED) {
-						R_EXPECTED = false;
-					}
-					if (N_EXPECTED) {
+					} else if (N_EXPECTED) {
 						N_EXPECTED = false;
 						SECR_EXPECTED = true;
-					}
-					if (SECR_EXPECTED && bytes[j] == '\r') {
+					} else if (SECR_EXPECTED && bytes[j] == '\r') {
 						SECR_EXPECTED = false;
 						SECN_EXPECTED = true;
 					} else if (SECR_EXPECTED) {
 						SECR_EXPECTED = false;
 						R_EXPECTED = true;
-					}
-					if (SECN_EXPECTED) {
+					} else if (SECN_EXPECTED) {
 						read = false;
 						auxIndex = 0;
-					}
-					if (bytes[j] == '\r') {
-						N_EXPECTED = true;
 					}
 
 				}
