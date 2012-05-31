@@ -31,9 +31,13 @@ public class DecoderImpl implements Decoder {
 	private boolean generatingKeep = false;
 	private String keepReadingBytesHexa;
 	private Configurator configurator;
+	private byte[] aux;
+	int auxIndex;
 
 	public DecoderImpl(int buffSize) {
 		headers = new HTTPPacket();
+		aux = new byte[20];
+		auxIndex = 0;
 	}
 
 	public void decode(byte[] bytes, int count) {
@@ -265,52 +269,59 @@ public class DecoderImpl implements Decoder {
 			read = false;
 			return;
 		}
-		String[] array = null;
-		String charset;
-		if (headers.getHeader("Content-Type") != null) {
-			array = headers.getHeader("Content-Type").split(";");
-		}
-		if (array != null && array.length >= 2)
-			charset = array[1].split("=")[1];
-		else
-			charset = "ISO-8859-1";
-		CharBuffer charBuf = Charset.forName(charset).decode(
-				ByteBuffer.wrap(bytes, 0, count));
-		String converted = new String(charBuf.array());
 		if (isChunked()) {
 			String[] chunks = null;
-			chunks = converted.split("\r\n");
-			for (int j = 0; j < chunks.length; j++) {
-				if (keepReadingBytes == 0) {
-					Integer sizeLine = null;
-					try {
-						sizeLine = Integer.parseInt(chunks[j], 16);
-						keepReadingBytesHexa = chunks[j];
-					} catch (NumberFormatException e) {
-						sizeLine = 0;
+			for (int j = 0; j < count; j++) {
+				if (generatingKeep) {
+
+					while (j < count && bytes[j] != '\n') {
+						aux[auxIndex++] = bytes[j];
+						j++;
 					}
-					if (sizeLine == 0) {
-						read = false;
+					if (j < count) {
+						aux[auxIndex++] = bytes[j++];
+						generatingKeep = false;
 					}
-					keepReadingBytes = sizeLine;
-					generatingKeep = true;
-				} else {
-					if (generatingKeep && j == 0) {
+					if (!generatingKeep) {
+						Integer sizeLine = null;
 						try {
-							Integer.parseInt(chunks[0], 16);
-							keepReadingBytesHexa += chunks[0];
-							keepReadingBytes = Integer.parseInt(
-									keepReadingBytesHexa, 16);
-							continue;
+							sizeLine = Integer.parseInt(new String(aux, 0,
+									auxIndex - 2), 16);
 						} catch (NumberFormatException e) {
+							sizeLine = 0;
+						}
+						if (sizeLine == 0) {
+							read = false;
+						}
+						keepReadingBytes = sizeLine;
+						generatingKeep = true;
+					}
+				} else {
+					// if (generatingKeep && j == 0) {
+					// try {
+					// String aux = "";
+					// while (j < count && bytes[j] != '\r') {
+					// aux += bytes[j];
+					// j++;
+					// }
+					// Integer.parseInt(aux, 16);
+					// keepReadingBytesHexa += aux;
+					// keepReadingBytes = Integer.parseInt(
+					// keepReadingBytesHexa, 16);
+					// continue;
+					// } catch (NumberFormatException e) {
+					// }
+					// }
+					keepReadingBytes -= 1;
+					if (keepReadingBytes < 0) {
+						while (true) {
+							System.out
+									.println("ESTO NO DEBERIA PASAR, keepReadingBytes <0");
 						}
 					}
-					keepReadingBytes -= chunks[j].getBytes().length;
-					if (keepReadingBytes < 0) {
-						System.out
-								.println("ESTO NO DEBERIA PASAR, keepReadingBytes <0");
+					if (keepReadingBytes == 0) {
+						generatingKeep = true;
 					}
-					generatingKeep = false;
 				}
 
 			}
@@ -388,11 +399,10 @@ public class DecoderImpl implements Decoder {
 		} else if (cause.equals("MAXSIZE")) {
 			newHeaders.addHeader("StatusCode", "999");
 			newHeaders.addHeader("Reason", "Blocked File Size");
+		} else if (cause.equals("ALL")) {
+			newHeaders.addHeader("StatusCode", "1234");
+			newHeaders.addHeader("Reason", "All Blocked");
 		}
-		 else if (cause.equals("ALL")) {
-				newHeaders.addHeader("StatusCode", "1234");
-				newHeaders.addHeader("Reason", "All Blocked");
-			}
 		newHeaders.addHeader("HTTPVersion", "HTTP/1.1");
 		newHeaders.addHeader("Via", " mu0");
 		newHeaders.addHeader("Content-Type", " text/html; charset=iso-8859-1");
@@ -443,16 +453,14 @@ public class DecoderImpl implements Decoder {
 					+ "<p>Su proxy bloqueo archivos de este tamano<br />"
 					+ "</p>" + "</body></html>";
 
-		}
-		 else if (cause.equals("ALL")) {
-				html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
-						+ "<html><head>"
-						+ "<title>1234 Se bloqueo todo</title>"
-						+ "</head><body>" + "<h1>Todo bloqueado</h1>"
-						+ "<p>Su proxy bloqueo todo<br />"
-						+ "</p>" + "</body></html>";
+		} else if (cause.equals("ALL")) {
+			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
+					+ "<html><head>" + "<title>1234 Se bloqueo todo</title>"
+					+ "</head><body>" + "<h1>Todo bloqueado</h1>"
+					+ "<p>Su proxy bloqueo todo<br />" + "</p>"
+					+ "</body></html>";
 
-			}
+		}
 		return new HTML(html.getBytes(), html.length());
 	}
 
