@@ -182,6 +182,7 @@ public class AnalyzerImp implements Analyzer {
 			resp.clear();
 			keepReading = decoder.keepReading();
 			while (keepReading && ((receivedMsg = externalIs.read(buf)) != -1)) {
+				analyzeLog.info("Getting response from server"); 
 				totalCount += receivedMsg;
 				decoder.analize(buf, receivedMsg);
 				decoder.applyRestrictions(buf, receivedMsg, requestHeaders);
@@ -191,6 +192,7 @@ public class AnalyzerImp implements Analyzer {
 				keepReading = decoder.keepReading();
 				data = true;
 			}
+			analyzeLog.info("Response completed from server");
 			if (blockAnalizer.analizeChunkedSize(decoder, clientOs, totalCount)) {
 				return;
 			}

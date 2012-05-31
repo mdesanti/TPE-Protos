@@ -47,14 +47,14 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 
 	public boolean analizeChunkedSize(Decoder decoder, OutputStream clientOs,
 			int totalSize) throws IOException {
-		if (decoder.getHeader("Transfer-Encoding") == null) {
-			return false;
-		}
-		if (totalSize > configurator.getMaxSize()) {
-			generateProxyResponse(clientOs, "MAXSIZE");
-
-			return true;
-		}
+//		if (decoder.getHeader("Transfer-Encoding") == null) {
+//			return false;
+//		}
+//		if (totalSize > configurator.getMaxSize()) {
+//			generateProxyResponse(clientOs, "MAXSIZE");
+//
+//			return true;
+//		}
 		return false;
 	}
 

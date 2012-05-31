@@ -33,8 +33,15 @@ public class DecoderImpl implements Decoder {
 	private byte[] aux;
 	int auxIndex = 0;
 
+	private boolean BUILDING_NUMBER = true;
+	private boolean N_EXPECTED = false;
+	private boolean R_EXPECTED = false;
+	private boolean READING_CONTENT = false;
+	private boolean FINISHED = false;
+
 	public DecoderImpl(int buffSize) {
 		headers = new HTTPPacket();
+		aux = new byte[100];
 	}
 
 	public void decode(byte[] bytes, int count) {
@@ -261,74 +268,75 @@ public class DecoderImpl implements Decoder {
 	}
 
 	public synchronized void analize(byte[] bytes, int count) {
+		String str = new String(bytes);
 		if (!headers.contentExpected()) {
 			keepReadingBytes = 0;
 			read = false;
 			return;
 		}
 		if (isChunked()) {
+			// System.out.println(new String(bytes).substring(0, count));
 			for (int j = 0; j < count; j++) {
-				if (generatingKeep) {
-					if(auxIndex==0){
-						aux = new byte[20];
-					}
-					
-					//Consumes the \n of the line before the size number
-					if(j<count && bytes[j]=='\n'){
-						j++;
-					}
-					//Doesn't put \r
-					while (j < count && bytes[j] != '\r' && bytes[j+1]!='\n') {
-						aux[auxIndex++] = bytes[j++];
-					}
-					if (j < count) {
-						//Consumes \r\n
-						j++;j++;
-						generatingKeep = false;
+//				byte[] aux3 = new byte[1];
+//				aux3[0] = bytes[j];
+//				if(bytes[j] == '\n') {
+//					System.out.print("N");
+//				}
+//				if(bytes[j] == '\r') {
+//					System.out.print("R");
+//				}
+//				System.out.print(new String(aux3));
+				if (BUILDING_NUMBER && !N_EXPECTED) {
+					if (bytes[j] == '\r' || bytes[j] == 0) {
+						N_EXPECTED = true;
 					} else {
-						generatingKeep = true;
+						aux[auxIndex++] = bytes[j];
 					}
-					if (!generatingKeep) {
-						Integer sizeLine = null;
-						try {
-							sizeLine = Integer.parseInt(new String(aux, 0,
-									auxIndex), 16);
-						} catch (NumberFormatException e) {
-							sizeLine = 0;
-						}
-						if (sizeLine == 0) {
-							read = false;
-						}
-						keepReadingBytes = sizeLine;
-
+				} else if (BUILDING_NUMBER && N_EXPECTED) {
+					if (bytes[j] != '\n' && bytes[j] != 0) {
+						System.out.println("NO DEBERIA PASAR");
 					}
-				} else {
-					// if (generatingKeep && j == 0) {
-					// try {
-					// String aux = "";
-					// while (j < count && bytes[j] != '\r') {
-					// aux += bytes[j];
-					// j++;
-					// }
-					// Integer.parseInt(aux, 16);
-					// keepReadingBytesHexa += aux;
-					// keepReadingBytes = Integer.parseInt(
-					// keepReadingBytesHexa, 16);
-					// continue;
-					// } catch (NumberFormatException e) {
-					// }
-					// }
+					Integer sizeLine = null;
+					try {
+						sizeLine = Integer.parseInt(
+								new String(aux, 0, auxIndex), 16);
+					} catch (NumberFormatException e) {
+						sizeLine = 0;
+					}
+					if (sizeLine == 0) {
+						read = false;
+						FINISHED = true;
+						BUILDING_NUMBER = false;
+						N_EXPECTED = false;
+						continue;
+					}
+					keepReadingBytes = sizeLine;
+					auxIndex = 0;
+					READING_CONTENT = true;
+					BUILDING_NUMBER = false;
+					N_EXPECTED = false;
+					R_EXPECTED = false;
+				} else if (READING_CONTENT) {
 					keepReadingBytes -= 1;
-					if (keepReadingBytes < 0) {
-						System.out
-								.println("ESTO NO DEBERIA PASAR, keepReadingBytes <0");
-					}
 					if (keepReadingBytes == 0) {
-						generatingKeep = true;
-						auxIndex = 0;
+						READING_CONTENT = false;
+						BUILDING_NUMBER = false;
+						R_EXPECTED = true;
+						N_EXPECTED = false;
 					}
+					if (keepReadingBytes < 0) {
+						System.out.println("OUCH");
+					}
+				} else if (R_EXPECTED){
+					R_EXPECTED = false;
+					N_EXPECTED = true;
+				} else if(N_EXPECTED){
+					N_EXPECTED = false;
+					BUILDING_NUMBER = true;
+				} else if(FINISHED) {
+					read = false;
+					auxIndex = 0;
 				}
-
 			}
 		} else if (headers.getHeader("Content-Length") != null) {
 			if (keepReadingBytes == 0) {
@@ -352,6 +360,12 @@ public class DecoderImpl implements Decoder {
 		generatingKeep = true;
 		isImage = false;
 		isText = false;
+		BUILDING_NUMBER = true;
+		N_EXPECTED = false;
+		R_EXPECTED = false;
+		READING_CONTENT = false;
+		FINISHED = false;
+		auxIndex = 0;
 	}
 
 	public void parseHeaders(byte[] data, int count) {
