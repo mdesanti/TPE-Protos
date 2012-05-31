@@ -28,16 +28,13 @@ public class DecoderImpl implements Decoder {
 	private int keepReadingBytes = 0;
 	private boolean isImage = false;
 	private boolean isText = false;
-	private boolean generatingKeep = false;
-	private String keepReadingBytesHexa;
+	private boolean generatingKeep = true;
 	private Configurator configurator;
 	private byte[] aux;
-	int auxIndex;
+	int auxIndex = 0;
 
 	public DecoderImpl(int buffSize) {
 		headers = new HTTPPacket();
-		aux = new byte[20];
-		auxIndex = 0;
 	}
 
 	public void decode(byte[] bytes, int count) {
@@ -270,23 +267,32 @@ public class DecoderImpl implements Decoder {
 			return;
 		}
 		if (isChunked()) {
-			String[] chunks = null;
 			for (int j = 0; j < count; j++) {
 				if (generatingKeep) {
-
-					while (j < count && bytes[j] != '\n') {
-						aux[auxIndex++] = bytes[j];
+					if(auxIndex==0){
+						aux = new byte[20];
+					}
+					
+					//Consumes the \n of the line before the size number
+					if(j<count && bytes[j]=='\n'){
 						j++;
 					}
-					if (j < count) {
+					//Doesn't put \r
+					while (j < count && bytes[j] != '\r' && bytes[j+1]!='\n') {
 						aux[auxIndex++] = bytes[j++];
+					}
+					if (j < count) {
+						//Consumes \r\n
+						j++;j++;
 						generatingKeep = false;
+					} else {
+						generatingKeep = true;
 					}
 					if (!generatingKeep) {
 						Integer sizeLine = null;
 						try {
 							sizeLine = Integer.parseInt(new String(aux, 0,
-									auxIndex - 2), 16);
+									auxIndex), 16);
 						} catch (NumberFormatException e) {
 							sizeLine = 0;
 						}
@@ -294,7 +300,7 @@ public class DecoderImpl implements Decoder {
 							read = false;
 						}
 						keepReadingBytes = sizeLine;
-						generatingKeep = true;
+
 					}
 				} else {
 					// if (generatingKeep && j == 0) {
@@ -314,13 +320,12 @@ public class DecoderImpl implements Decoder {
 					// }
 					keepReadingBytes -= 1;
 					if (keepReadingBytes < 0) {
-						while (true) {
-							System.out
-									.println("ESTO NO DEBERIA PASAR, keepReadingBytes <0");
-						}
+						System.out
+								.println("ESTO NO DEBERIA PASAR, keepReadingBytes <0");
 					}
 					if (keepReadingBytes == 0) {
 						generatingKeep = true;
+						auxIndex = 0;
 					}
 				}
 
@@ -344,8 +349,7 @@ public class DecoderImpl implements Decoder {
 		headers = new HTTPPacket();
 		fileName = null;
 		keepReadingBytes = 0;
-		generatingKeep = false;
-		keepReadingBytesHexa = "";
+		generatingKeep = true;
 		isImage = false;
 		isText = false;
 	}
