@@ -10,7 +10,7 @@ import java.util.Iterator;
 public class Monitor implements Runnable {
 
 	private static int TIMEOUT = 500;
-	private static int BUFFSIZE = 1024;
+	private static int BUFFSIZE = 1024 * 5;
 
 	public void run() {
 		try {
