@@ -180,7 +180,7 @@ public class AnalyzerImp implements Analyzer {
 			// Parse response heaaders
 			decoder.parseHeaders(resp.array(), totalCount);
 			responseHeaders = decoder.getHeaders();
-			String connection = requestHeaders.getHeader("Connection");
+			String connection = responseHeaders.getHeader("Connection");
 			if (connection != null && connection.contains("keep-alive")) {
 				externalSConnection = true;
 				keepConnection = true;
