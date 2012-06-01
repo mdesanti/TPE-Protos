@@ -277,11 +277,15 @@ public class DecoderImpl implements Decoder {
 			read = false;
 			return;
 		}
+		String str = new String(bytes).substring(0, count);
 		if (isChunked()) {
 			for (int j = 0; j < count; j++) {
-				aux2[0]=bytes[j];
+//				byte[] aux3 = new byte[1];
+//				aux3[0] = bytes[j];
+//				System.out.print(new String(aux3));
+//				aux2[0]=bytes[j];
 				if (BUILDING_NUMBER && !N_EXPECTED) {
-					if (bytes[j] == '0' && j+1<count && bytes[j+1]=='\r' && auxIndex == 0) {
+					if (bytes[j] == '0' && auxIndex == 0) {
 						FINISHED = true;
 						R_EXPECTED = true;
 						N_EXPECTED=false;
@@ -398,7 +402,9 @@ public class DecoderImpl implements Decoder {
 
 		allHeaders.remove("Accept-Encoding");
 		allHeaders.remove("Proxy-Connection");
+		allHeaders.remove("Connection");
 		allHeaders.put("Accept-Encoding", "identity");
+		allHeaders.put("Connection", "keep-alive");
 		sb += allHeaders.get("Method") + " ";
 		sb += allHeaders.get("RequestedURI") + " ";
 		sb += allHeaders.get("HTTPVersion") + "\r\n";
@@ -513,8 +519,32 @@ public class DecoderImpl implements Decoder {
 		sb += allHeaders.get("Reason") + "\r\n";
 
 		for (String key : allHeaders.keySet()) {
-			if (!key.equals("Method") && !key.equals("RequestedURI")
-					&& !key.equals("HTTPVersion"))
+			if (!key.equals("HTTPVersion") && !key.equals("StatusCode")
+					&& !key.equals("Reason"))
+				sb += (key + ":" + allHeaders.get(key) + "\r\n");
+		}
+		// allHeaders.put("Via", " mu0Proxy");
+		// sb += "Via:" + allHeaders.get("Via") + "\r\n";
+		sb += ("\r\n");
+		return new RebuiltHeader(sb.getBytes(), sb.length());
+	}
+	
+	public RebuiltHeader rebuildResponseHeaders() {
+		Map<String, String> allHeaders = headers.getAllHeaders();
+		String sb = "";
+
+		allHeaders.remove("Accept-Encoding");
+		allHeaders.remove("Proxy-Connection");
+//		allHeaders.remove("Connection");
+		allHeaders.put("Accept-Encoding", "identity");
+//		allHeaders.put("Connection", "keep-alive");
+		sb += allHeaders.get("HTTPVersion") + " ";
+		sb += allHeaders.get("StatusCode") + " ";
+		sb += allHeaders.get("Reason") + "\r\n";
+
+		for (String key : allHeaders.keySet()) {
+			if (!key.equals("HTTPVersion") && !key.equals("StatusCode")
+					&& !key.equals("Reason"))
 				sb += (key + ":" + allHeaders.get(key) + "\r\n");
 		}
 		// allHeaders.put("Via", " mu0Proxy");

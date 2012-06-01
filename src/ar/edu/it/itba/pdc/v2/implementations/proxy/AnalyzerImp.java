@@ -34,6 +34,7 @@ public class AnalyzerImp implements Analyzer {
 	private HTTPHeaders responseHeaders;
 	private byte[] buf = new byte[BUFFSIZE];
 	private Socket externalServer;
+	private boolean keepConnection;
 
 	public AnalyzerImp(ConnectionManager connectionManager,
 			Configurator configurator) {
@@ -54,7 +55,7 @@ public class AnalyzerImp implements Analyzer {
 				analizeResponse();
 
 			}
-			totalCount =0;
+			totalCount = 0;
 			decoder.reset();
 			receivedMsg = 0;
 			keepReading = false;
@@ -62,8 +63,15 @@ public class AnalyzerImp implements Analyzer {
 			responseHeaders = null;
 			buf = new byte[BUFFSIZE];
 			externalServer = null;
+			System.out.println("Sale del analyze");
 		} catch (IOException e) {
-			System.out.println(e.getMessage());
+			try {
+				socket.close();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+			keepConnection = false;
+			return;
 		} catch (BufferOverflowException e) {
 			e.printStackTrace();
 		}
@@ -79,6 +87,17 @@ public class AnalyzerImp implements Analyzer {
 			// Parse request headers
 			decoder.parseHeaders(buffer.array(), count);
 			requestHeaders = decoder.getHeaders();
+			String connection = requestHeaders.getHeader("Connection");
+			String proxyConnection = requestHeaders
+					.getHeader("Proxy-Connection");
+			if (connection != null && connection.contains("keep-alive")) {
+				keepConnection = true;
+			} else if (proxyConnection != null
+					&& proxyConnection.contains("keep-alive")) {
+				keepConnection = true;
+			} else {
+				keepConnection = false;
+			}
 
 			analyzeLog.info("Received headers from client "
 					+ socket.getInetAddress() + " :"
@@ -95,10 +114,16 @@ public class AnalyzerImp implements Analyzer {
 					+ socket.getInetAddress() + " :"
 					+ new String(rh.getHeader()));
 
-			String host = decoder.getHeader("Host").replace(" ", "");
+			String host = decoder.getHeader("Host");
+			if (host == null) {
+				keepConnection = false;
+				return false;
+			} else {
+				host = host.replace(" ", "");
+			}
 			analyzeLog.info("Requesting for connection to: " + host);
 			while ((externalServer = connectionManager.getConnection(host)) == null) {
-				System.out.println("No pudo abrir la conexion");
+				System.out.println("No deberia pasar");
 			}
 
 			externalOs = externalServer.getOutputStream();
@@ -110,8 +135,8 @@ public class AnalyzerImp implements Analyzer {
 			// If client sends something in the body..
 			if (requestHeaders.getReadBytes() < count) {
 				byte[] extra = decoder.getExtra(buffer.array(), count);
-				externalOs.write(extra, 0, count
-						- requestHeaders.getReadBytes());
+				externalOs.write(extra, 0,
+						count - requestHeaders.getReadBytes());
 				decoder.analize(extra, count - requestHeaders.getReadBytes());
 			} else {
 				decoder.analize(buffer.array(), count);
@@ -125,8 +150,8 @@ public class AnalyzerImp implements Analyzer {
 				externalOs.write(buf, 0, receivedMsg);
 			}
 		} catch (IOException e) {
-			socket.close();
-			connectionManager.releaseConnection(externalServer);
+			if (externalServer != null)
+				connectionManager.releaseConnection(externalServer, false);
 			return false;
 		}
 		return true;
@@ -134,6 +159,7 @@ public class AnalyzerImp implements Analyzer {
 	}
 
 	private void analizeResponse() throws IOException {
+		boolean externalSConnection = false;
 		// Reads response from server and write it to client
 		decoder.reset();
 		keepReading = true;
@@ -148,12 +174,20 @@ public class AnalyzerImp implements Analyzer {
 			while (keepReading && ((receivedMsg = externalIs.read(buf)) != -1)) {
 				totalCount += receivedMsg;
 				resp.put(buf, 0, receivedMsg);
-				keepReading = !decoder.completeHeaders(resp.array(), resp
-						.array().length);
+				keepReading = !decoder.completeHeaders(resp.array(),
+						resp.array().length);
 			}
 			// Parse response heaaders
 			decoder.parseHeaders(resp.array(), totalCount);
 			responseHeaders = decoder.getHeaders();
+			String connection = requestHeaders.getHeader("Connection");
+			if (connection != null && connection.contains("keep-alive")) {
+				externalSConnection = true;
+				keepConnection = true;
+			} else {
+				keepConnection = false;
+				externalSConnection = false;
+			}
 
 			if (blockAnalizer.analizeResponse(decoder, clientOs)) {
 				analyzeLog
@@ -167,7 +201,9 @@ public class AnalyzerImp implements Analyzer {
 					+ responseHeaders.getHeader("StatusCode") + " to client "
 					+ socket.getInetAddress());
 			boolean applyTransform = decoder.applyTransformations();
-			if ((!configurator.applyRotations()) || (configurator.applyRotations() && !applyTransform))
+//			RebuiltHeader rh = decoder.rebuildResponseHeaders();
+			if ((!configurator.applyRotations())
+					|| (configurator.applyRotations() && !applyTransform))
 				clientOs.write(resp.array(), 0, responseHeaders.getReadBytes());
 
 			// Sends the rest of the body to client...
@@ -176,22 +212,23 @@ public class AnalyzerImp implements Analyzer {
 			boolean data = false;
 			if (responseHeaders.getReadBytes() < totalCount) {
 				byte[] extra = decoder.getExtra(resp.array(), totalCount);
-				decoder.analize(extra, totalCount
-						- responseHeaders.getReadBytes());
-				decoder.applyRestrictions(extra, totalCount
-						- responseHeaders.getReadBytes(), requestHeaders);
+				decoder.analize(extra,
+						totalCount - responseHeaders.getReadBytes());
+				decoder.applyRestrictions(extra,
+						totalCount - responseHeaders.getReadBytes(),
+						requestHeaders);
 				if (!applyTransform) {
-					clientOs.write(extra, 0, totalCount
-							- responseHeaders.getReadBytes());
+					clientOs.write(extra, 0,
+							totalCount - responseHeaders.getReadBytes());
 				}
 				data = true;
 			}
 			resp.clear();
 			keepReading = decoder.keepReading();
-			System.out.println("PASA"+keepReading);
+			System.out.println("PASA" + keepReading);
 			while (keepReading && ((receivedMsg = externalIs.read(buf)) != -1)) {
-				System.out.println("ENTRA WHILE"+keepReading);
-				analyzeLog.info("Getting response from server"); 
+				System.out.println("ENTRA WHILE" + keepReading);
+				analyzeLog.info("Getting response from server");
 				totalCount += receivedMsg;
 				decoder.analize(buf, receivedMsg);
 				decoder.applyRestrictions(buf, receivedMsg, requestHeaders);
@@ -201,7 +238,7 @@ public class AnalyzerImp implements Analyzer {
 				keepReading = decoder.keepReading();
 				data = true;
 			}
-			System.out.println("SALE WHILE"+keepReading);
+			System.out.println("SALE WHILE" + keepReading);
 			analyzeLog.info("Response completed from server");
 			if (blockAnalizer.analizeChunkedSize(decoder, clientOs, totalCount)) {
 				return;
@@ -212,8 +249,8 @@ public class AnalyzerImp implements Analyzer {
 					byte[] rotated = decoder.getRotatedImage();
 					RebuiltHeader newHeader = decoder
 							.modifiedContentLength(rotated.length);
-					clientOs.write(newHeader.getHeader(), 0, newHeader
-							.getSize());
+					clientOs.write(newHeader.getHeader(), 0,
+							newHeader.getSize());
 					clientOs.write(rotated, 0, rotated.length);
 				}
 				if (configurator.applyTextTransformation() && decoder.isText()) {
@@ -221,12 +258,17 @@ public class AnalyzerImp implements Analyzer {
 					clientOs.write(transformed, 0, transformed.length);
 				}
 			}
-			connectionManager.releaseConnection(externalServer);
+			connectionManager.releaseConnection(externalServer,
+					externalSConnection);
 			// System.out.println("TERMINO");
 		} catch (IOException e) {
-			connectionManager.releaseConnection(externalServer);
+			connectionManager.releaseConnection(externalServer, false);
 			System.out.println(e.getMessage());
 		}
 
+	}
+
+	public boolean keepConnection() {
+		return false;
 	}
 }

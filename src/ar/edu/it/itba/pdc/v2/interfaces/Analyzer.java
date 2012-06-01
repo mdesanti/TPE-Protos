@@ -6,5 +6,7 @@ import java.nio.ByteBuffer;
 public interface Analyzer {
 
 	public void analyze(ByteBuffer buffer, int count, Socket socket);
+	
+	public boolean keepConnection();
 
 }

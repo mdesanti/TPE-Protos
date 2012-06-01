@@ -26,12 +26,12 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 	public boolean analizeRequest(Decoder decoder, OutputStream clientOs)
 			throws IOException {
 		this.decoder = decoder;
-		if (analizeBlockAll(clientOs))
-			return true;
-		if (analizeBlockIP(clientOs))
-			return true;
-		if (analizeBlockURL(clientOs))
-			return true;
+//		if (analizeBlockAll(clientOs))
+//			return true;
+//		if (analizeBlockIP(clientOs))
+//			return true;
+//		if (analizeBlockURL(clientOs))
+//			return true;
 		return false;
 	}
 
@@ -76,6 +76,8 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 
 	private boolean analizeBlockIP(OutputStream clientOs) throws IOException {
 		try {
+			if(decoder.getHeader("Host") == null)
+				return false;
 			URL url = new URL("http://" + decoder
 					.getHeader("Host").replace(" ", ""));
 			if (!configurator.isAccepted(InetAddress.getByName(url.getHost()))) {

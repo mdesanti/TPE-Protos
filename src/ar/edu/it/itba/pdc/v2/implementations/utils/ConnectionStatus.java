@@ -23,5 +23,9 @@ public class ConnectionStatus {
 	public void releaseConnection() {
 		this.inUse = false;
 	}
+	
+	public void takeConnection() {
+		this.inUse = true;
+	}
 
 }

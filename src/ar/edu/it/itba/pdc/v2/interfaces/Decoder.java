@@ -39,6 +39,8 @@ public interface Decoder {
 	public void analize(byte[] bytes, int count);
 
 	public RebuiltHeader rebuildHeaders();
+	
+	public RebuiltHeader rebuildResponseHeaders();
 
 	public void setConfigurator(Configurator configurator);
 
