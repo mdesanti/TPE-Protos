@@ -109,10 +109,10 @@ public class AnalyzerImp implements Analyzer {
 			}
 
 			// Rebuilt the headers according to proxy rules and implementations
-			RebuiltHeader rh = decoder.rebuildHeaders();
-			analyzeLog.info("Rebuilt headers from client "
-					+ socket.getInetAddress() + " :"
-					+ new String(rh.getHeader()));
+			// RebuiltHeader rh = decoder.rebuildHeaders();
+			// analyzeLog.info("Rebuilt headers from client "
+			// + socket.getInetAddress() + " :"
+			// + new String(rh.getHeader()));
 
 			String host = decoder.getHeader("Host");
 			if (host == null) {
@@ -130,7 +130,7 @@ public class AnalyzerImp implements Analyzer {
 
 			// Sends rebuilt header to server
 			analyzeLog.info("Sending rebuilt headers to server");
-			externalOs.write(rh.getHeader(), 0, rh.getSize());
+			externalOs.write(buffer.array(), 0, requestHeaders.getReadBytes());
 
 			// If client sends something in the body..
 			if (requestHeaders.getReadBytes() < count) {
@@ -201,7 +201,7 @@ public class AnalyzerImp implements Analyzer {
 					+ responseHeaders.getHeader("StatusCode") + " to client "
 					+ socket.getInetAddress());
 			boolean applyTransform = decoder.applyTransformations();
-//			RebuiltHeader rh = decoder.rebuildResponseHeaders();
+			// RebuiltHeader rh = decoder.rebuildResponseHeaders();
 			if ((!configurator.applyRotations())
 					|| (configurator.applyRotations() && !applyTransform))
 				clientOs.write(resp.array(), 0, responseHeaders.getReadBytes());
@@ -224,7 +224,18 @@ public class AnalyzerImp implements Analyzer {
 				data = true;
 			}
 			resp.clear();
-			keepReading = decoder.keepReading();
+			String length = responseHeaders.getHeader("Content-Length");
+			if (length != null) {
+				length = length.replaceAll(" ", "");
+				if (length.equals("0")) {
+					keepReading = false;
+				} else
+					keepReading = decoder.keepReading();
+			} else
+				keepReading = decoder.keepReading();
+			if (receivedMsg == -1) {
+				keepReading = false;
+			}
 			System.out.println("PASA" + keepReading);
 			while (keepReading && ((receivedMsg = externalIs.read(buf)) != -1)) {
 				System.out.println("ENTRA WHILE" + keepReading);
