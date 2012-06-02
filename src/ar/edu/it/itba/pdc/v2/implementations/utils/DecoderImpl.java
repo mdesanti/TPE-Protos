@@ -259,17 +259,36 @@ public class DecoderImpl implements Decoder {
 	}
 
 	public boolean completeHeaders(byte[] bytes, int count) {
-		String read = null;
-		read = new String(bytes).substring(0, count);
-		String[] lines = read.split("\r\n");
-
-		for (String line : lines) {
-			if (line.equals("")) {
+		boolean R_EXPECTED =true;
+		boolean N_EXPECTED = false;
+		boolean SECR_EXPECTED =false;
+		boolean SECN_EXPECTED = false;
+		for (int j = 0; j < count; j++) {
+			if(R_EXPECTED && bytes[j] == '\r'){
+				R_EXPECTED=false;
+				N_EXPECTED =true;
+			}else if(N_EXPECTED && bytes[j] == '\n'){
+				N_EXPECTED=false;
+				SECR_EXPECTED=true;
+			}else if(N_EXPECTED){
+				N_EXPECTED = false;
+				R_EXPECTED=true;
+			}else if(SECR_EXPECTED && bytes[j]=='\r'){
+				SECR_EXPECTED =false;
+				SECN_EXPECTED = true;
+			} else if(SECR_EXPECTED){
+				SECR_EXPECTED=false;
+				R_EXPECTED = true;
+			}else if(SECN_EXPECTED && bytes[j]=='\n'){
 				return true;
+			}else{
+				SECN_EXPECTED = false;
+				R_EXPECTED = true;
 			}
+			
 		}
-
 		return false;
+
 	}
 
 	public void analize(byte[] bytes, int count) {
