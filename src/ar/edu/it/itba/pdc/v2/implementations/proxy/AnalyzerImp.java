@@ -76,12 +76,13 @@ public class AnalyzerImp implements Analyzer {
 			return;
 		} catch (BufferOverflowException e) {
 			e.printStackTrace();
+		}catch(Exception e){
+			e.printStackTrace();
 		}
-
 	}
 
 	private boolean analizeRequest(ByteBuffer buffer, int count)
-			throws IOException {
+			throws Exception {
 		try {
 			OutputStream clientOs = socket.getOutputStream(), externalOs;
 			InputStream clientIs = socket.getInputStream();
@@ -130,8 +131,8 @@ public class AnalyzerImp implements Analyzer {
 			// Sends rebuilt header to server
 			analyzeLog.info("Sending rebuilt headers to server");
 			// System.out.println(new String(rh.getHeader()));
-			// externalOs.write(rh.getHeader(), 0, rh.getSize());
-			externalOs.write(buffer.array(), 0, requestHeaders.getReadBytes());
+			 externalOs.write(rh.getHeader(), 0, rh.getSize());
+//			externalOs.write(buffer.array(), 0, requestHeaders.getReadBytes());
 
 			// If client sends something in the body..
 			if (requestHeaders.getReadBytes() < count) {
@@ -161,7 +162,7 @@ public class AnalyzerImp implements Analyzer {
 
 	}
 
-	private void analizeResponse() throws IOException {
+	private void analizeResponse() throws Exception {
 		boolean externalSConnection = false;
 		// Reads response from server and write it to client
 		decoder.reset();
@@ -182,9 +183,7 @@ public class AnalyzerImp implements Analyzer {
 			}
 			if (totalCount == 0) {
 				connectionManager.releaseConnection(externalServer, false);
-				while (true) {
-					System.out.println("TOTAL COUNT ES 0000000");
-				}
+				return;
 			}
 			// Parse response heaaders
 			decoder.parseHeaders(resp.array(), totalCount);
@@ -291,8 +290,6 @@ public class AnalyzerImp implements Analyzer {
 					clientOs.write(transformed, 0, transformed.length);
 				}
 			}
-			externalIs.close();
-			clientOs.close();
 			connectionManager.releaseConnection(externalServer,
 					externalSConnection);
 			// System.out.println("TERMINO");
