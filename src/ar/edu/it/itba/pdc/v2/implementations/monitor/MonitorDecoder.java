@@ -3,6 +3,7 @@ package ar.edu.it.itba.pdc.v2.implementations.monitor;
 import java.util.HashMap;
 import java.util.Map;
 
+import ar.edu.it.itba.pdc.v2.implementations.monitor.exceptions.BadCredentialException;
 import ar.edu.it.itba.pdc.v2.interfaces.ConnectionDecoder;
 import ar.edu.it.itba.pdc.v2.interfaces.DataStorage;
 
@@ -19,6 +20,11 @@ public class MonitorDecoder implements ConnectionDecoder {
 	public String decode(String s) {
 
 		try {
+			s = s.replace("\n", "");
+
+			if (s.equals("HELP"))
+				return printHelp();
+
 			String[] args = s.split(" ");
 			String method = args[0];
 			String option = args[1];
@@ -40,31 +46,26 @@ public class MonitorDecoder implements ConnectionDecoder {
 	}
 
 	private String analizeComandoBytes(String filter) {
-		try {
 
-			if (filter.equals("ALL\n"))
-				return this.options.get("OK") + "\ncomando-bytes(ALL)="
-						+ storage.getTotalBytes() + "\n";
-			if (filter.equals("CP\n"))
-				return this.options.get("OK") + "\n comando-bytes(CP)="
-						+ storage.getClientProxyBytes() + "\n";
-			if (filter.equals("PS\n"))
-				return this.options.get("OK") + "\n comando-bytes(CS)="
-						+ storage.getProxyServersBytes() + "\n";
+		if (filter.equals("ALL"))
+			return this.options.get("OK") + "\ncomando-bytes(ALL)="
+					+ storage.getTotalBytes() + "\n";
+		if (filter.equals("CP"))
+			return this.options.get("OK") + "\n comando-bytes(CP)="
+					+ storage.getClientProxyBytes() + "\n";
+		if (filter.equals("PS"))
+			return this.options.get("OK") + "\n comando-bytes(CS)="
+					+ storage.getProxyServersBytes() + "\n";
 
-			return this.options.get("BAD_REQUEST");
-		} catch (NullPointerException e) {
+		return this.options.get("BAD_REQUEST");
 
-			return this.options.get("BAD_REQUEST");
-
-		}
 	}
 
 	private String analizeComandoCount(String filter) {
-		if (filter.equals("BLOCK\n"))
+		if (filter.equals("BLOCK"))
 			return this.options.get("OK") + "\ncomando-count(BLOCK)="
 					+ storage.getBlocks() + "\n";
-		if (filter.equals("TRANS\n"))
+		if (filter.equals("TRANS"))
 			return this.options.get("OK") + "\ncomando-count(TRANS)="
 					+ storage.getTransformations() + "\n";
 
@@ -72,10 +73,10 @@ public class MonitorDecoder implements ConnectionDecoder {
 	}
 
 	private String analizeComandoCons(String filter) {
-		if (filter.equals("C\n"))
+		if (filter.equals("C"))
 			return this.options.get("OK") + "\ncomando-cons(C)="
 					+ storage.getClientOpenConections() + "\n";
-		if (filter.equals("S\n"))
+		if (filter.equals("S"))
 			return this.options.get("OK") + "\ncomando-count(S)="
 					+ storage.getServersOpenConections() + "\n";
 
@@ -95,6 +96,33 @@ public class MonitorDecoder implements ConnectionDecoder {
 
 	public boolean closeConnection() {
 		return false;
+	}
+
+	public String logIn(String s) {
+		try {
+			s = s.replace("\n", "");
+			String[] userAndPass = s.split(":");
+			String user = userAndPass[0];
+			String pass = userAndPass[1];
+
+			if (user.equals("admin") && pass.equals("123"))
+				return "Hello, you may use \"HELP\" to list commands\n";
+		} catch (Exception e) {
+
+			throw new BadCredentialException();
+		}
+		throw new BadCredentialException();
+
+	}
+
+	private String printHelp() {
+		StringBuffer sb = new StringBuffer();
+		sb.append("command:comando-bytes|comando-count|comando-cons\n");
+		sb.append("comando-bytes=\"GET\"SP\"BYTES\"SP(ALL|CP|CS)\n");
+		sb.append("comando-count=\"GET\"SP\"COUNT\"SP(BLOCK|TRANS)\n");
+		sb.append("comando-cons=\"GET\"SP\"CONS\"SP(C|S)\n");
+
+		return sb.toString();
 	}
 
 }
