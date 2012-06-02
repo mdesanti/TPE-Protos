@@ -63,7 +63,6 @@ public class Attend implements Runnable {
 				}
 				attend.debug("Headers completely read. Sending to analyzer");
 				analyzer.analyze(req, totalCount, socket);
-				System.out.println("Salio del analyze");
 				if (!socket.isConnected() || socket.isClosed()
 						|| !analyzer.keepConnection()) {
 					attend.info("Analyzer returned. Closing socket");

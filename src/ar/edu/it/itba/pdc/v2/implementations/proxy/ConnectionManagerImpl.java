@@ -45,9 +45,6 @@ public class ConnectionManagerImpl implements ConnectionManager {
 	}
 
 	public synchronized void releaseConnection(Socket socket, boolean keepAlive) {
-		if(socket == null) {
-			System.out.println("PTM");
-		}
 		List<ConnectionStatus> connectionList = connections.get(socket.getInetAddress());
 		for(ConnectionStatus connection: connectionList) {
 			Socket s = connection.getSocket();

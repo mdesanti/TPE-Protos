@@ -63,7 +63,6 @@ public class AnalyzerImp implements Analyzer {
 			responseHeaders = null;
 			buf = new byte[BUFFSIZE];
 			externalServer = null;
-			System.out.println("Sale del analyze");
 		} catch (IOException e) {
 			try {
 				socket.close();
@@ -90,10 +89,10 @@ public class AnalyzerImp implements Analyzer {
 			String connection = requestHeaders.getHeader("Connection");
 			String proxyConnection = requestHeaders
 					.getHeader("Proxy-Connection");
-			if (connection != null && connection.contains("keep-alive")) {
+			if (connection != null && connection.toUpperCase().contains("KEEP-ALIVE")) {
 				keepConnection = true;
 			} else if (proxyConnection != null
-					&& proxyConnection.contains("keep-alive")) {
+					&& proxyConnection.toUpperCase().contains("KEEP-ALIVE")) {
 				keepConnection = true;
 			} else {
 				keepConnection = false;
@@ -109,10 +108,10 @@ public class AnalyzerImp implements Analyzer {
 			}
 
 			// Rebuilt the headers according to proxy rules and implementations
-			// RebuiltHeader rh = decoder.rebuildHeaders();
-			// analyzeLog.info("Rebuilt headers from client "
-			// + socket.getInetAddress() + " :"
-			// + new String(rh.getHeader()));
+			 RebuiltHeader rh = decoder.rebuildHeaders();
+			 analyzeLog.info("Rebuilt headers from client "
+			 + socket.getInetAddress() + " :"
+			 + new String(rh.getHeader()));
 
 			String host = decoder.getHeader("Host");
 			if (host == null) {
@@ -181,7 +180,7 @@ public class AnalyzerImp implements Analyzer {
 			decoder.parseHeaders(resp.array(), totalCount);
 			responseHeaders = decoder.getHeaders();
 			String connection = responseHeaders.getHeader("Connection");
-			if (connection != null && connection.contains("keep-alive")) {
+			if (connection != null && connection.toUpperCase().contains("KEEP-ALIVE")) {
 				externalSConnection = true;
 				keepConnection = true;
 			} else {
@@ -236,9 +235,9 @@ public class AnalyzerImp implements Analyzer {
 			if (receivedMsg == -1) {
 				keepReading = false;
 			}
-			System.out.println("PASA" + keepReading);
+//			System.out.println("PASA" + keepReading);
 			while (keepReading && ((receivedMsg = externalIs.read(buf)) != -1)) {
-				System.out.println("ENTRA WHILE" + keepReading);
+//				System.out.println("ENTRA WHILE" + keepReading);
 				analyzeLog.info("Getting response from server");
 				totalCount += receivedMsg;
 				decoder.analize(buf, receivedMsg);
@@ -249,7 +248,7 @@ public class AnalyzerImp implements Analyzer {
 				keepReading = decoder.keepReading();
 				data = true;
 			}
-			System.out.println("SALE WHILE" + keepReading);
+//			System.out.println("SALE WHILE" + keepReading);
 			analyzeLog.info("Response completed from server");
 			if (blockAnalizer.analizeChunkedSize(decoder, clientOs, totalCount)) {
 				return;
