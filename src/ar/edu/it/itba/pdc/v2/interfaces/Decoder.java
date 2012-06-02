@@ -56,4 +56,6 @@ public interface Decoder {
 
 	public RebuiltHeader modifiedContentLength(int contentLength);
 	
+	public boolean contentExpected();
+	
 }

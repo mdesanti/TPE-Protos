@@ -66,6 +66,7 @@ public class Attend implements Runnable {
 				// if (!socket.isConnected() || socket.isClosed()
 				// || !analyzer.keepConnection()) {
 				attend.info("Analyzer returned. Closing socket");
+				req.clear();
 				socket.close();
 				// }
 

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 
@@ -63,6 +64,8 @@ public class AnalyzerImp implements Analyzer {
 			responseHeaders = null;
 			buf = new byte[BUFFSIZE];
 			externalServer = null;
+		} catch (UnknownHostException e) {
+			// TODO: Mandar 400 Bad request
 		} catch (IOException e) {
 			try {
 				socket.close();
@@ -122,15 +125,13 @@ public class AnalyzerImp implements Analyzer {
 			while ((externalServer = connectionManager.getConnection(host)) == null) {
 				// System.out.println("No deberia pasar");
 			}
-
 			externalOs = externalServer.getOutputStream();
 
 			// Sends rebuilt header to server
 			analyzeLog.info("Sending rebuilt headers to server");
 			// System.out.println(new String(rh.getHeader()));
-			externalOs.write(rh.getHeader(), 0, rh.getSize());
-			// externalOs.write(buffer.array(), 0,
-			// requestHeaders.getReadBytes());
+			// externalOs.write(rh.getHeader(), 0, rh.getSize());
+			externalOs.write(buffer.array(), 0, requestHeaders.getReadBytes());
 
 			// If client sends something in the body..
 			if (requestHeaders.getReadBytes() < count) {
@@ -152,8 +153,10 @@ public class AnalyzerImp implements Analyzer {
 		} catch (IOException e) {
 			if (externalServer != null)
 				connectionManager.releaseConnection(externalServer, false);
+			e.printStackTrace();
 			return false;
 		}
+
 		return true;
 
 	}
@@ -177,9 +180,11 @@ public class AnalyzerImp implements Analyzer {
 				keepReading = !decoder.completeHeaders(resp.array(),
 						resp.array().length);
 			}
-			if(totalCount == 0) {
+			if (totalCount == 0) {
 				connectionManager.releaseConnection(externalServer, false);
-				return;
+				while (true) {
+					System.out.println("TOTAL COUNT ES 0000000");
+				}
 			}
 			// Parse response heaaders
 			decoder.parseHeaders(resp.array(), totalCount);
@@ -209,14 +214,18 @@ public class AnalyzerImp implements Analyzer {
 			RebuiltHeader rh = decoder.rebuildResponseHeaders();
 			if ((!configurator.applyRotations())
 					|| (configurator.applyRotations() && !applyTransform)) {
-				// clientOs.write(resp.array(), 0,
-				// responseHeaders.getReadBytes());
-				clientOs.write(rh.getHeader(), 0, rh.getSize());
+				clientOs.write(resp.array(), 0, responseHeaders.getReadBytes());
+				// clientOs.write(rh.getHeader(), 0, rh.getSize());
 			}
 
 			// Sends the rest of the body to client...
 			decoder.setConfigurator(configurator);
 			boolean data = false;
+			if (!decoder.contentExpected()) {
+				connectionManager.releaseConnection(externalServer, false);
+				keepConnection = false;
+				return;
+			}
 			if (responseHeaders.getReadBytes() < totalCount) {
 				byte[] extra = decoder.getExtra(resp.array(), totalCount);
 				decoder.analize(extra,
@@ -243,9 +252,9 @@ public class AnalyzerImp implements Analyzer {
 			if (receivedMsg == -1) {
 				keepReading = false;
 			}
-			// System.out.println("PASA" + keepReading);
+			System.out.println("PASA" + keepReading);
 			while (keepReading && ((receivedMsg = externalIs.read(buf)) != -1)) {
-				// System.out.println("ENTRA WHILE" + keepReading);
+				System.out.println("ENTRA WHILE" + keepReading);
 				analyzeLog.info("Getting response from server");
 				totalCount += receivedMsg;
 				decoder.analize(buf, receivedMsg);
@@ -256,7 +265,7 @@ public class AnalyzerImp implements Analyzer {
 				keepReading = decoder.keepReading();
 				data = true;
 			}
-			// System.out.println("SALE WHILE" + keepReading);
+			System.out.println("SALE WHILE" + keepReading);
 			analyzeLog.info("Response completed from server");
 			if (blockAnalizer.analizeChunkedSize(decoder, clientOs, totalCount)) {
 				return;
@@ -282,6 +291,8 @@ public class AnalyzerImp implements Analyzer {
 					clientOs.write(transformed, 0, transformed.length);
 				}
 			}
+			externalIs.close();
+			clientOs.close();
 			connectionManager.releaseConnection(externalServer,
 					externalSConnection);
 			// System.out.println("TERMINO");
