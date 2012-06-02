@@ -209,7 +209,7 @@ public class DecoderImpl implements Decoder {
 		// }
 
 		byte[] modified = im.rotate(fileName, 180);
-		if(modified == null) {
+		if (modified == null) {
 			return null;
 		}
 		// try {
@@ -259,33 +259,33 @@ public class DecoderImpl implements Decoder {
 	}
 
 	public boolean completeHeaders(byte[] bytes, int count) {
-		boolean R_EXPECTED =true;
+		boolean R_EXPECTED = true;
 		boolean N_EXPECTED = false;
-		boolean SECR_EXPECTED =false;
+		boolean SECR_EXPECTED = false;
 		boolean SECN_EXPECTED = false;
 		for (int j = 0; j < count; j++) {
-			if(R_EXPECTED && bytes[j] == '\r'){
-				R_EXPECTED=false;
-				N_EXPECTED =true;
-			}else if(N_EXPECTED && bytes[j] == '\n'){
-				N_EXPECTED=false;
-				SECR_EXPECTED=true;
-			}else if(N_EXPECTED){
+			if (R_EXPECTED && bytes[j] == '\r') {
+				R_EXPECTED = false;
+				N_EXPECTED = true;
+			} else if (N_EXPECTED && bytes[j] == '\n') {
 				N_EXPECTED = false;
-				R_EXPECTED=true;
-			}else if(SECR_EXPECTED && bytes[j]=='\r'){
-				SECR_EXPECTED =false;
-				SECN_EXPECTED = true;
-			} else if(SECR_EXPECTED){
-				SECR_EXPECTED=false;
+				SECR_EXPECTED = true;
+			} else if (N_EXPECTED) {
+				N_EXPECTED = false;
 				R_EXPECTED = true;
-			}else if(SECN_EXPECTED && bytes[j]=='\n'){
+			} else if (SECR_EXPECTED && bytes[j] == '\r') {
+				SECR_EXPECTED = false;
+				SECN_EXPECTED = true;
+			} else if (SECR_EXPECTED) {
+				SECR_EXPECTED = false;
+				R_EXPECTED = true;
+			} else if (SECN_EXPECTED && bytes[j] == '\n') {
 				return true;
-			}else{
+			} else {
 				SECN_EXPECTED = false;
 				R_EXPECTED = true;
 			}
-			
+
 		}
 		return false;
 
@@ -304,7 +304,7 @@ public class DecoderImpl implements Decoder {
 					if (bytes[j] == '0' && auxIndex == 0) {
 						FINISHED = true;
 						R_EXPECTED = true;
-						N_EXPECTED=false;
+						N_EXPECTED = false;
 						BUILDING_NUMBER = false;
 					} else if (bytes[j] == '\r') {
 						N_EXPECTED = true;
@@ -353,8 +353,8 @@ public class DecoderImpl implements Decoder {
 					N_EXPECTED = false;
 					BUILDING_NUMBER = true;
 				} else if (FINISHED) {
-//					read = false;
-//					auxIndex = 0;
+					// read = false;
+					// auxIndex = 0;
 					if (R_EXPECTED && bytes[j] == '\r') {
 						R_EXPECTED = false;
 						N_EXPECTED = true;
@@ -520,17 +520,19 @@ public class DecoderImpl implements Decoder {
 		sb += ("\r\n");
 		return new RebuiltHeader(sb.getBytes(), sb.length());
 	}
-	
+
 	public RebuiltHeader rebuildHeaders() {
 		Charset charset = Charset.forName("ISO-8859-1");
 		Map<String, String> allHeaders = headers.getAllHeaders();
 		final StringBuilder sb = new StringBuilder();
 
-		allHeaders.remove("Accept-Encoding");
-		allHeaders.remove("Proxy-Connection");
-		allHeaders.remove("Connection");
-		allHeaders.put("Accept-Encoding", "identity");
-		allHeaders.put("Connection", "keep-alive");
+		if (requestImage()) {
+			allHeaders.remove("Accept-Encoding");
+		}
+		// allHeaders.remove("Proxy-Connection");
+		// allHeaders.remove("Connection");
+		// allHeaders.put("Accept-Encoding", "identity");
+		// allHeaders.put("Connection", "keep-alive");
 		sb.append(allHeaders.get("Method")).append(" ");
 		sb.append(allHeaders.get("RequestedURI")).append(" ");
 		sb.append(allHeaders.get("HTTPVersion")).append("\r\n");
@@ -538,24 +540,26 @@ public class DecoderImpl implements Decoder {
 		for (String key : allHeaders.keySet()) {
 			if (!key.equals("Method") && !key.equals("RequestedURI")
 					&& !key.equals("HTTPVersion"))
-				sb.append(key).append(": ").append(allHeaders.get(key)).append("\r\n");
+				sb.append(key).append(": ").append(allHeaders.get(key))
+						.append("\r\n");
 		}
-		// allHeaders.put("Via", " mu0Proxy");
-		// sb += "Via:" + allHeaders.get("Via") + "\r\n";
+		if (requestImage()) {
+			sb.append("Accept-Encoding: identity\r\n");
+		}
+		sb.append("Via: mu0-Proxy\r\n");
 		sb.append("\r\n");
-		return new RebuiltHeader(sb.toString().getBytes(), sb.toString().length());
+		return new RebuiltHeader(sb.toString().getBytes(), sb.toString()
+				.length());
 	}
-	
+
 	public RebuiltHeader rebuildResponseHeaders() {
 		Charset charset = Charset.forName("ISO-8859-1");
 		Map<String, String> allHeaders = headers.getAllHeaders();
 		StringBuilder sb = new StringBuilder();
 
-		allHeaders.remove("Accept-Encoding");
-		allHeaders.remove("Proxy-Connection");
-//		allHeaders.remove("Connection");
-//		allHeaders.put("Connection", "keep-alive");
-		allHeaders.put("Connection", "close");
+		// allHeaders.remove("Connection");
+		// allHeaders.put("Connection", "keep-alive");
+		// allHeaders.put("Connection", "close");
 		sb.append(allHeaders.get("HTTPVersion")).append(" ");
 		sb.append(allHeaders.get("StatusCode")).append(" ");
 		sb.append(allHeaders.get("Reason")).append("\r\n");
@@ -563,12 +567,18 @@ public class DecoderImpl implements Decoder {
 		for (String key : allHeaders.keySet()) {
 			if (!key.equals("HTTPVersion") && !key.equals("StatusCode")
 					&& !key.equals("Reason"))
-				sb.append(key).append(": ").append(allHeaders.get(key) + "\r\n");
+				sb.append(key).append(": ")
+						.append(allHeaders.get(key) + "\r\n");
 		}
-		// allHeaders.put("Via", " mu0Proxy");
-		// sb += "Via:" + allHeaders.get("Via") + "\r\n";
+		sb.append("Via: mu0-Proxy\r\n");
 		sb.append("\r\n");
-		return new RebuiltHeader(sb.toString().getBytes(), sb.toString().length());
+		return new RebuiltHeader(sb.toString().getBytes(), sb.toString()
+				.length());
+	}
+
+	private boolean requestImage() {
+		String accept = headers.getHeader("Accept");
+		return accept.contains("image");
 	}
 
 }

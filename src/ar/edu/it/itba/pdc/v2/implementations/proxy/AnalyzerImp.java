@@ -120,16 +120,17 @@ public class AnalyzerImp implements Analyzer {
 			}
 			analyzeLog.info("Requesting for connection to: " + host);
 			while ((externalServer = connectionManager.getConnection(host)) == null) {
-				System.out.println("No deberia pasar");
+				// System.out.println("No deberia pasar");
 			}
 
 			externalOs = externalServer.getOutputStream();
 
 			// Sends rebuilt header to server
 			analyzeLog.info("Sending rebuilt headers to server");
-			System.out.println(new String(rh.getHeader()));
-//			externalOs.write(rh.getHeader(), 0, rh.getSize());
-			externalOs.write(buffer.array(), 0, requestHeaders.getReadBytes());
+			// System.out.println(new String(rh.getHeader()));
+			externalOs.write(rh.getHeader(), 0, rh.getSize());
+			// externalOs.write(buffer.array(), 0,
+			// requestHeaders.getReadBytes());
 
 			// If client sends something in the body..
 			if (requestHeaders.getReadBytes() < count) {
@@ -176,6 +177,10 @@ public class AnalyzerImp implements Analyzer {
 				keepReading = !decoder.completeHeaders(resp.array(),
 						resp.array().length);
 			}
+			if(totalCount == 0) {
+				connectionManager.releaseConnection(externalServer, false);
+				return;
+			}
 			// Parse response heaaders
 			decoder.parseHeaders(resp.array(), totalCount);
 			responseHeaders = decoder.getHeaders();
@@ -198,13 +203,15 @@ public class AnalyzerImp implements Analyzer {
 			analyzeLog.info("Got response from "
 					+ requestHeaders.getHeader("Host").replace(" ", "")
 					+ " with status code "
-					+ responseHeaders.getHeader("StatusCode") + "||||||" + responseHeaders.dumpHeaders());
+					+ responseHeaders.getHeader("StatusCode") + "||||||"
+					+ responseHeaders.dumpHeaders());
 			boolean applyTransform = decoder.applyTransformations();
 			RebuiltHeader rh = decoder.rebuildResponseHeaders();
 			if ((!configurator.applyRotations())
 					|| (configurator.applyRotations() && !applyTransform)) {
-				clientOs.write(resp.array(), 0, responseHeaders.getReadBytes());
-//				clientOs.write(rh.getHeader(), 0, rh.getSize());
+				// clientOs.write(resp.array(), 0,
+				// responseHeaders.getReadBytes());
+				clientOs.write(rh.getHeader(), 0, rh.getSize());
 			}
 
 			// Sends the rest of the body to client...
@@ -236,9 +243,9 @@ public class AnalyzerImp implements Analyzer {
 			if (receivedMsg == -1) {
 				keepReading = false;
 			}
-			 System.out.println("PASA" + keepReading);
+			// System.out.println("PASA" + keepReading);
 			while (keepReading && ((receivedMsg = externalIs.read(buf)) != -1)) {
-				 System.out.println("ENTRA WHILE" + keepReading);
+				// System.out.println("ENTRA WHILE" + keepReading);
 				analyzeLog.info("Getting response from server");
 				totalCount += receivedMsg;
 				decoder.analize(buf, receivedMsg);
@@ -258,8 +265,9 @@ public class AnalyzerImp implements Analyzer {
 				if (configurator.applyRotations() && decoder.isImage()) {
 
 					byte[] rotated = decoder.getRotatedImage();
-					if(rotated == null) {
-						connectionManager.releaseConnection(externalServer, false);
+					if (rotated == null) {
+						connectionManager.releaseConnection(externalServer,
+								false);
 						keepConnection = false;
 						return;
 					}
