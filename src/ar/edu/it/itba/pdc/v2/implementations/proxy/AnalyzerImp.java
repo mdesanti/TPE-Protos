@@ -89,7 +89,8 @@ public class AnalyzerImp implements Analyzer {
 			String connection = requestHeaders.getHeader("Connection");
 			String proxyConnection = requestHeaders
 					.getHeader("Proxy-Connection");
-			if (connection != null && connection.toUpperCase().contains("KEEP-ALIVE")) {
+			if (connection != null
+					&& connection.toUpperCase().contains("KEEP-ALIVE")) {
 				keepConnection = true;
 			} else if (proxyConnection != null
 					&& proxyConnection.toUpperCase().contains("KEEP-ALIVE")) {
@@ -108,10 +109,7 @@ public class AnalyzerImp implements Analyzer {
 			}
 
 			// Rebuilt the headers according to proxy rules and implementations
-			 RebuiltHeader rh = decoder.rebuildHeaders();
-			 analyzeLog.info("Rebuilt headers from client "
-			 + socket.getInetAddress() + " :"
-			 + new String(rh.getHeader()));
+			RebuiltHeader rh = decoder.rebuildHeaders();
 
 			String host = decoder.getHeader("Host");
 			if (host == null) {
@@ -129,6 +127,8 @@ public class AnalyzerImp implements Analyzer {
 
 			// Sends rebuilt header to server
 			analyzeLog.info("Sending rebuilt headers to server");
+			System.out.println(new String(rh.getHeader()));
+//			externalOs.write(rh.getHeader(), 0, rh.getSize());
 			externalOs.write(buffer.array(), 0, requestHeaders.getReadBytes());
 
 			// If client sends something in the body..
@@ -180,7 +180,8 @@ public class AnalyzerImp implements Analyzer {
 			decoder.parseHeaders(resp.array(), totalCount);
 			responseHeaders = decoder.getHeaders();
 			String connection = responseHeaders.getHeader("Connection");
-			if (connection != null && connection.toUpperCase().contains("KEEP-ALIVE")) {
+			if (connection != null
+					&& connection.toUpperCase().contains("KEEP-ALIVE")) {
 				externalSConnection = true;
 				keepConnection = true;
 			} else {
@@ -197,16 +198,16 @@ public class AnalyzerImp implements Analyzer {
 			analyzeLog.info("Got response from "
 					+ requestHeaders.getHeader("Host").replace(" ", "")
 					+ " with status code "
-					+ responseHeaders.getHeader("StatusCode") + " to client "
-					+ socket.getInetAddress());
+					+ responseHeaders.getHeader("StatusCode") + "||||||" + responseHeaders.dumpHeaders());
 			boolean applyTransform = decoder.applyTransformations();
-			// RebuiltHeader rh = decoder.rebuildResponseHeaders();
+			RebuiltHeader rh = decoder.rebuildResponseHeaders();
 			if ((!configurator.applyRotations())
-					|| (configurator.applyRotations() && !applyTransform))
+					|| (configurator.applyRotations() && !applyTransform)) {
 				clientOs.write(resp.array(), 0, responseHeaders.getReadBytes());
+//				clientOs.write(rh.getHeader(), 0, rh.getSize());
+			}
 
 			// Sends the rest of the body to client...
-
 			decoder.setConfigurator(configurator);
 			boolean data = false;
 			if (responseHeaders.getReadBytes() < totalCount) {
@@ -235,9 +236,9 @@ public class AnalyzerImp implements Analyzer {
 			if (receivedMsg == -1) {
 				keepReading = false;
 			}
-//			System.out.println("PASA" + keepReading);
+			 System.out.println("PASA" + keepReading);
 			while (keepReading && ((receivedMsg = externalIs.read(buf)) != -1)) {
-//				System.out.println("ENTRA WHILE" + keepReading);
+				 System.out.println("ENTRA WHILE" + keepReading);
 				analyzeLog.info("Getting response from server");
 				totalCount += receivedMsg;
 				decoder.analize(buf, receivedMsg);
@@ -248,7 +249,7 @@ public class AnalyzerImp implements Analyzer {
 				keepReading = decoder.keepReading();
 				data = true;
 			}
-//			System.out.println("SALE WHILE" + keepReading);
+			// System.out.println("SALE WHILE" + keepReading);
 			analyzeLog.info("Response completed from server");
 			if (blockAnalizer.analizeChunkedSize(decoder, clientOs, totalCount)) {
 				return;
@@ -257,6 +258,11 @@ public class AnalyzerImp implements Analyzer {
 				if (configurator.applyRotations() && decoder.isImage()) {
 
 					byte[] rotated = decoder.getRotatedImage();
+					if(rotated == null) {
+						connectionManager.releaseConnection(externalServer, false);
+						keepConnection = false;
+						return;
+					}
 					RebuiltHeader newHeader = decoder
 							.modifiedContentLength(rotated.length);
 					clientOs.write(newHeader.getHeader(), 0,

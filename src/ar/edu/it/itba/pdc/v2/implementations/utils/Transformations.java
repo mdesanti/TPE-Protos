@@ -15,36 +15,39 @@ import javax.imageio.ImageIO;
 
 public class Transformations {
 
-	public synchronized byte[] rotate(String fileName, Integer degrees) throws IOException {
-		File file = new File(fileName);
-		BufferedImage originalImage = null;
-		originalImage = ImageIO.read(file);
-		AffineTransform affineTransform = new AffineTransform();
-		affineTransform.rotate(Math.toRadians(degrees),
-				originalImage.getWidth() / 2, originalImage.getHeight() / 2);
-
-		AffineTransformOp opRotated = new AffineTransformOp(affineTransform,
-				AffineTransformOp.TYPE_BILINEAR);
-		BufferedImage newImage = null;
-
-		// If 0x0 image
-		if (originalImage.getHeight() == 1 || originalImage.getWidth() == 1) {
-			newImage = originalImage;
-		} else
-			newImage = opRotated.filter(originalImage, null);
-
-		String[] path = fileName.split("/");
-		File fileNew = new File("/tmp/prueba/R" + path[3]);
-
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
+	public synchronized byte[] rotate(String fileName, Integer degrees)
+			throws IOException {
+		File file = null;
 		try {
+			file = new File(fileName);
+			BufferedImage originalImage = null;
+			originalImage = ImageIO.read(file);
+			AffineTransform affineTransform = new AffineTransform();
+			affineTransform
+					.rotate(Math.toRadians(degrees),
+							originalImage.getWidth() / 2,
+							originalImage.getHeight() / 2);
+
+			AffineTransformOp opRotated = new AffineTransformOp(
+					affineTransform, AffineTransformOp.TYPE_BILINEAR);
+			BufferedImage newImage = null;
+
+			// If 0x0 image
+			if (originalImage.getHeight() == 1 || originalImage.getWidth() == 1) {
+				newImage = originalImage;
+			} else
+				newImage = opRotated.filter(originalImage, null);
+
+			String[] path = fileName.split("/");
+			File fileNew = new File("/tmp/prueba/R" + path[3]);
+
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			ImageIO.write(newImage, "png", fileNew);
 			ImageIO.write(newImage, "png", out);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return out.toByteArray();
+		} catch (Exception e) {
+			return null;
 		}
-		return out.toByteArray();
 
 	}
 

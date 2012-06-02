@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.Map;
 
@@ -199,7 +198,7 @@ public class DecoderImpl implements Decoder {
 		return isText;
 	}
 
-	public synchronized byte[] getRotatedImage() throws IOException {
+	public byte[] getRotatedImage() throws IOException {
 		Transformations im = new Transformations();
 		// InputStream is = null;
 		// try {
@@ -210,6 +209,9 @@ public class DecoderImpl implements Decoder {
 		// }
 
 		byte[] modified = im.rotate(fileName, 180);
+		if(modified == null) {
+			return null;
+		}
 		// try {
 		// is.close();
 		// } catch (IOException e) {
@@ -270,20 +272,15 @@ public class DecoderImpl implements Decoder {
 		return false;
 	}
 
-	public synchronized void analize(byte[] bytes, int count) {
+	public void analize(byte[] bytes, int count) {
 
 		if (!headers.contentExpected()) {
 			keepReadingBytes = 0;
 			read = false;
 			return;
 		}
-		String str = new String(bytes).substring(0, count);
 		if (isChunked()) {
 			for (int j = 0; j < count; j++) {
-//				byte[] aux3 = new byte[1];
-//				aux3[0] = bytes[j];
-//				System.out.print(new String(aux3));
-//				aux2[0]=bytes[j];
 				if (BUILDING_NUMBER && !N_EXPECTED) {
 					if (bytes[j] == '0' && auxIndex == 0) {
 						FINISHED = true;
@@ -396,30 +393,6 @@ public class DecoderImpl implements Decoder {
 		return headers;
 	}
 
-	public RebuiltHeader rebuildHeaders() {
-		Map<String, String> allHeaders = headers.getAllHeaders();
-		String sb = "";
-
-		allHeaders.remove("Accept-Encoding");
-		allHeaders.remove("Proxy-Connection");
-		allHeaders.remove("Connection");
-		allHeaders.put("Accept-Encoding", "identity");
-		allHeaders.put("Connection", "keep-alive");
-		sb += allHeaders.get("Method") + " ";
-		sb += allHeaders.get("RequestedURI") + " ";
-		sb += allHeaders.get("HTTPVersion") + "\r\n";
-
-		for (String key : allHeaders.keySet()) {
-			if (!key.equals("Method") && !key.equals("RequestedURI")
-					&& !key.equals("HTTPVersion"))
-				sb += (key + ":" + allHeaders.get(key) + "\r\n");
-		}
-		// allHeaders.put("Via", " mu0Proxy");
-		// sb += "Via:" + allHeaders.get("Via") + "\r\n";
-		sb += ("\r\n");
-		return new RebuiltHeader(sb.getBytes(), sb.length());
-	}
-
 	public void setConfigurator(Configurator configurator) {
 		this.configurator = configurator;
 
@@ -529,28 +502,54 @@ public class DecoderImpl implements Decoder {
 		return new RebuiltHeader(sb.getBytes(), sb.length());
 	}
 	
-	public RebuiltHeader rebuildResponseHeaders() {
+	public RebuiltHeader rebuildHeaders() {
+		Charset charset = Charset.forName("ISO-8859-1");
 		Map<String, String> allHeaders = headers.getAllHeaders();
-		String sb = "";
+		final StringBuilder sb = new StringBuilder();
+
+		allHeaders.remove("Accept-Encoding");
+		allHeaders.remove("Proxy-Connection");
+		allHeaders.remove("Connection");
+		allHeaders.put("Accept-Encoding", "identity");
+		allHeaders.put("Connection", "keep-alive");
+		sb.append(allHeaders.get("Method")).append(" ");
+		sb.append(allHeaders.get("RequestedURI")).append(" ");
+		sb.append(allHeaders.get("HTTPVersion")).append("\r\n");
+
+		for (String key : allHeaders.keySet()) {
+			if (!key.equals("Method") && !key.equals("RequestedURI")
+					&& !key.equals("HTTPVersion"))
+				sb.append(key).append(": ").append(allHeaders.get(key)).append("\r\n");
+		}
+		// allHeaders.put("Via", " mu0Proxy");
+		// sb += "Via:" + allHeaders.get("Via") + "\r\n";
+		sb.append("\r\n");
+		return new RebuiltHeader(sb.toString().getBytes(), sb.toString().length());
+	}
+	
+	public RebuiltHeader rebuildResponseHeaders() {
+		Charset charset = Charset.forName("ISO-8859-1");
+		Map<String, String> allHeaders = headers.getAllHeaders();
+		StringBuilder sb = new StringBuilder();
 
 		allHeaders.remove("Accept-Encoding");
 		allHeaders.remove("Proxy-Connection");
 //		allHeaders.remove("Connection");
-		allHeaders.put("Accept-Encoding", "identity");
 //		allHeaders.put("Connection", "keep-alive");
-		sb += allHeaders.get("HTTPVersion") + " ";
-		sb += allHeaders.get("StatusCode") + " ";
-		sb += allHeaders.get("Reason") + "\r\n";
+		allHeaders.put("Connection", "close");
+		sb.append(allHeaders.get("HTTPVersion")).append(" ");
+		sb.append(allHeaders.get("StatusCode")).append(" ");
+		sb.append(allHeaders.get("Reason")).append("\r\n");
 
 		for (String key : allHeaders.keySet()) {
 			if (!key.equals("HTTPVersion") && !key.equals("StatusCode")
 					&& !key.equals("Reason"))
-				sb += (key + ":" + allHeaders.get(key) + "\r\n");
+				sb.append(key).append(": ").append(allHeaders.get(key) + "\r\n");
 		}
 		// allHeaders.put("Via", " mu0Proxy");
 		// sb += "Via:" + allHeaders.get("Via") + "\r\n";
-		sb += ("\r\n");
-		return new RebuiltHeader(sb.getBytes(), sb.length());
+		sb.append("\r\n");
+		return new RebuiltHeader(sb.toString().getBytes(), sb.toString().length());
 	}
 
 }

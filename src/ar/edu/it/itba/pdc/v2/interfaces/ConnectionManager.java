@@ -5,7 +5,7 @@ import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-public interface ConnectionManager {
+public interface ConnectionManager extends Runnable {
 
 	public Socket getConnection(String host) throws IOException;
 	
