@@ -63,12 +63,12 @@ public class Attend implements Runnable {
 				}
 				attend.debug("Headers completely read. Sending to analyzer");
 				analyzer.analyze(req, totalCount, socket);
-				// if (!socket.isConnected() || socket.isClosed()
-				// || !analyzer.keepConnection()) {
-				attend.info("Analyzer returned. Closing socket");
-				req.clear();
-				socket.close();
-				// }
+				if (!socket.isConnected() || socket.isClosed()
+						|| !analyzer.keepConnection()) {
+					attend.info("Analyzer returned. Closing socket");
+					req.clear();
+					socket.close();
+				}
 
 			} catch (IOException e) {
 				return;

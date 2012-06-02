@@ -439,6 +439,12 @@ public class DecoderImpl implements Decoder {
 		} else if (cause.equals("ALL")) {
 			newHeaders.addHeader("StatusCode", "1234");
 			newHeaders.addHeader("Reason", "All Blocked");
+		} else if (cause.equals("ALL")) {
+			newHeaders.addHeader("StatusCode", "1234");
+			newHeaders.addHeader("Reason", "All Blocked");
+		} else if (cause.equals("500")){
+			newHeaders.addHeader("StatusCode", "500");
+			newHeaders.addHeader("Reason", "Internal Server Error");
 		}
 		newHeaders.addHeader("HTTPVersion", "HTTP/1.1");
 		newHeaders.addHeader("Via", " mu0");
@@ -497,6 +503,13 @@ public class DecoderImpl implements Decoder {
 					+ "<p>Su proxy bloqueo todo<br />" + "</p>"
 					+ "</body></html>";
 
+		} else if (cause.equals("500")) {
+			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
+					+ "<html><head>" + "<title>500 Internal Server Error</title>"
+					+ "</head><body>" + "<h1>Internal Server Error</h1>"
+					+ "<p>Internal Server Error<br />" + "</p>"
+					+ "</body></html>";
+
 		}
 		return new HTML(html.getBytes(), html.length());
 	}
@@ -538,14 +551,11 @@ public class DecoderImpl implements Decoder {
 		if (requestImage()) {
 			allHeaders.remove("Accept-Encoding");
 		}
-		// allHeaders.remove("Proxy-Connection");
-		// allHeaders.remove("Connection");
-		// allHeaders.put("Accept-Encoding", "identity");
-		// allHeaders.put("Connection", "keep-alive");
+		allHeaders.remove("Proxy-Connection");
+		allHeaders.put("Connection", "keep-alive");
 		sb.append(allHeaders.get("Method")).append(" ");
 		sb.append(allHeaders.get("RequestedURI")).append(" ");
 		sb.append(allHeaders.get("HTTPVersion")).append("\r\n");
-		// sb.append("Connection: keep-alive\r\n");
 
 		for (String key : allHeaders.keySet()) {
 			if (!key.equals("Method") && !key.equals("RequestedURI")

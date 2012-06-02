@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 
 import org.apache.log4j.Logger;
 
+import ar.edu.it.itba.pdc.v2.implementations.HTML;
 import ar.edu.it.itba.pdc.v2.implementations.RebuiltHeader;
 import ar.edu.it.itba.pdc.v2.implementations.utils.DecoderImpl;
 import ar.edu.it.itba.pdc.v2.interfaces.Analyzer;
@@ -183,6 +184,11 @@ public class AnalyzerImp implements Analyzer {
 			}
 			if (totalCount == 0) {
 				connectionManager.releaseConnection(externalServer, false);
+				RebuiltHeader erh = decoder.generateBlockedHeader("500");
+				HTML ehtml = decoder.generateBlockedHTML("500");
+				clientOs.write(erh.getHeader(), 0,erh.getSize());
+				clientOs.write(ehtml.getHTML(), 0, ehtml.getSize());
+				keepConnection = false;
 				return;
 			}
 			// Parse response heaaders
