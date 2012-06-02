@@ -5,12 +5,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.Map;
-import java.util.Queue;
 
-import ar.edu.it.itba.pdc.Implementations.proxy.TCPSelector;
-import ar.edu.it.itba.pdc.Interfaces.ProxyWorker;
-import ar.edu.it.itba.pdc.Interfaces.TCPProtocol;
+import ar.edu.it.itba.pdc.v2.implementations.monitor.exceptions.BadCredentialException;
 
 public class MonitorHandler {
 
@@ -28,31 +24,44 @@ public class MonitorHandler {
 		// Register the selector with new channel for read and attach byte
 		// buffer
 		ByteBuffer buf = ByteBuffer.allocate(bufSize);
-		buf.put(("- Hello, for command list send \"help\"\n").getBytes());
-		clntChan.register(key.selector(), SelectionKey.OP_WRITE, buf);
+		buf.put(("- Hello, please identify yoursefl (user:password) \n")
+				.getBytes());
+		MonitorAttach att = new MonitorAttach(buf);
+		clntChan.register(key.selector(), SelectionKey.OP_WRITE, att);
 
 	}
 
 	public void handleRead(SelectionKey key) throws IOException {
 		SocketChannel clntChan = (SocketChannel) key.channel();
-		ByteBuffer buf = (ByteBuffer) key.attachment();
+		MonitorAttach att = (MonitorAttach) key.attachment();
+		boolean logged = att.getLogged();
+		ByteBuffer buf = att.getBuffer();
 		long bytesRead = clntChan.read(buf);
 		if (bytesRead == -1) {
 			clntChan.close();
 			return;
 		}
-			String s = new String(buf.array(), 0, buf.position());
-		s = decoder.decode(s);
+		String s = new String(buf.array(), 0, buf.position());
+		try {
+			if (!logged) {
+				s = decoder.logIn(s);
+				att.logIn();
+			} else
+				s = decoder.decode(s);
+		} catch (BadCredentialException e) {
+			s = "User or password are incorrect, please try again\n";
+		}
 		buf.clear();
 		buf.put(s.getBytes());
-		key.attach(buf);
+		key.attach(att);
 		key.interestOps(SelectionKey.OP_WRITE);
 
 	}
 
 	public void handleWrite(SelectionKey key) throws IOException {
 
-		ByteBuffer buf = (ByteBuffer) key.attachment();
+		MonitorAttach att = (MonitorAttach) key.attachment();
+		ByteBuffer buf = att.getBuffer();
 		buf.flip(); // Prepare buffer for writing
 		SocketChannel clntChan = (SocketChannel) key.channel();
 		clntChan.write(buf);
@@ -61,7 +70,7 @@ public class MonitorHandler {
 			key.interestOps(SelectionKey.OP_READ);
 		}
 		buf.clear();
-//		buf.compact(); // Make room for more data to be read in
+		// buf.compact(); // Make room for more data to be read in
 
 	}
 }
