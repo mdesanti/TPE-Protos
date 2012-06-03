@@ -38,6 +38,9 @@ public class AnalyzerImp implements Analyzer {
 	private byte[] buf = new byte[BUFFSIZE];
 	private Socket externalServer;
 	private OutputStream clientOs;
+	private OutputStream externalOs;
+	private InputStream clientIs;
+	private InputStream externalIs;
 	private boolean keepConnection = true;
 	private DataStorage dataStorage;
 
@@ -69,15 +72,18 @@ public class AnalyzerImp implements Analyzer {
 			responseHeaders = null;
 			buf = new byte[BUFFSIZE];
 			externalServer = null;
+			closeStreams();
 		} catch (UnknownHostException e) {
 			try {
 				blockAnalizer.generateProxyResponse(clientOs, "400");
+				closeStreams();
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 		} catch (IOException e) {
 			try {
+				closeStreams();
 				socket.close();
 			} catch (IOException e1) {
 				e1.printStackTrace();
@@ -94,8 +100,8 @@ public class AnalyzerImp implements Analyzer {
 	private boolean analizeRequest(ByteBuffer buffer, int count)
 			throws Exception {
 		try {
-			OutputStream clientOs = socket.getOutputStream(), externalOs;
-			InputStream clientIs = socket.getInputStream();
+			clientOs = socket.getOutputStream();
+			clientIs = socket.getInputStream();
 
 			// Parse request headers
 			decoder.parseHeaders(buffer.array(), count);
@@ -171,7 +177,7 @@ public class AnalyzerImp implements Analyzer {
 				totalCount += receivedMsg;
 				analyzeLog.info("Reading upload data from client "
 						+ socket.getInetAddress());
-				decoder.decode(buf, receivedMsg);
+				decoder.analize(buf, receivedMsg);
 				externalOs.write(buf, 0, receivedMsg);
 			}
 			dataStorage.addClientProxyBytes(totalCount);
@@ -181,7 +187,6 @@ public class AnalyzerImp implements Analyzer {
 			e.printStackTrace();
 			return false;
 		}
-
 		return true;
 
 	}
@@ -193,7 +198,7 @@ public class AnalyzerImp implements Analyzer {
 		keepReading = true;
 		totalCount = 0;
 		ByteBuffer resp = ByteBuffer.allocate(BUFFSIZE);
-		InputStream externalIs = externalServer.getInputStream();
+		externalIs = externalServer.getInputStream();
 		clientOs = socket.getOutputStream();
 
 		try {
@@ -333,6 +338,14 @@ public class AnalyzerImp implements Analyzer {
 	}
 
 	public boolean keepConnection() {
-		return false;
+		return keepConnection;
 	}
+	
+	private void closeStreams() throws IOException {
+		clientIs.close();
+		clientOs.close();
+		externalIs.close();
+		externalOs.close();
+	}
+	
 }
