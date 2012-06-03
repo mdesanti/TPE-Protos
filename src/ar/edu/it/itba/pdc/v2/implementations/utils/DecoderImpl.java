@@ -218,7 +218,7 @@ public class DecoderImpl implements Decoder {
 				FileWriter fw = new FileWriter(fileName, true);
 				ByteBuffer buf = ByteBuffer.wrap(bytes);
 				CharBuffer cbuf = charset.decode(buf);
-				fw.write(cbuf.array(), 0, cbuf.position());
+				fw.write(cbuf.array(), 0, cbuf.length());
 				fw.close();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block

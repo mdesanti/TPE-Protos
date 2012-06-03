@@ -54,19 +54,20 @@ public class Transformations {
 	public synchronized byte[] transformL33t(InputStream original)
 			throws UnsupportedEncodingException {
 		BufferedReader br = new BufferedReader(new InputStreamReader(original));
-
 		StringBuilder sb = new StringBuilder();
-
-		String line;
+		char[] buf = new char[1024];
+		int numRead=0;
 		try {
-			while ((line = br.readLine()) != null) {
-				sb.append(line);
+			while((numRead=br.read(buf)) != -1){
+			String readData = String.valueOf(buf, 0, numRead);
+			sb.append(readData);
+			buf = new char[1024];
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		String data = new String(sb);
+		String data = sb.toString();
 		String data1 = data.replace('a', '4');
 		String data2 = data1.replace('e', '3');
 		String data3 = data2.replace('i', '1');
