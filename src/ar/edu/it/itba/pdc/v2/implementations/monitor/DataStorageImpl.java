@@ -24,7 +24,7 @@ public class DataStorageImpl implements DataStorage {
 	}
 
 	public long getTotalBytes() {
-		return totalBytes;
+		return clientToProxyBytes + proxyToServersBytes;
 	}
 
 	public long getClientProxyBytes() {
@@ -70,7 +70,7 @@ public class DataStorageImpl implements DataStorage {
 	}
 
 	public synchronized void addBlock() {
-		this.blocks += blocks;
+		this.blocks ++;
 	}
 
 	public synchronized void addTransformation() {

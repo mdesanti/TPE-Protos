@@ -7,10 +7,13 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Iterator;
 
+import ar.edu.it.itba.pdc.v2.interfaces.DataStorage;
+
 public class Monitor implements Runnable {
 
 	private static int TIMEOUT = 500;
 	private static int BUFFSIZE = 1024 * 5;
+	private MonitorHandler protocol = new MonitorHandler(BUFFSIZE);;
 
 	public void run() {
 		try {
@@ -20,7 +23,6 @@ public class Monitor implements Runnable {
 			listnChannel.socket().bind(new InetSocketAddress(9091));
 			listnChannel.configureBlocking(false); // must be nonblocking to
 			listnChannel.register(selector, SelectionKey.OP_ACCEPT);
-			MonitorHandler protocol = new MonitorHandler(BUFFSIZE);
 			while (true) { // Run forever, processing available I/O operations
 				// Wait for some channel to be ready (or timeout)
 				if (selector.select(TIMEOUT) == 0) { // returns # of ready chans
@@ -51,5 +53,10 @@ public class Monitor implements Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	
+	public DataStorage getDataStorage(){
+		return protocol.getDataStorage();
 	}
 }

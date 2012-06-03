@@ -7,6 +7,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
 import ar.edu.it.itba.pdc.v2.implementations.monitor.exceptions.BadCredentialException;
+import ar.edu.it.itba.pdc.v2.interfaces.DataStorage;
 
 public class MonitorHandler {
 
@@ -72,5 +73,9 @@ public class MonitorHandler {
 		buf.clear();
 		// buf.compact(); // Make room for more data to be read in
 
+	}
+	
+	public DataStorage getDataStorage(){
+		return decoder.getStorage();
 	}
 }

@@ -28,18 +28,18 @@ public class Start {
 			proxy.info("Instantiating server");
 			ThreadedSocketServer server = new ThreadedSocketServer(9090,
 					InetAddress.getByName("localhost"), new ClientHandler(),
-					configurator);
+					configurator,monitor);
 			proxy.info("Creating server thread");
 			Thread serverThread = new Thread(server);
 
 			proxy.info("Configurator thread starting");
+			monitorThread.start();
 			configuratorThread.start();
 			proxy.info("Server thread starting");
 			serverThread.start();
-			monitorThread.start();
+			monitorThread.join();
 			configuratorThread.join();
 			serverThread.join();
-			monitorThread.join();
 		} catch (final Exception e) {
 			System.out.println("Ocurrio un error");
 			e.printStackTrace();

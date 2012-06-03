@@ -14,18 +14,21 @@ import java.util.Map;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import ar.edu.it.itba.pdc.v2.implementations.monitor.Monitor;
 import ar.edu.it.itba.pdc.v2.implementations.utils.ConnectionStatus;
 import ar.edu.it.itba.pdc.v2.interfaces.ConnectionManager;
+import ar.edu.it.itba.pdc.v2.interfaces.DataStorage;
 
 public class ConnectionManagerImpl implements ConnectionManager {
-
 	private Map<InetAddress, List<ConnectionStatus>> connections;
 	private Logger connectionLog = Logger
 			.getLogger(ConnectionManagerImpl.class);
+	private DataStorage dataStorage;
 
-	public ConnectionManagerImpl() {
+	public ConnectionManagerImpl(Monitor monitor) {
 		connections = new HashMap<InetAddress, List<ConnectionStatus>>();
 		connectionLog.setLevel(Level.INFO);
+		this.dataStorage = monitor.getDataStorage();
 	}
 
 	public Socket getConnection(String host) throws IOException,UnknownHostException {
@@ -55,6 +58,7 @@ public class ConnectionManagerImpl implements ConnectionManager {
 		Socket s = null;
 		try {
 			s = new Socket(addr, port);
+			dataStorage.addServerOpenConection(1);
 		} catch (ConnectException e) {
 			return null;
 		}

@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 
 import org.apache.log4j.Logger;
 
+import ar.edu.it.itba.pdc.v2.implementations.monitor.Monitor;
 import ar.edu.it.itba.pdc.v2.implementations.utils.DecoderImpl;
 import ar.edu.it.itba.pdc.v2.interfaces.Analyzer;
 import ar.edu.it.itba.pdc.v2.interfaces.Configurator;
@@ -21,22 +22,24 @@ public class Attend implements Runnable {
 	private ConnectionManager connectionManager;
 	private Analyzer analyzer;
 	private Configurator configurator;
+	private Monitor monitor;
 
 	public Attend(Socket socket, ConnectionHandler handler,
 			ConnectionManager connectionManager, Analyzer analyzer,
-			Configurator configurator) {
+			Configurator configurator,Monitor monitor) {
 		this.handler = handler;
 		this.socket = socket;
 		this.connectionManager = connectionManager;
 		this.analyzer = analyzer;
 		this.configurator = configurator;
+		this.monitor = monitor;
 	}
 
 	public void run() {
 		Logger attend = Logger.getLogger("proxy.server.attend");
 		Decoder decoder = new DecoderImpl(20 * 1024);
 		byte[] buffer = new byte[500];
-		analyzer = new AnalyzerImp(connectionManager, configurator);
+		analyzer = new AnalyzerImp(connectionManager, configurator,monitor);
 		ByteBuffer req = ByteBuffer.allocate(20 * 1024);
 		String s = socket.getRemoteSocketAddress().toString();
 		while (!socket.isClosed()) {
@@ -62,6 +65,7 @@ public class Attend implements Runnable {
 					socket.close();
 				}
 				attend.debug("Headers completely read. Sending to analyzer");
+				monitor.getDataStorage().addClientProxyBytes(totalCount);
 				analyzer.analyze(req, totalCount, socket);
 				if (!socket.isConnected() || socket.isClosed()
 						|| !analyzer.keepConnection()) {

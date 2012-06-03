@@ -16,6 +16,9 @@ public class MonitorDecoder implements ConnectionDecoder {
 	public MonitorDecoder() {
 		fillOptions();
 	}
+	public DataStorage getStorage() {
+		return storage;
+	}
 
 	public String decode(String s) {
 

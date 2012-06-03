@@ -10,13 +10,14 @@ import java.nio.ByteBuffer;
 
 import org.apache.log4j.Logger;
 
-import ar.edu.it.itba.pdc.v2.implementations.HTML;
 import ar.edu.it.itba.pdc.v2.implementations.RebuiltHeader;
+import ar.edu.it.itba.pdc.v2.implementations.monitor.Monitor;
 import ar.edu.it.itba.pdc.v2.implementations.utils.DecoderImpl;
 import ar.edu.it.itba.pdc.v2.interfaces.Analyzer;
 import ar.edu.it.itba.pdc.v2.interfaces.BlockAnalizer;
 import ar.edu.it.itba.pdc.v2.interfaces.Configurator;
 import ar.edu.it.itba.pdc.v2.interfaces.ConnectionManager;
+import ar.edu.it.itba.pdc.v2.interfaces.DataStorage;
 import ar.edu.it.itba.pdc.v2.interfaces.Decoder;
 import ar.edu.it.itba.pdc.v2.interfaces.HTTPHeaders;
 
@@ -38,11 +39,13 @@ public class AnalyzerImp implements Analyzer {
 	private Socket externalServer;
 	private OutputStream clientOs;
 	private boolean keepConnection;
+	private DataStorage dataStorage;
 
 	public AnalyzerImp(ConnectionManager connectionManager,
-			Configurator configurator) {
+			Configurator configurator, Monitor monitor) {
 		this.connectionManager = connectionManager;
 		this.configurator = configurator;
+		this.dataStorage = monitor.getDataStorage();
 		this.analyzeLog = Logger.getLogger("proxy.server.attend.analyze");
 		this.blockAnalizer = new BlockAnalizerImpl(configurator);
 		this.decoder = new DecoderImpl(BUFFSIZE);
@@ -83,7 +86,7 @@ public class AnalyzerImp implements Analyzer {
 			return;
 		} catch (BufferOverflowException e) {
 			e.printStackTrace();
-		}catch(Exception e){
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
@@ -116,6 +119,7 @@ public class AnalyzerImp implements Analyzer {
 
 			if (blockAnalizer.analizeRequest(decoder, clientOs)) {
 				analyzeLog.info("Block analyzer blocked request. Returning");
+				dataStorage.addBlock();
 				return false;
 			}
 
@@ -130,11 +134,11 @@ public class AnalyzerImp implements Analyzer {
 				host = host.replace(" ", "");
 			}
 			analyzeLog.info("Requesting for connection to: " + host);
-			try{
-			while ((externalServer = connectionManager.getConnection(host)) == null) {
-				// System.out.println("No deberia pasar");
-			}
-			}catch(UnknownHostException e){
+			try {
+				while ((externalServer = connectionManager.getConnection(host)) == null) {
+					// System.out.println("No deberia pasar");
+				}
+			} catch (UnknownHostException e) {
 				blockAnalizer.generateProxyResponse(clientOs, "400");
 				return false;
 			}
@@ -143,8 +147,9 @@ public class AnalyzerImp implements Analyzer {
 			// Sends rebuilt header to server
 			analyzeLog.info("Sending rebuilt headers to server");
 			// System.out.println(new String(rh.getHeader()));
-			 externalOs.write(rh.getHeader(), 0, rh.getSize());
-//			externalOs.write(buffer.array(), 0, requestHeaders.getReadBytes());
+			externalOs.write(rh.getHeader(), 0, rh.getSize());
+			// externalOs.write(buffer.array(), 0,
+			// requestHeaders.getReadBytes());
 
 			// If client sends something in the body..
 			if (requestHeaders.getReadBytes() < count) {
@@ -156,13 +161,16 @@ public class AnalyzerImp implements Analyzer {
 				decoder.analize(buffer.array(), count);
 			}
 			// if client continues to send info, read it and send it to server
+			totalCount = 0;
 			while (decoder.keepReading()
 					&& ((receivedMsg = clientIs.read(buf)) != -1)) {
+				totalCount += receivedMsg;
 				analyzeLog.info("Reading upload data from client "
 						+ socket.getInetAddress());
 				decoder.decode(buf, receivedMsg);
 				externalOs.write(buf, 0, receivedMsg);
 			}
+			dataStorage.addClientProxyBytes(totalCount);
 		} catch (IOException e) {
 			if (externalServer != null)
 				connectionManager.releaseConnection(externalServer, false);
@@ -213,6 +221,7 @@ public class AnalyzerImp implements Analyzer {
 			}
 
 			if (blockAnalizer.analizeResponse(decoder, clientOs)) {
+				dataStorage.addBlock();
 				analyzeLog
 						.info("Response blocked by proxy. Closing connection and returning");
 				return;
@@ -278,9 +287,13 @@ public class AnalyzerImp implements Analyzer {
 				keepReading = decoder.keepReading();
 				data = true;
 			}
+			dataStorage.addProxyServerBytes(totalCount);
 			System.out.println("SALE WHILE" + keepReading);
 			analyzeLog.info("Response completed from server");
 			if (blockAnalizer.analizeChunkedSize(decoder, clientOs, totalCount)) {
+				analyzeLog
+						.info("Response blocked by proxy. Closing connection and returning");
+				dataStorage.addBlock();
 				return;
 			}
 			if (applyTransform && data) {
@@ -298,10 +311,12 @@ public class AnalyzerImp implements Analyzer {
 					clientOs.write(newHeader.getHeader(), 0,
 							newHeader.getSize());
 					clientOs.write(rotated, 0, rotated.length);
+					dataStorage.addTransformation();
 				}
 				if (configurator.applyTextTransformation() && decoder.isText()) {
 					byte[] transformed = decoder.getTransformed();
 					clientOs.write(transformed, 0, transformed.length);
+					dataStorage.addTransformation();
 				}
 			}
 			connectionManager.releaseConnection(externalServer,
