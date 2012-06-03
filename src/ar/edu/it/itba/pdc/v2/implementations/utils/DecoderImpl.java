@@ -568,7 +568,8 @@ public class DecoderImpl implements Decoder {
 		Map<String, String> allHeaders = headers.getAllHeaders();
 		try {
 			URL url = new URL(allHeaders.get("RequestedURI"));
-			allHeaders.put("RequestedURI", url.getPath());
+			System.out.println(url.getPath() + url.getQuery());
+			allHeaders.put("RequestedURI", url.getPath() + "?" + url.getQuery());
 		} catch (MalformedURLException e) {
 		}
 		final StringBuilder sb = new StringBuilder();

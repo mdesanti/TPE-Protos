@@ -266,13 +266,13 @@ public class AnalyzerImp implements Analyzer {
 			}
 			resp.clear();
 			String length = responseHeaders.getHeader("Content-Length");
-			if (length != null) {
-				length = length.replaceAll(" ", "");
-				if (length.equals("0")) {
-					keepReading = false;
-				} else
-					keepReading = decoder.keepReading();
-			} else
+//			if (length != null) {
+//				length = length.replaceAll(" ", "");
+//				if (length.equals("0")) {
+//					keepReading = false;
+//				} else
+//					keepReading = decoder.keepReading();
+//			} else
 				keepReading = decoder.keepReading();
 			if (receivedMsg == -1) {
 				keepReading = false;
