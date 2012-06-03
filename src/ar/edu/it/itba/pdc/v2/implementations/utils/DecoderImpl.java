@@ -618,8 +618,8 @@ public class DecoderImpl implements Decoder {
 		allHeaders.remove("Connection");
 		// allHeaders.put("Connection", "keep-alive");
 		// allHeaders.put("Connection", "close");
-		allHeaders.remove("Content-Encoding");
-		allHeaders.put("Content-Encoding", " identity");
+//		allHeaders.remove("Content-Encoding");
+//		allHeaders.put("Content-Encoding", " identity");
 		sb.append(allHeaders.get("HTTPVersion")).append(" ");
 		sb.append(allHeaders.get("StatusCode")).append(" ");
 		sb.append(allHeaders.get("Reason")).append("\r\n");
