@@ -11,8 +11,10 @@ import org.apache.log4j.Logger;
 import ar.edu.it.itba.pdc.v2.implementations.configurator.ConfiguratorImpl;
 import ar.edu.it.itba.pdc.v2.implementations.monitor.Monitor;
 import ar.edu.it.itba.pdc.v2.implementations.proxy.ClientHandler;
+import ar.edu.it.itba.pdc.v2.implementations.proxy.ConnectionManagerImpl;
 import ar.edu.it.itba.pdc.v2.implementations.proxy.ThreadedSocketServer;
 import ar.edu.it.itba.pdc.v2.interfaces.Configurator;
+import ar.edu.it.itba.pdc.v2.interfaces.ConnectionManager;
 
 public class Start {
 
@@ -32,19 +34,23 @@ public class Start {
 			Thread configuratorThread = new Thread(configurator);
 			Monitor monitor = new Monitor(Integer.valueOf(proxyProp.getProperty("monitorPort")));
 			Thread monitorThread = new Thread(monitor);
+			ConnectionManager cm = new ConnectionManagerImpl(monitor);
+			Thread connManagerThread = new Thread(cm);
 			proxy.info("Instantiating server");
 			ThreadedSocketServer server = new ThreadedSocketServer(Integer.valueOf(proxyProp.getProperty("serverPort")),
 					InetAddress.getByName("localhost"), new ClientHandler(),
-					configurator,monitor);
+					configurator, monitor, cm);
 			proxy.info("Creating server thread");
 			Thread serverThread = new Thread(server);
 
 			proxy.info("Configurator thread starting");
 			monitorThread.start();
+			connManagerThread.start();
 			configuratorThread.start();
 			proxy.info("Server thread starting");
 			serverThread.start();
 			monitorThread.join();
+			connManagerThread.join();
 			configuratorThread.join();
 			serverThread.join();
 		} catch (final Exception e) {
