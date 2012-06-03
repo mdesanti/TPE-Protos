@@ -149,7 +149,7 @@ public class AnalyzerImp implements Analyzer {
 			externalOs = externalServer.getOutputStream();
 
 			// Sends rebuilt header to server
-			analyzeLog.info("Sending rebuilt headers to server");
+			analyzeLog.info("Sending rebuilt headers to server --- " + new String(rh.getHeader()));
 			// System.out.println(new String(rh.getHeader()));
 			externalOs.write(rh.getHeader(), 0, rh.getSize());
 			// externalOs.write(buffer.array(), 0,
@@ -266,13 +266,13 @@ public class AnalyzerImp implements Analyzer {
 			}
 			resp.clear();
 			String length = responseHeaders.getHeader("Content-Length");
-			if (length != null) {
-				length = length.replaceAll(" ", "");
-				if (length.equals("0")) {
-					keepReading = false;
-				} else
-					keepReading = decoder.keepReading();
-			} else
+//			if (length != null) {
+//				length = length.replaceAll(" ", "");
+//				if (length.equals("0")) {
+//					keepReading = false;
+//				} else
+//					keepReading = decoder.keepReading();
+//			} else
 				keepReading = decoder.keepReading();
 			if (receivedMsg == -1) {
 				keepReading = false;

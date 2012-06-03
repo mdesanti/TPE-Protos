@@ -41,7 +41,7 @@ public class ConnectionManagerImpl implements ConnectionManager {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			connectionLog.info("Cleaning closed sockets");
+//			connectionLog.info("Cleaning closed sockets");
 			Set<InetAddress> keys = connections.keySet();
 			synchronized (connections) {
 				for(InetAddress addr: keys) {

@@ -50,6 +50,8 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 		if (decoder.getHeader("Transfer-Encoding") == null) {
 			return false;
 		}
+		if(configurator.getMaxSize() == -1)
+			return false;
 		if (totalSize > configurator.getMaxSize()) {
 			generateProxyResponse(clientOs, "451");
 

@@ -5,12 +5,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.util.Map;
 
 import ar.edu.it.itba.pdc.v2.implementations.HTML;
@@ -32,7 +35,9 @@ public class DecoderImpl implements Decoder {
 	private Configurator configurator;
 	private byte[] aux;
 	private byte[] aux2 = new byte[20];
-	int auxIndex = 0;
+	private int auxIndex = 0;
+	private Charset charset = null;
+
 
 	private boolean BUILDING_NUMBER = true;
 	private boolean N_EXPECTED = false;
@@ -189,6 +194,14 @@ public class DecoderImpl implements Decoder {
 
 		} else if (isText && configurator.applyTextTransformation()) {
 			if (fileName == null) {
+				String[] params = headers.getHeader("Content-Type").split(";");
+				if(params.length < 2) {
+					charset = Charset.forName("UTF-8");
+				} else {
+					String set = params[1].split("=")[1].replace(" ", "");
+					charset = Charset.forName("set");
+				}
+				
 				String path[] = requestHeaders.getHeader("RequestedURI").split(
 						"/");
 				File f = new File("/tmp/prueba");
@@ -202,8 +215,10 @@ public class DecoderImpl implements Decoder {
 				}
 			}
 			try {
-				FileOutputStream fw = new FileOutputStream(fileName, true);
-				fw.write(bytes, 0, count);
+				FileWriter fw = new FileWriter(fileName, true);
+				ByteBuffer buf = ByteBuffer.wrap(bytes);
+				CharBuffer cbuf = charset.decode(buf);
+				fw.write(cbuf.array(), 0, cbuf.position());
 				fw.close();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -577,6 +592,7 @@ public class DecoderImpl implements Decoder {
 		final StringBuilder sb = new StringBuilder();
 
 		allHeaders.remove("Proxy-Connection");
+		allHeaders.remove("Accept-Encoding");
 		allHeaders.put("Connection", "keep-alive");
 		sb.append(allHeaders.get("Method")).append(" ");
 		sb.append(allHeaders.get("RequestedURI")).append(" ");
@@ -602,6 +618,8 @@ public class DecoderImpl implements Decoder {
 		allHeaders.remove("Connection");
 		// allHeaders.put("Connection", "keep-alive");
 		// allHeaders.put("Connection", "close");
+		allHeaders.remove("Content-Encoding");
+		allHeaders.put("Content-Encoding", " identity");
 		sb.append(allHeaders.get("HTTPVersion")).append(" ");
 		sb.append(allHeaders.get("StatusCode")).append(" ");
 		sb.append(allHeaders.get("Reason")).append("\r\n");
