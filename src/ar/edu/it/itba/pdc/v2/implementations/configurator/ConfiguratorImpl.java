@@ -20,10 +20,11 @@ public class ConfiguratorImpl implements Configurator {
 	private ConfiguratorConnectionHandler handler;
 	private ConfiguratorConnectionDecoder decoder;
 
-	public ConfiguratorImpl() {
+	public ConfiguratorImpl(int port) {
 		this.decoder = new ConfiguratorConnectionDecoder();
 		this.handler = new ConfiguratorConnectionHandler(maxMessageLength,
 				decoder);
+		this.port = port;
 	}
 
 	public void run() {

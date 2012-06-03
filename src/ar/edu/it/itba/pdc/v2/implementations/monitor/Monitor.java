@@ -13,14 +13,19 @@ public class Monitor implements Runnable {
 
 	private static int TIMEOUT = 500;
 	private static int BUFFSIZE = 1024 * 5;
-	private MonitorHandler protocol = new MonitorHandler(BUFFSIZE);;
+	private MonitorHandler protocol = new MonitorHandler(BUFFSIZE);
+	private int port;
+	
+	public Monitor(int port) {
+		this.port = port;
+	}
 
 	public void run() {
 		try {
 			Selector selector = null;
 			selector = Selector.open();
 			ServerSocketChannel listnChannel = ServerSocketChannel.open();
-			listnChannel.socket().bind(new InetSocketAddress(9091));
+			listnChannel.socket().bind(new InetSocketAddress(port));
 			listnChannel.configureBlocking(false); // must be nonblocking to
 			listnChannel.register(selector, SelectionKey.OP_ACCEPT);
 			while (true) { // Run forever, processing available I/O operations

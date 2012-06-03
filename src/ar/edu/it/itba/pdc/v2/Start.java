@@ -1,6 +1,8 @@
 package ar.edu.it.itba.pdc.v2;
 
+import java.io.FileInputStream;
 import java.net.InetAddress;
+import java.util.Properties;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
@@ -16,17 +18,22 @@ public class Start {
 
 	public static void main(String args[]) {
 		try {
+			Properties proxyProp = new Properties();
+			FileInputStream in = new FileInputStream("proxy.properties");
+			proxyProp.load(in);
+			in.close();
+			
 			BasicConfigurator.configure();
 			Logger proxy = Logger.getLogger("proxy");
 			proxy.setLevel(Level.INFO);
 			proxy.info("Instantiating configurator");
-			Configurator configurator = new ConfiguratorImpl();
+			Configurator configurator = new ConfiguratorImpl(Integer.valueOf(proxyProp.getProperty("configuratorPort")));
 			proxy.info("Creating configurator thread");
 			Thread configuratorThread = new Thread(configurator);
-			Monitor monitor = new Monitor();
+			Monitor monitor = new Monitor(Integer.valueOf(proxyProp.getProperty("monitorPort")));
 			Thread monitorThread = new Thread(monitor);
 			proxy.info("Instantiating server");
-			ThreadedSocketServer server = new ThreadedSocketServer(9090,
+			ThreadedSocketServer server = new ThreadedSocketServer(Integer.valueOf(proxyProp.getProperty("serverPort")),
 					InetAddress.getByName("localhost"), new ClientHandler(),
 					configurator,monitor);
 			proxy.info("Creating server thread");
