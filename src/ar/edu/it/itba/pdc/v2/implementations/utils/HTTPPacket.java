@@ -16,7 +16,7 @@ public class HTTPPacket implements HTTPHeaders {
 
 	private Map<String, String> headers;
 	private int headerBytes = 0;
-	private boolean bodyHeaders = false;
+	private boolean isHEAD = false;
 	private boolean contentExpected = true;
 
 	public HTTPPacket() {

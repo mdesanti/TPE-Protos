@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.core.MediaType;
 
@@ -96,7 +97,8 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 	public boolean isAccepted(String str) {
 		Object[] set = decoder.getBlockedURIs();
 		for (Object blocked : set) {
-			if (str.matches((String)blocked)) {
+			String regex = (String)blocked;
+			if (str.matches(regex)) {
 				return false;
 			}
 		}

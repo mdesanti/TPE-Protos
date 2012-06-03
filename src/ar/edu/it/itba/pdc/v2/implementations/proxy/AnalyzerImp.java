@@ -38,7 +38,7 @@ public class AnalyzerImp implements Analyzer {
 	private byte[] buf = new byte[BUFFSIZE];
 	private Socket externalServer;
 	private OutputStream clientOs;
-	private boolean keepConnection;
+	private boolean keepConnection = true;
 	private DataStorage dataStorage;
 
 	public AnalyzerImp(ConnectionManager connectionManager,
@@ -103,16 +103,20 @@ public class AnalyzerImp implements Analyzer {
 			String connection = requestHeaders.getHeader("Connection");
 			String proxyConnection = requestHeaders
 					.getHeader("Proxy-Connection");
-			if (connection != null
-					&& connection.toUpperCase().contains("KEEP-ALIVE")) {
+			String httpVersion = requestHeaders.getHeader("HTTPVersion");
+			if (connection == null && proxyConnection == null
+					&& httpVersion.contains("1.1")) {
 				keepConnection = true;
-			} else if (proxyConnection != null
-					&& proxyConnection.toUpperCase().contains("KEEP-ALIVE")) {
-				keepConnection = true;
-			} else {
+			} else if (connection == null && proxyConnection == null
+					&& httpVersion.contains("1.0")) {
 				keepConnection = false;
+			} else if ((connection != null && connection.contains("close"))
+					|| (proxyConnection != null && proxyConnection
+							.contains("close"))) {
+				keepConnection = false;
+			} else {
+				keepConnection = true;
 			}
-
 			analyzeLog.info("Received headers from client "
 					+ socket.getInetAddress() + " :"
 					+ requestHeaders.dumpHeaders());
@@ -183,7 +187,7 @@ public class AnalyzerImp implements Analyzer {
 	}
 
 	private void analizeResponse() throws Exception {
-		boolean externalSConnection = false;
+		boolean externalSConnection = true;
 		// Reads response from server and write it to client
 		decoder.reset();
 		keepReading = true;
@@ -211,12 +215,10 @@ public class AnalyzerImp implements Analyzer {
 			decoder.parseHeaders(resp.array(), totalCount);
 			responseHeaders = decoder.getHeaders();
 			String connection = responseHeaders.getHeader("Connection");
-			if (connection != null
-					&& connection.toUpperCase().contains("KEEP-ALIVE")) {
+			String httpVersion = responseHeaders.getHeader("HTTPVersion");
+			if ((connection == null && httpVersion.contains("1.1")) || (connection != null && connection.toUpperCase().contains("KEEP-ALIVE"))) {
 				externalSConnection = true;
-				keepConnection = true;
-			} else {
-				keepConnection = false;
+			} else if (connection.contains("close")) {
 				externalSConnection = false;
 			}
 
@@ -236,8 +238,9 @@ public class AnalyzerImp implements Analyzer {
 			RebuiltHeader rh = decoder.rebuildResponseHeaders();
 			if ((!configurator.applyRotations())
 					|| (configurator.applyRotations() && !applyTransform)) {
-				clientOs.write(resp.array(), 0, responseHeaders.getReadBytes());
-				// clientOs.write(rh.getHeader(), 0, rh.getSize());
+				// clientOs.write(resp.array(), 0,
+				// responseHeaders.getReadBytes());
+				clientOs.write(rh.getHeader(), 0, rh.getSize());
 			}
 
 			// Sends the rest of the body to client...

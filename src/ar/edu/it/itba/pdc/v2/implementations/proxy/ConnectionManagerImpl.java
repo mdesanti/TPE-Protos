@@ -14,8 +14,8 @@ import java.util.Map;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import ar.edu.it.itba.pdc.v2.implementations.configurator.ConnectionStatus;
 import ar.edu.it.itba.pdc.v2.implementations.monitor.Monitor;
-import ar.edu.it.itba.pdc.v2.implementations.utils.ConnectionStatus;
 import ar.edu.it.itba.pdc.v2.interfaces.ConnectionManager;
 import ar.edu.it.itba.pdc.v2.interfaces.DataStorage;
 
@@ -29,6 +29,18 @@ public class ConnectionManagerImpl implements ConnectionManager {
 		connections = new HashMap<InetAddress, List<ConnectionStatus>>();
 		connectionLog.setLevel(Level.INFO);
 		this.dataStorage = monitor.getDataStorage();
+	}
+	
+	public void run() {
+		while (!Thread.interrupted()) {
+			try {
+				Thread.sleep(3000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		}
 	}
 
 	public Socket getConnection(String host) throws IOException,UnknownHostException {
@@ -98,17 +110,5 @@ public class ConnectionManagerImpl implements ConnectionManager {
 				&& s1.getPort() == s2.getPort()
 				&& s1.getRemoteSocketAddress().equals(
 						s2.getRemoteSocketAddress());
-	}
-
-	public void run() {
-		while (!Thread.interrupted()) {
-			try {
-				Thread.sleep(3000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
-		}
 	}
 }
