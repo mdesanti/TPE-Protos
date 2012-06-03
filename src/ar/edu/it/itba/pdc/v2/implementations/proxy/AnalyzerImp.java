@@ -43,6 +43,7 @@ public class AnalyzerImp implements Analyzer {
 	private InputStream externalIs;
 	private boolean keepConnection = true;
 	private DataStorage dataStorage;
+	private boolean isHEADRequest = false;
 
 	public AnalyzerImp(ConnectionManager connectionManager,
 			Configurator configurator, Monitor monitor) {
@@ -106,6 +107,7 @@ public class AnalyzerImp implements Analyzer {
 			// Parse request headers
 			decoder.parseHeaders(buffer.array(), count);
 			requestHeaders = decoder.getHeaders();
+			isHEADRequest = requestHeaders.isHEADRequest();
 			String connection = requestHeaders.getHeader("Connection");
 			String proxyConnection = requestHeaders
 					.getHeader("Proxy-Connection");
@@ -223,9 +225,12 @@ public class AnalyzerImp implements Analyzer {
 			String httpVersion = responseHeaders.getHeader("HTTPVersion");
 			if ((connection == null && httpVersion.contains("1.1")) || (connection != null && connection.toUpperCase().contains("KEEP-ALIVE"))) {
 				externalSConnection = true;
-			} else if (connection.contains("close")) {
+			} else if (connection == null && httpVersion.contains("1.1")) {
+				externalSConnection = true;
+			} if(connection == null || connection.contains("close")) {
 				externalSConnection = false;
 			}
+			
 
 			if (blockAnalizer.analizeResponse(decoder, clientOs)) {
 				dataStorage.addBlock();
@@ -282,6 +287,8 @@ public class AnalyzerImp implements Analyzer {
 			if (receivedMsg == -1) {
 				keepReading = false;
 			}
+			if(isHEADRequest)
+				keepReading = false;
 			System.out.println("PASA" + keepReading);
 			while (keepReading && ((receivedMsg = externalIs.read(buf)) != -1)) {
 				System.out.println("ENTRA WHILE" + keepReading);

@@ -17,4 +17,6 @@ public interface HTTPHeaders {
 	public Map<String, String> getAllHeaders();
 	
 	public void addHeader(String name, String value);
+	
+	public boolean isHEADRequest();
 }

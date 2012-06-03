@@ -584,6 +584,9 @@ public class DecoderImpl implements Decoder {
 		try {
 			URL url = new URL(allHeaders.get("RequestedURI"));
 			String path = url.getPath();
+			if(path.isEmpty()) {
+				path += "/";
+			}
 			if (url.getQuery() != null)
 				path += "?" + url.getQuery();
 			allHeaders.put("RequestedURI", path);
@@ -636,5 +639,7 @@ public class DecoderImpl implements Decoder {
 		return new RebuiltHeader(sb.toString().getBytes(), sb.toString()
 				.length());
 	}
+	
+	
 
 }
