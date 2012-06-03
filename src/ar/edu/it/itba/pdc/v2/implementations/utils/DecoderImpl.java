@@ -80,24 +80,42 @@ public class DecoderImpl implements Decoder {
 	}
 
 	public byte[] getExtra(byte[] data, int count) {
-		String read = null;
-		read = new String(data).substring(0, count);
-		String[] lines = read.split("\r\n");
-		boolean found = false;
-		ByteBuffer buffer = ByteBuffer.allocate(count - headers.getReadBytes());
-		for (int i = 0; i < lines.length; i++) {
-			if (found) {
-				if (i < lines.length - 1)
-					lines[i] += "\r\n";
-				buffer.put(lines[i].getBytes());
-			}
-			if (lines[i].equals("")) {
-				found = true;
+		byte[] bytes = new byte[count - headers.getReadBytes()];
+		int i = 0;
+		boolean R_EXPECTED = true;
+		boolean N_EXPECTED = false;
+		boolean SECR_EXPECTED = false;
+		boolean SECN_EXPECTED = false;
+		for (int j = 0; j < count; j++) {
+			if (R_EXPECTED && data[j] == '\r') {
+				R_EXPECTED = false;
+				N_EXPECTED = true;
+			} else if (N_EXPECTED && data[j] == '\n') {
+				N_EXPECTED = false;
+				SECR_EXPECTED = true;
+			} else if (N_EXPECTED) {
+				N_EXPECTED = false;
+				R_EXPECTED = true;
+			} else if (SECR_EXPECTED && data[j] == '\r') {
+				SECR_EXPECTED = false;
+				SECN_EXPECTED = true;
+			} else if (SECR_EXPECTED) {
+				SECR_EXPECTED = false;
+				R_EXPECTED = true;
+			} else if (SECN_EXPECTED && data[j] == '\n') {
+				j++;
+				for (i = 0; i < count - headers.getReadBytes() && j < count; i++) {
+					bytes[i] = data[j++];
+				}
+				return bytes;
+			} else {
+				SECN_EXPECTED = false;
+				R_EXPECTED = true;
 			}
 
 		}
 
-		return buffer.array();
+		return bytes;
 	}
 
 	public boolean keepReading() {
@@ -424,27 +442,27 @@ public class DecoderImpl implements Decoder {
 
 	public RebuiltHeader generateBlockedHeader(String cause) {
 		HTTPHeaders newHeaders = new HTTPPacket();
-		if (cause.equals("URI")) {
-			newHeaders.addHeader("StatusCode", "666");
+		if (cause.equals("455")) {
+			newHeaders.addHeader("StatusCode", "455");
 			newHeaders.addHeader("Reason", "Blocked URL");
-		} else if (cause.equals("CONTENT-TYPE")) {
-			newHeaders.addHeader("StatusCode", "777");
+		} else if (cause.equals("456")) {
+			newHeaders.addHeader("StatusCode", "456");
 			newHeaders.addHeader("Reason", "Blocked MediaType");
-		} else if (cause.equals("IP")) {
-			newHeaders.addHeader("StatusCode", "888");
+		} else if (cause.equals("453")) {
+			newHeaders.addHeader("StatusCode", "453");
 			newHeaders.addHeader("Reason", "Blocked IP");
-		} else if (cause.equals("MAXSIZE")) {
-			newHeaders.addHeader("StatusCode", "999");
+		} else if (cause.equals("451")) {
+			newHeaders.addHeader("StatusCode", "451");
 			newHeaders.addHeader("Reason", "Blocked File Size");
-		} else if (cause.equals("ALL")) {
-			newHeaders.addHeader("StatusCode", "1234");
+		} else if (cause.equals("452")) {
+			newHeaders.addHeader("StatusCode", "452");
 			newHeaders.addHeader("Reason", "All Blocked");
-		} else if (cause.equals("ALL")) {
-			newHeaders.addHeader("StatusCode", "1234");
-			newHeaders.addHeader("Reason", "All Blocked");
-		} else if (cause.equals("500")){
+		} else if (cause.equals("500")) {
 			newHeaders.addHeader("StatusCode", "500");
 			newHeaders.addHeader("Reason", "Internal Server Error");
+		} else if (cause.equals("400")) {
+			newHeaders.addHeader("StatusCode", "400");
+			newHeaders.addHeader("Reason", "Bad Request");
 		}
 		newHeaders.addHeader("HTTPVersion", "HTTP/1.1");
 		newHeaders.addHeader("Via", " mu0");
@@ -469,46 +487,53 @@ public class DecoderImpl implements Decoder {
 
 	public HTML generateBlockedHTML(String cause) {
 		String html = "";
-		if (cause.equals("URI")) {
+		if (cause.equals("455")) {
 			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
-					+ "<html><head>" + "<title>666 URL bloqueada</title>"
+					+ "<html><head>" + "<title>455 URL bloqueada</title>"
 					+ "</head><body>" + "<h1>URL Bloqueada</h1>"
 					+ "<p>Su proxy bloqueo esta url<br />" + "</p>"
 					+ "</body></html>";
 
-		} else if (cause.equals("CONTENT-TYPE")) {
+		} else if (cause.equals("456")) {
 			html = "<h1>MediaType Bloqueada</h1>"
 					+ "<p>Su proxy bloqueo este tipo de archivos<br />"
 					+ "</p>";
 
-		} else if (cause.equals("IP")) {
+		} else if (cause.equals("453")) {
 			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
-					+ "<html><head>" + "<title>888 IP bloqueada</title>"
+					+ "<html><head>" + "<title>453 IP bloqueada</title>"
 					+ "</head><body>" + "<h1>IP Bloqueada</h1>"
 					+ "<p>Su proxy bloqueo esta IP<br />" + "</p>"
 					+ "</body></html>";
 
-		} else if (cause.equals("MAXSIZE")) {
+		} else if (cause.equals("451")) {
 			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
 					+ "<html><head>"
-					+ "<title>999 Tamano de archivo bloqueado</title>"
+					+ "<title>451 Tamano de archivo bloqueado</title>"
 					+ "</head><body>" + "<h1>Tamano de archivo Bloqueada</h1>"
 					+ "<p>Su proxy bloqueo archivos de este tamano<br />"
 					+ "</p>" + "</body></html>";
 
-		} else if (cause.equals("ALL")) {
+		} else if (cause.equals("452")) {
 			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
-					+ "<html><head>" + "<title>1234 Se bloqueo todo</title>"
+					+ "<html><head>" + "<title>452 Se bloqueo todo</title>"
 					+ "</head><body>" + "<h1>Todo bloqueado</h1>"
 					+ "<p>Su proxy bloqueo todo<br />" + "</p>"
 					+ "</body></html>";
 
 		} else if (cause.equals("500")) {
 			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
-					+ "<html><head>" + "<title>500 Internal Server Error</title>"
+					+ "<html><head>"
+					+ "<title>500 Internal Server Error</title>"
 					+ "</head><body>" + "<h1>Internal Server Error</h1>"
 					+ "<p>Internal Server Error<br />" + "</p>"
 					+ "</body></html>";
+
+		} else if (cause.equals("400")) {
+			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
+					+ "<html><head>" + "<title>400 Bad Request</title>"
+					+ "</head><body>" + "<h1>Bad Request</h1>"
+					+ "<p>Bad Request<br />" + "</p>" + "</body></html>";
 
 		}
 		return new HTML(html.getBytes(), html.length());

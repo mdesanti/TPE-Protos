@@ -5,6 +5,7 @@ import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -27,7 +28,7 @@ public class ConnectionManagerImpl implements ConnectionManager {
 		connectionLog.setLevel(Level.INFO);
 	}
 
-	public Socket getConnection(String host) throws IOException {
+	public Socket getConnection(String host) throws IOException,UnknownHostException {
 		URL url = new URL("http://" + host);
 		InetAddress addr = InetAddress.getByName(url.getHost());
 		connectionLog.info("Requested connection for " + url.toString());

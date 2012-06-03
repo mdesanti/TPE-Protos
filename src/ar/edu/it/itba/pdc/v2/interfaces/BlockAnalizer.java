@@ -13,4 +13,6 @@ public interface BlockAnalizer {
 
 	public boolean analizeChunkedSize(Decoder decoder, OutputStream clientOs,
 			int totalSize) throws IOException;
+	
+	public void generateProxyResponse(OutputStream clientOs, String cause) throws IOException;
 }

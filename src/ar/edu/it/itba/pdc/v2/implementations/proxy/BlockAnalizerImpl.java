@@ -16,8 +16,8 @@ import ar.edu.it.itba.pdc.v2.interfaces.Decoder;
 
 public class BlockAnalizerImpl implements BlockAnalizer {
 
-	Decoder decoder;
-	Configurator configurator;
+	private Decoder decoder;
+	private Configurator configurator;
 
 	public BlockAnalizerImpl(Configurator configurator) {
 		this.configurator = configurator;
@@ -26,12 +26,12 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 	public boolean analizeRequest(Decoder decoder, OutputStream clientOs)
 			throws IOException {
 		this.decoder = decoder;
-//		if (analizeBlockAll(clientOs))
-//			return true;
-//		if (analizeBlockIP(clientOs))
-//			return true;
-//		if (analizeBlockURL(clientOs))
-//			return true;
+		if (analizeBlockAll(clientOs))
+			return true;
+		if (analizeBlockIP(clientOs))
+			return true;
+		if (analizeBlockURL(clientOs))
+			return true;
 		return false;
 	}
 
@@ -47,14 +47,14 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 
 	public boolean analizeChunkedSize(Decoder decoder, OutputStream clientOs,
 			int totalSize) throws IOException {
-//		if (decoder.getHeader("Transfer-Encoding") == null) {
-//			return false;
-//		}
-//		if (totalSize > configurator.getMaxSize()) {
-//			generateProxyResponse(clientOs, "MAXSIZE");
-//
-//			return true;
-//		}
+		if (decoder.getHeader("Transfer-Encoding") == null) {
+			return false;
+		}
+		if (totalSize > configurator.getMaxSize()) {
+			generateProxyResponse(clientOs, "451");
+
+			return true;
+		}
 		return false;
 	}
 
@@ -68,7 +68,7 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 
 	private boolean analizeBlockAll(OutputStream clientOs) throws IOException {
 		if (configurator.blockAll()) {
-			generateProxyResponse(clientOs, "ALL");
+			generateProxyResponse(clientOs, "452");
 			return true;
 		}
 		return false;
@@ -81,7 +81,7 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 			URL url = new URL("http://" + decoder
 					.getHeader("Host").replace(" ", ""));
 			if (!configurator.isAccepted(InetAddress.getByName(url.getHost()))) {
-				generateProxyResponse(clientOs, "IP");
+				generateProxyResponse(clientOs, "453");
 
 				return true;
 			}
@@ -100,12 +100,12 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 			length = Integer.parseInt(decoder.getHeader("Content-Length")
 					.replace(" ", ""));
 		} catch (NumberFormatException e) {
-			System.out.println("Content-Length inv‡lido");
+			System.out.println("Content-Length invï¿½lido");
 			return true;
 		}
 		if (configurator.getMaxSize() != -1
 				&& length > configurator.getMaxSize()) {
-			generateProxyResponse(clientOs, "MAXSIZE");
+			generateProxyResponse(clientOs, "451");
 
 			return true;
 		}
@@ -115,7 +115,7 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 	private boolean analizeBlockURL(OutputStream clientOs) throws IOException {
 		if (!configurator.isAccepted(decoder.getHeader("RequestedURI").replace(
 				" ", ""))) {
-			generateProxyResponse(clientOs, "URI");
+			generateProxyResponse(clientOs, "455");
 			return true;
 		}
 		return false;
@@ -127,14 +127,14 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 		if (decoder.getHeader("Content-Type") != null
 				&& !configurator.isAccepted(MediaType.valueOf(decoder
 						.getHeader("Content-Type").replace(" ", "")))) {
-			generateProxyResponse(clientOs, "CONTENT-TYPE");
+			generateProxyResponse(clientOs, "456");
 			return true;
 		}
 		return false;
 
 	}
 
-	private void generateProxyResponse(OutputStream clientOs, String cause)
+	public void generateProxyResponse(OutputStream clientOs, String cause)
 			throws IOException {
 		RebuiltHeader newHeader = generateProxyResponseHeader(cause);
 		HTML html = generateProxyResponseHTML(cause);

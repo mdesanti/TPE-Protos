@@ -36,6 +36,7 @@ public class AnalyzerImp implements Analyzer {
 	private HTTPHeaders responseHeaders;
 	private byte[] buf = new byte[BUFFSIZE];
 	private Socket externalServer;
+	private OutputStream clientOs;
 	private boolean keepConnection;
 
 	public AnalyzerImp(ConnectionManager connectionManager,
@@ -66,7 +67,12 @@ public class AnalyzerImp implements Analyzer {
 			buf = new byte[BUFFSIZE];
 			externalServer = null;
 		} catch (UnknownHostException e) {
-			// TODO: Mandar 400 Bad request
+			try {
+				blockAnalizer.generateProxyResponse(clientOs, "400");
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 		} catch (IOException e) {
 			try {
 				socket.close();
@@ -124,8 +130,13 @@ public class AnalyzerImp implements Analyzer {
 				host = host.replace(" ", "");
 			}
 			analyzeLog.info("Requesting for connection to: " + host);
+			try{
 			while ((externalServer = connectionManager.getConnection(host)) == null) {
 				// System.out.println("No deberia pasar");
+			}
+			}catch(UnknownHostException e){
+				blockAnalizer.generateProxyResponse(clientOs, "400");
+				return false;
 			}
 			externalOs = externalServer.getOutputStream();
 
@@ -171,7 +182,7 @@ public class AnalyzerImp implements Analyzer {
 		totalCount = 0;
 		ByteBuffer resp = ByteBuffer.allocate(BUFFSIZE);
 		InputStream externalIs = externalServer.getInputStream();
-		OutputStream clientOs = socket.getOutputStream();
+		clientOs = socket.getOutputStream();
 
 		try {
 			// Read headers
@@ -183,11 +194,8 @@ public class AnalyzerImp implements Analyzer {
 						resp.array().length);
 			}
 			if (totalCount == 0) {
+				blockAnalizer.generateProxyResponse(clientOs, "500");
 				connectionManager.releaseConnection(externalServer, false);
-				RebuiltHeader erh = decoder.generateBlockedHeader("500");
-				HTML ehtml = decoder.generateBlockedHTML("500");
-				clientOs.write(erh.getHeader(), 0,erh.getSize());
-				clientOs.write(ehtml.getHTML(), 0, ehtml.getSize());
 				keepConnection = false;
 				return;
 			}
