@@ -59,6 +59,9 @@ public class HTTPPacket implements HTTPHeaders {
 		parseHeaders(lines);
 		if(args[0].equals("GET") || args[0].equals("HEAD")) {
 			contentExpected = false;
+			if(args[0].equals("HEAD")) {
+				isHEAD = true;
+			}
 		}
 
 	}
@@ -157,6 +160,10 @@ public class HTTPPacket implements HTTPHeaders {
 	
 	public void addHeader(String name, String value) {
 		headers.put(name, value);
+	}
+	
+	public boolean isHEADRequest() {
+		return isHEAD;
 	}
 
 }
