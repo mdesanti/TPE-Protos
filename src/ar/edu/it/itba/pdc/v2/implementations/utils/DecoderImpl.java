@@ -569,16 +569,13 @@ public class DecoderImpl implements Decoder {
 		try {
 			URL url = new URL(allHeaders.get("RequestedURI"));
 			String path = url.getPath();
-			if(url.getQuery() != null)
+			if (url.getQuery() != null)
 				path += "?" + url.getQuery();
 			allHeaders.put("RequestedURI", path);
 		} catch (MalformedURLException e) {
 		}
 		final StringBuilder sb = new StringBuilder();
 
-		if (requestImage()) {
-			allHeaders.remove("Accept-Encoding");
-		}
 		allHeaders.remove("Proxy-Connection");
 		allHeaders.put("Connection", "keep-alive");
 		sb.append(allHeaders.get("Method")).append(" ");
@@ -591,9 +588,7 @@ public class DecoderImpl implements Decoder {
 				sb.append(key).append(": ").append(allHeaders.get(key))
 						.append("\r\n");
 		}
-		if (requestImage()) {
-			sb.append("Accept-Encoding: identity\r\n");
-		}
+		sb.append("Accept-Encoding: identity\r\n");
 		// sb.append("Via: mu0-Proxy\r\n");
 		sb.append("\r\n");
 		return new RebuiltHeader(sb.toString().getBytes(), sb.toString()
@@ -604,7 +599,7 @@ public class DecoderImpl implements Decoder {
 		Map<String, String> allHeaders = headers.getAllHeaders();
 		StringBuilder sb = new StringBuilder();
 
-		 allHeaders.remove("Connection");
+		allHeaders.remove("Connection");
 		// allHeaders.put("Connection", "keep-alive");
 		// allHeaders.put("Connection", "close");
 		sb.append(allHeaders.get("HTTPVersion")).append(" ");
@@ -622,13 +617,6 @@ public class DecoderImpl implements Decoder {
 		sb.append("\r\n");
 		return new RebuiltHeader(sb.toString().getBytes(), sb.toString()
 				.length());
-	}
-
-	private boolean requestImage() {
-		String accept = headers.getHeader("Accept");
-		if (accept != null)
-			return accept.contains("image");
-		return false;
 	}
 
 }
