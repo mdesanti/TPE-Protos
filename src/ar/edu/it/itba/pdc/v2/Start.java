@@ -1,6 +1,7 @@
 package ar.edu.it.itba.pdc.v2;
 
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Properties;
 
@@ -17,27 +18,68 @@ import ar.edu.it.itba.pdc.v2.interfaces.Configurator;
 import ar.edu.it.itba.pdc.v2.interfaces.ConnectionManager;
 
 public class Start {
+	
+	private static Logger proxy;
 
 	public static void main(String args[]) {
+		BasicConfigurator.configure();
+		proxy = Logger.getLogger("proxy");
+		proxy.setLevel(Level.INFO);
+		ProxyData pd;
+		if((pd = loadProperties()) != null) {
+			init(pd);
+		}
+	}
+
+	private static ProxyData loadProperties() {
+		Properties proxyProp = new Properties();
 		try {
-			Properties proxyProp = new Properties();
+			proxy.info("Reading proxy.properties file...");
 			FileInputStream in = new FileInputStream("proxy.properties");
 			proxyProp.load(in);
 			in.close();
-			
-			BasicConfigurator.configure();
-			Logger proxy = Logger.getLogger("proxy");
-			proxy.setLevel(Level.INFO);
+			int configPort = Integer.valueOf(proxyProp
+					.getProperty("configuratorPort"));
+			proxy.info("Configurator port loaded. Listening on port " + configPort);
+			int serverPort = Integer.valueOf(proxyProp.getProperty("serverPort"));
+			proxy.info("Server port loaded. Listening on port " + serverPort);
+			int monitorPort = Integer.valueOf(proxyProp.getProperty("monitorPort"));
+			proxy.info("Monitor port loaded. Listening on port " + monitorPort);
+			String intermProxyAddr = proxyProp.getProperty("intermProxyAddr");
+			String intermProxyPort = proxyProp.getProperty("intermProxyAddr");
+			if(intermProxyAddr == null || intermProxyAddr.isEmpty()) {
+				proxy.info("No intermediate proxy configuration was found");
+				return new ProxyData(configPort, serverPort, monitorPort, false, null, -1);
+			} else {
+				InetAddress addr = InetAddress.getByName(intermProxyAddr);
+				int port = Integer.valueOf(intermProxyPort);
+				proxy.info("Intermediate proxy configuration found. Address: " + addr.toString() + " - Port: " + port);
+				return new ProxyData(configPort, serverPort, monitorPort, true, addr, port);
+			}
+		} catch (IOException e) {
+			System.out
+					.println("No se ha podido encontrar el archivo 'proxy.properties'. El proxy no puede funcionar sin el");
+			return null;
+		} catch (NumberFormatException e) {
+			System.out
+					.println("Los puertos ingresados no son validos. Por favor revise el archivo proxy.properties");
+			return null;
+		}
+	}
+
+	private static void init(ProxyData pd) {
+		try {
+
 			proxy.info("Instantiating configurator");
-			Configurator configurator = new ConfiguratorImpl(Integer.valueOf(proxyProp.getProperty("configuratorPort")));
+			Configurator configurator = new ConfiguratorImpl(pd.getConfigPort());
 			proxy.info("Creating configurator thread");
 			Thread configuratorThread = new Thread(configurator);
-			Monitor monitor = new Monitor(Integer.valueOf(proxyProp.getProperty("monitorPort")));
+			Monitor monitor = new Monitor(pd.getMonitorPort());
 			Thread monitorThread = new Thread(monitor);
-			ConnectionManager cm = new ConnectionManagerImpl(monitor);
+			ConnectionManager cm = new ConnectionManagerImpl(monitor, pd);
 			Thread connManagerThread = new Thread(cm);
 			proxy.info("Instantiating server");
-			ThreadedSocketServer server = new ThreadedSocketServer(Integer.valueOf(proxyProp.getProperty("serverPort")),
+			ThreadedSocketServer server = new ThreadedSocketServer(pd.getMonitorPort(),
 					InetAddress.getByName("localhost"), new ClientHandler(),
 					configurator, monitor, cm);
 			proxy.info("Creating server thread");
@@ -58,5 +100,4 @@ public class Start {
 			e.printStackTrace();
 		}
 	}
-
 }
