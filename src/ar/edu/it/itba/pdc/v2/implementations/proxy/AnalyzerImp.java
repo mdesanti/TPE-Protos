@@ -157,7 +157,8 @@ public class AnalyzerImp implements Analyzer {
 			externalOs = externalServer.getOutputStream();
 
 			// Sends rebuilt header to server
-			analyzeLog.info("Sending rebuilt headers to server --- " + new String(rh.getHeader()));
+			analyzeLog.info("Sending rebuilt headers to server --- "
+					+ new String(rh.getHeader()));
 			// System.out.println(new String(rh.getHeader()));
 			externalOs.write(rh.getHeader(), 0, rh.getSize());
 			// externalOs.write(buffer.array(), 0,
@@ -223,14 +224,16 @@ public class AnalyzerImp implements Analyzer {
 			responseHeaders = decoder.getHeaders();
 			String connection = responseHeaders.getHeader("Connection");
 			String httpVersion = responseHeaders.getHeader("HTTPVersion");
-			if ((connection == null && httpVersion.contains("1.1")) || (connection != null && connection.toUpperCase().contains("KEEP-ALIVE"))) {
+			if ((connection == null && httpVersion.contains("1.1"))
+					|| (connection != null && connection.toUpperCase()
+							.contains("KEEP-ALIVE"))) {
 				externalSConnection = true;
 			} else if (connection == null && httpVersion.contains("1.1")) {
 				externalSConnection = true;
-			} if(connection == null || connection.contains("close")) {
+			}
+			if (connection == null || connection.contains("close")) {
 				externalSConnection = false;
 			}
-			
 
 			if (blockAnalizer.analizeResponse(decoder, clientOs)) {
 				dataStorage.addBlock();
@@ -287,7 +290,7 @@ public class AnalyzerImp implements Analyzer {
 			if (receivedMsg == -1) {
 				keepReading = false;
 			}
-			if(isHEADRequest)
+			if (isHEADRequest)
 				keepReading = false;
 			System.out.println("PASA" + keepReading);
 			while (keepReading && ((receivedMsg = externalIs.read(buf)) != -1)) {
@@ -347,12 +350,16 @@ public class AnalyzerImp implements Analyzer {
 	public boolean keepConnection() {
 		return keepConnection;
 	}
-	
+
 	private void closeStreams() throws IOException {
-		clientIs.close();
-		clientOs.close();
-		externalIs.close();
-		externalOs.close();
+		if (clientIs != null)
+			clientIs.close();
+		if (clientOs != null)
+			clientOs.close();
+		if (externalIs != null)
+			externalIs.close();
+		if (externalOs != null)
+			externalOs.close();
 	}
-	
+
 }

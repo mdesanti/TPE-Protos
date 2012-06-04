@@ -25,19 +25,15 @@ import ar.edu.it.itba.pdc.v2.interfaces.HTTPHeaders;
 public class DecoderImpl implements Decoder {
 
 	private boolean read = true;
-	private int index = 0;
 	private HTTPHeaders headers = null;
 	private String fileName;
 	private int keepReadingBytes = 0;
 	private boolean isImage = false;
 	private boolean isText = false;
-	private boolean generatingKeep = true;
 	private Configurator configurator;
 	private byte[] aux;
-	private byte[] aux2 = new byte[20];
 	private int auxIndex = 0;
 	private Charset charset = null;
-
 
 	private boolean BUILDING_NUMBER = true;
 	private boolean N_EXPECTED = false;
@@ -50,38 +46,6 @@ public class DecoderImpl implements Decoder {
 	public DecoderImpl(int buffSize) {
 		headers = new HTTPPacket();
 		aux = new byte[100];
-	}
-
-	public void decode(byte[] bytes, int count) {
-
-		// headers.parse(bytes, count);
-
-		String length;
-
-		if (headers.getHeader("Method").contains("GET")) {
-			read = false;
-		}
-
-		length = headers.getHeader("Content-Length");
-		// remove spaces
-		if (length != null) {
-			length = length.replaceAll(" ", "");
-			int expectedRead = Integer.parseInt(length);
-			if (expectedRead >= headers.getReadBytes()) {
-				if (!headers.contentExpected())
-					read = false;
-				read = true;
-			} else {
-				read = false;
-			}
-		} else {
-			String transferEncoding = headers.getHeader("Transfer-Encoding");
-			if (transferEncoding != null
-					&& transferEncoding.contains("chunked")) {
-
-			}
-		}
-
 	}
 
 	public byte[] getExtra(byte[] data, int count) {
@@ -134,10 +98,6 @@ public class DecoderImpl implements Decoder {
 	private boolean isChunked() {
 		return (headers.getHeader("Transfer-Encoding") != null)
 				&& (headers.getHeader("Transfer-Encoding").contains("chunked"));
-	}
-
-	public int getBufferSize() {
-		return index;
 	}
 
 	public String getHeader(String header) {
@@ -195,13 +155,13 @@ public class DecoderImpl implements Decoder {
 		} else if (isText && configurator.applyTextTransformation()) {
 			if (fileName == null) {
 				String[] params = headers.getHeader("Content-Type").split(";");
-				if(params.length < 2) {
+				if (params.length < 2) {
 					charset = Charset.forName("UTF-8");
 				} else {
 					String set = params[1].split("=")[1].replace(" ", "");
-					charset = Charset.forName("set");
+					charset = Charset.forName(set);
 				}
-				
+
 				String path[] = requestHeaders.getHeader("RequestedURI").split(
 						"/");
 				File f = new File("/tmp/prueba");
@@ -238,24 +198,11 @@ public class DecoderImpl implements Decoder {
 
 	public byte[] getRotatedImage() throws IOException {
 		Transformations im = new Transformations();
-		// InputStream is = null;
-		// try {
-		// is = new BufferedInputStream(new FileInputStream((fileName)));
-		// } catch (FileNotFoundException e) {
-		// // TODO Auto-generated catch block
-		// e.printStackTrace();
-		// }
 
 		byte[] modified = im.rotate(fileName, 180);
 		if (modified == null) {
 			return null;
 		}
-		// try {
-		// is.close();
-		// } catch (IOException e) {
-		// // TODO Auto-generated catch block
-		// e.printStackTrace();
-		// }
 		fileName = null;
 		return modified;
 	}
@@ -264,7 +211,6 @@ public class DecoderImpl implements Decoder {
 		Transformations im = new Transformations();
 		InputStream is = null;
 		try {
-			System.out.println(fileName);
 			is = new BufferedInputStream(new FileInputStream((fileName)));
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -284,16 +230,6 @@ public class DecoderImpl implements Decoder {
 		}
 		fileName = null;
 		return modified;
-	}
-
-	public void applyTransformations(byte[] bytes, int count) {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void applyFilters() {
-		// TODO Auto-generated method stub
-
 	}
 
 	public boolean completeHeaders(byte[] bytes, int count) {
@@ -391,8 +327,6 @@ public class DecoderImpl implements Decoder {
 					N_EXPECTED = false;
 					BUILDING_NUMBER = true;
 				} else if (FINISHED) {
-					// read = false;
-					// auxIndex = 0;
 					if (R_EXPECTED && bytes[j] == '\r') {
 						R_EXPECTED = false;
 						N_EXPECTED = true;
@@ -427,11 +361,9 @@ public class DecoderImpl implements Decoder {
 
 	public void reset() {
 		read = true;
-		index = 0;
 		headers = new HTTPPacket();
 		fileName = null;
 		keepReadingBytes = 0;
-		generatingKeep = true;
 		isImage = false;
 		isText = false;
 		BUILDING_NUMBER = true;
@@ -485,78 +417,79 @@ public class DecoderImpl implements Decoder {
 		newHeaders.addHeader("Connection", " close");
 
 		Map<String, String> allHeaders = newHeaders.getAllHeaders();
-		String sb = "";
+		StringBuilder sb = new StringBuilder();
 
-		sb += allHeaders.get("HTTPVersion") + " ";
-		sb += allHeaders.get("StatusCode") + " ";
-		sb += allHeaders.get("Reason") + "\r\n";
+		sb.append(allHeaders.get("HTTPVersion")).append(" ");
+		sb.append(allHeaders.get("StatusCode")).append(" ");
+		sb.append(allHeaders.get("Reason")).append("\r\n");
 
 		for (String key : allHeaders.keySet()) {
 			if (!key.equals("HTTPVersion") && !key.equals("StatusCode")
 					&& !key.equals("Reason"))
-				sb += (key + ":" + allHeaders.get(key) + "\r\n");
+				sb.append(key + ":" + allHeaders.get(key)).append("\r\n");
 		}
-		sb += ("\r\n");
-		return new RebuiltHeader(sb.getBytes(), sb.length());
+		sb.append("\r\n");
+		return new RebuiltHeader(sb.toString().getBytes(), sb.toString()
+				.length());
 	}
 
 	public HTML generateBlockedHTML(String cause) {
-		String html = "";
+		StringBuilder html = new StringBuilder();
 		if (cause.equals("455")) {
-			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
+			html.append("<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
 					+ "<html><head>" + "<title>455 URL bloqueada</title>"
 					+ "</head><body>" + "<h1>URL Bloqueada</h1>"
 					+ "<p>Su proxy bloqueo esta url<br />" + "</p>"
-					+ "</body></html>";
+					+ "</body></html>");
 
 		} else if (cause.equals("456")) {
-			html = "<h1>MediaType Bloqueada</h1>"
+			html.append("<h1>MediaType Bloqueada</h1>"
 					+ "<p>Su proxy bloqueo este tipo de archivos<br />"
-					+ "</p>";
+					+ "</p>");
 
 		} else if (cause.equals("453")) {
-			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
+			html.append("<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
 					+ "<html><head>" + "<title>453 IP bloqueada</title>"
 					+ "</head><body>" + "<h1>IP Bloqueada</h1>"
 					+ "<p>Su proxy bloqueo esta IP<br />" + "</p>"
-					+ "</body></html>";
+					+ "</body></html>");
 
 		} else if (cause.equals("451")) {
-			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
+			html.append("<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
 					+ "<html><head>"
 					+ "<title>451 Tamano de archivo bloqueado</title>"
 					+ "</head><body>" + "<h1>Tamano de archivo Bloqueada</h1>"
 					+ "<p>Su proxy bloqueo archivos de este tamano<br />"
-					+ "</p>" + "</body></html>";
+					+ "</p>" + "</body></html>");
 
 		} else if (cause.equals("452")) {
-			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
+			html.append("<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
 					+ "<html><head>" + "<title>452 Se bloqueo todo</title>"
 					+ "</head><body>" + "<h1>Todo bloqueado</h1>"
 					+ "<p>Su proxy bloqueo todo<br />" + "</p>"
-					+ "</body></html>";
+					+ "</body></html>");
 
 		} else if (cause.equals("500")) {
-			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
+			html.append("<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
 					+ "<html><head>"
 					+ "<title>500 Internal Server Error</title>"
 					+ "</head><body>" + "<h1>Internal Server Error</h1>"
 					+ "<p>Internal Server Error<br />" + "</p>"
-					+ "</body></html>";
+					+ "</body></html>");
 
 		} else if (cause.equals("400")) {
-			html = "<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
+			html.append("<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
 					+ "<html><head>" + "<title>400 Bad Request</title>"
 					+ "</head><body>" + "<h1>Bad Request</h1>"
-					+ "<p>Bad Request<br />" + "</p>" + "</body></html>";
+					+ "<p>Bad Request<br />" + "</p>" + "</body></html>");
 
 		}
-		return new HTML(html.getBytes(), html.length());
+		return new HTML(html.toString().getBytes(), html.toString().length());
 	}
 
 	public RebuiltHeader modifiedContentLength(int contentLength) {
 		Map<String, String> allHeaders = headers.getAllHeaders();
-		String sb = "";
+		StringBuilder sb = new StringBuilder();
 
 		allHeaders.remove("Accept-Encoding");
 		allHeaders.remove("Proxy-Connection");
@@ -564,19 +497,18 @@ public class DecoderImpl implements Decoder {
 		allHeaders.remove("Content-Length");
 		allHeaders.remove("Transfer-Encoding");
 		allHeaders.put("Content-Length", String.valueOf(contentLength));
-		sb += allHeaders.get("HTTPVersion") + " ";
-		sb += allHeaders.get("StatusCode") + " ";
-		sb += allHeaders.get("Reason") + "\r\n";
+		sb.append(allHeaders.get("HTTPVersion")).append(" ");
+		sb.append(allHeaders.get("StatusCode")).append(" ");
+		sb.append(allHeaders.get("Reason")).append("\r\n");
 
 		for (String key : allHeaders.keySet()) {
 			if (!key.equals("HTTPVersion") && !key.equals("StatusCode")
 					&& !key.equals("Reason"))
-				sb += (key + ":" + allHeaders.get(key) + "\r\n");
+				sb.append(key + ":" + allHeaders.get(key)).append("\r\n");
 		}
-		// allHeaders.put("Via", " mu0Proxy");
-		// sb += "Via:" + allHeaders.get("Via") + "\r\n";
-		sb += ("\r\n");
-		return new RebuiltHeader(sb.getBytes(), sb.length());
+		// sb.append("Via: mu0-Proxy\r\n");
+		sb.append("\r\n");
+		return new RebuiltHeader(sb.toString().getBytes(), sb.toString().length());
 	}
 
 	public RebuiltHeader rebuildHeaders() {
@@ -619,10 +551,6 @@ public class DecoderImpl implements Decoder {
 		StringBuilder sb = new StringBuilder();
 
 		allHeaders.remove("Connection");
-		// allHeaders.put("Connection", "keep-alive");
-		// allHeaders.put("Connection", "close");
-//		allHeaders.remove("Content-Encoding");
-//		allHeaders.put("Content-Encoding", " identity");
 		sb.append(allHeaders.get("HTTPVersion")).append(" ");
 		sb.append(allHeaders.get("StatusCode")).append(" ");
 		sb.append(allHeaders.get("Reason")).append("\r\n");
