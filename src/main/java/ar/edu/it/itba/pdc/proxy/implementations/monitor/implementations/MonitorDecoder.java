@@ -121,7 +121,7 @@ public class MonitorDecoder implements ConnectionDecoder {
 	private String printHelp() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("command:comando-bytes|comando-count|comando-cons\n");
-		sb.append("comando-bytes=\"GET\"SP\"BYTES\"SP(ALL|CP|CS)\n");
+		sb.append("comando-bytes=\"GET\"SP\"BYTES\"SP(ALL|CP|PS)\n");
 		sb.append("comando-count=\"GET\"SP\"COUNT\"SP(BLOCK|TRANS)\n");
 		sb.append("comando-cons=\"GET\"SP\"CONS\"SP(C|S)\n");
 

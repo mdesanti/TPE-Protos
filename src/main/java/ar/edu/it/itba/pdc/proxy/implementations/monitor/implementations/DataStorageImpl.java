@@ -4,22 +4,13 @@ import ar.edu.it.itba.pdc.proxy.implementations.monitor.interfaces.DataStorage;
 
 public class DataStorageImpl implements DataStorage {
 
-	private long clientToProxyBytes;
-	private long proxyToServersBytes;
-	private long blocks;
-	private long transformations;
-	private long clientOpenConections;
-	private long serversOpenConections;
+	private long clientToProxyBytes = 0;
+	private long proxyToServersBytes = 0;
+	private long blocks = 0;
+	private long transformations = 0;
+	private long clientOpenConnections = 0;
+	private long serversOpenConnections = 0;
 	private static DataStorageImpl INSTANCE = new DataStorageImpl();
-
-	private DataStorageImpl() {
-		this.clientToProxyBytes = 0;
-		this.proxyToServersBytes = 0;
-		this.blocks = 0;
-		this.transformations = 0;
-		this.clientOpenConections = 0;
-		this.serversOpenConections = 0;
-	}
 
 	public long getTotalBytes() {
 		return clientToProxyBytes + proxyToServersBytes;
@@ -43,17 +34,16 @@ public class DataStorageImpl implements DataStorage {
 	}
 
 	public long getClientOpenConnections() {
-		return clientOpenConections;
+		return clientOpenConnections;
 	}
 
 	public long getServersOpenConnections() {
-		return serversOpenConections;
+		return serversOpenConnections;
 	}
 
 	public static DataStorageImpl getInstance() {
 		return INSTANCE;
 	}
-
 
 	public synchronized void addClientProxyBytes(long bytes) {
 		clientToProxyBytes += bytes;
@@ -72,11 +62,11 @@ public class DataStorageImpl implements DataStorage {
 	}
 
 	public synchronized void addClientOpenConnection(long clientOpenConnections) {
-		clientOpenConnections += clientOpenConnections;
+		this.clientOpenConnections += clientOpenConnections;
 	}
 
 	public synchronized void addServerOpenConnection(long serverOpenConnection) {
-		serversOpenConections += serverOpenConnection;
+		this.serversOpenConnections += serverOpenConnection;
 	}
 
 	public Object clone() throws CloneNotSupportedException {

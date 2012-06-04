@@ -117,7 +117,8 @@ public class DecoderImpl implements Decoder {
 
 	public boolean applyTransformations() {
 		this.analizeMediaType();
-		return configurator.applyTransformation() && (isImage || isText);
+		return (configurator.applyRotations() && isImage)
+				|| (configurator.applyTextTransformation() && isText);
 	}
 
 	public void applyRestrictions(byte[] bytes, int count,
@@ -169,7 +170,8 @@ public class DecoderImpl implements Decoder {
 				File f = new File("/tmp/proxyFiles");
 				f.mkdir();
 				if (path[path.length - 1].length() < 10)
-					fileName = "/tmp/proxyFiles/" + path[path.length - 1] + ".txt";
+					fileName = "/tmp/proxyFiles/" + path[path.length - 1]
+							+ ".txt";
 				else {
 					fileName = "/tmp/proxyFiles/"
 							+ path[path.length - 1].substring(0, 6) + "."
