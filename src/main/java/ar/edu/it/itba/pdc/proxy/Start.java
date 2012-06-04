@@ -21,7 +21,7 @@ public class Start {
 	private static Logger proxy;
 
 	public static void main(String args[]) {
-//		BasicConfigurator.configure();
+		BasicConfigurator.configure();
 		proxy = Logger.getLogger("START");
 		proxy.setLevel(Level.INFO);
 		ProxyData pd;
