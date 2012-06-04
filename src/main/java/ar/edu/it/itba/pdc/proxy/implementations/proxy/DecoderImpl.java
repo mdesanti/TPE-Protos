@@ -46,7 +46,7 @@ public class DecoderImpl implements Decoder {
 	private boolean READING_CONTENT = false;
 	private boolean FINISHED = false;
 
-	public DecoderImpl(Configurator configurator ) {
+	public DecoderImpl(Configurator configurator) {
 		headers = new HTTPPacket();
 		aux = new byte[100];
 		this.configurator = configurator;
@@ -152,8 +152,6 @@ public class DecoderImpl implements Decoder {
 				fw.write(bytes, 0, count);
 				fw.close();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
 
 		} else if (isText && configurator.applyTextTransformation()) {
@@ -185,8 +183,6 @@ public class DecoderImpl implements Decoder {
 				fw.write(cbuf.array(), 0, cbuf.length());
 				fw.close();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			}
 		}
 
@@ -207,6 +203,9 @@ public class DecoderImpl implements Decoder {
 		if (modified == null) {
 			return null;
 		}
+		File f = new File(fileName);
+		f.setWritable(true);
+		f.delete();
 		fileName = null;
 		return modified;
 	}
@@ -233,6 +232,8 @@ public class DecoderImpl implements Decoder {
 			e.printStackTrace();
 		}
 		File f = new File(fileName);
+		f.setWritable(true);
+		f.delete();
 		fileName = null;
 		return modified;
 	}

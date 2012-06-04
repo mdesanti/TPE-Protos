@@ -38,11 +38,7 @@ public class Transformations {
 			} else
 				newImage = opRotated.filter(originalImage, null);
 
-			String[] path = fileName.split("/");
-			File fileNew = new File("/tmp/prueba/R" + path[3]);
-
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			ImageIO.write(newImage, "png", fileNew);
 			ImageIO.write(newImage, "png", out);
 			return out.toByteArray();
 		} catch (Exception e) {
