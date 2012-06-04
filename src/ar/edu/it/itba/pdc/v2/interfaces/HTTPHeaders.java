@@ -12,7 +12,7 @@ public interface HTTPHeaders {
 	
 	public String dumpHeaders();
 	
-	public void parseHeaders(byte[] data, int count);
+	public boolean parseHeaders(byte[] data, int count,String action);
 	
 	public Map<String, String> getAllHeaders();
 	

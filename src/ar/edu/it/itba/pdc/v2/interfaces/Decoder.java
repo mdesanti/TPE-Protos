@@ -26,7 +26,7 @@ public interface Decoder {
 
 	public void reset();
 
-	public void parseHeaders(byte[] data, int count);
+	public boolean parseHeaders(byte[] data, int count,String action);
 
 	public HTTPHeaders getHeaders();
 

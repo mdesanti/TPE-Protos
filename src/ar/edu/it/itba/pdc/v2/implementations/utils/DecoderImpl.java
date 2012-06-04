@@ -374,8 +374,8 @@ public class DecoderImpl implements Decoder {
 		auxIndex = 0;
 	}
 
-	public void parseHeaders(byte[] data, int count) {
-		headers.parseHeaders(data, count);
+	public boolean parseHeaders(byte[] data, int count,String action) {
+		return headers.parseHeaders(data, count,action);
 	}
 
 	public HTTPHeaders getHeaders() {
@@ -410,6 +410,9 @@ public class DecoderImpl implements Decoder {
 		} else if (cause.equals("400")) {
 			newHeaders.addHeader("StatusCode", "400");
 			newHeaders.addHeader("Reason", "Bad Request");
+		} else if (cause.equals("501")) {
+			newHeaders.addHeader("StatusCode", "501");
+			newHeaders.addHeader("Reason", "Not Implemented");
 		}
 		newHeaders.addHeader("HTTPVersion", "HTTP/1.1");
 		newHeaders.addHeader("Via", " mu0");
@@ -484,6 +487,13 @@ public class DecoderImpl implements Decoder {
 					+ "<p>Bad Request<br />" + "</p>" + "</body></html>");
 
 		}
+		 else if (cause.equals("501")) {
+				html.append("<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
+						+ "<html><head>" + "<title>501 Not Implemented</title>"
+						+ "</head><body>" + "<h1>Not Implemented</h1>"
+						+ "<p>Bad Request<br />" + "</p>" + "</body></html>");
+
+			}
 		return new HTML(html.toString().getBytes(), html.toString().length());
 	}
 
