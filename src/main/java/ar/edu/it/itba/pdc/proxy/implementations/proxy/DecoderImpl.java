@@ -280,12 +280,7 @@ public class DecoderImpl implements Decoder {
 		if (isChunked()) {
 			for (int j = 0; j < count; j++) {
 				if (BUILDING_NUMBER && !N_EXPECTED) {
-					if (bytes[j] == '0' && auxIndex == 0) {
-						FINISHED = true;
-						R_EXPECTED = true;
-						N_EXPECTED = false;
-						BUILDING_NUMBER = false;
-					} else if (bytes[j] == '\r') {
+					if (bytes[j] == '\r') {
 						N_EXPECTED = true;
 					} else {
 						aux[auxIndex++] = bytes[j];
