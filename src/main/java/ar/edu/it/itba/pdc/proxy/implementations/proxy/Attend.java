@@ -34,41 +34,44 @@ public class Attend implements Runnable {
 	public void run() {
 		byte[] buffer = new byte[500];
 		ByteBuffer req = ByteBuffer.allocate(20 * 1024);
-		try {
-			int receivedMsg = 0, totalCount = 0;
+		while (!socket.isClosed()) {
+			try {
+				int receivedMsg = 0, totalCount = 0;
 
-			InputStream clientIs = socket.getInputStream();
+				InputStream clientIs = socket.getInputStream();
 
-			boolean keepReading = true;
+				boolean keepReading = true;
 
-			// Reads until headers are complete
-			attend.debug("Before reading headers from client");
-			attend.info("Reading headers from client");
-			while (keepReading && ((receivedMsg = clientIs.read(buffer)) != -1)) {
-				totalCount += receivedMsg;
-				req.put(buffer, 0, receivedMsg);
-				keepReading = !decoder.completeHeaders(req.array(),
-						req.array().length);
+				// Reads until headers are complete
+				attend.debug("Before reading headers from client");
+				attend.info("Reading headers from client");
+				while (keepReading
+						&& ((receivedMsg = clientIs.read(buffer)) != -1)) {
+					totalCount += receivedMsg;
+					req.put(buffer, 0, receivedMsg);
+					keepReading = !decoder.completeHeaders(req.array(),
+							req.array().length);
+				}
+				if (receivedMsg == -1) {
+					attend.info("Received -1 from client. Closing connection");
+					socket.close();
+				}
+
+				attend.debug("Headers completely read. Sending to analyzer");
+				monitor.getDataStorage().addClientProxyBytes(totalCount);
+
+				analyzer.analyze(req, totalCount, socket);
+
+				if (!socket.isConnected() || socket.isClosed()
+						|| !analyzer.keepConnection()) {
+					attend.info("Analyzer returned. Closing socket");
+					req.clear();
+					socket.close();
+				}
+
+			} catch (IOException e) {
+				return;
 			}
-			if (receivedMsg == -1) {
-				attend.info("Received -1 from client. Closing connection");
-				socket.close();
-			}
-
-			attend.debug("Headers completely read. Sending to analyzer");
-			monitor.getDataStorage().addClientProxyBytes(totalCount);
-
-			analyzer.analyze(req, totalCount, socket);
-
-			if (!socket.isConnected() || socket.isClosed()
-					|| !analyzer.keepConnection()) {
-				attend.info("Analyzer returned. Closing socket");
-				req.clear();
-				socket.close();
-			}
-
-		} catch (IOException e) {
-			return;
 		}
 	}
 }

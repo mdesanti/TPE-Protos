@@ -121,10 +121,8 @@ public class ConnectionManagerImpl implements ConnectionManager {
 					Socket s = connection.getSocket();
 					if (equals(socket, s) && keepAlive) {
 						connection.releaseConnection();
-//						socket.shutdownInput();
-//						socket.shutdownOutput();
 						return;
-					} else if (socket.equals(s)) {
+					} else if (equals(socket,s)) {
 						s.close();
 					}
 				}
