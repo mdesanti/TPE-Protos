@@ -76,6 +76,7 @@ public class AnalyzerImp implements Analyzer {
 			try {
 				decoder.generateProxyResponse(clientOs, "400");
 				closeStreams();
+				socket.close();
 			} catch (IOException e1) {
 			}
 		} catch (IOException e) {
@@ -90,6 +91,7 @@ public class AnalyzerImp implements Analyzer {
 			try {
 				decoder.generateProxyResponse(clientOs, "500");
 				closeStreams();
+				socket.close();
 			} catch (IOException e1) {
 			}
 		}
