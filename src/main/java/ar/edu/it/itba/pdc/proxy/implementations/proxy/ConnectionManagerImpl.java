@@ -82,8 +82,7 @@ public class ConnectionManagerImpl implements ConnectionManager {
 			}
 			for (ConnectionStatus connection : connectionList) {
 				Socket s = connection.getSocket();
-				if (!connection.isInUse() && !s.isClosed() && s.isConnected()
-						&& !s.isInputShutdown() && !s.isOutputShutdown()) {
+				if (!connection.isInUse() && !s.isClosed() && s.isConnected()) {
 					connectionLog
 							.info("Reused connection to " + url.toString());
 					connection.takeConnection();
@@ -93,7 +92,7 @@ public class ConnectionManagerImpl implements ConnectionManager {
 		}
 		connectionLog.info("Created new connection to " + url.toString());
 		int port;
-		if(pd.extistsIntermediateProxy()) {
+		if (pd.extistsIntermediateProxy()) {
 			port = pd.getIntermProxyPort();
 		} else {
 			port = (url.getPort() == -1) ? 80 : url.getPort();
@@ -117,19 +116,21 @@ public class ConnectionManagerImpl implements ConnectionManager {
 		List<ConnectionStatus> connectionList = connections.get(socket
 				.getInetAddress());
 		synchronized (connections) {
-			for (ConnectionStatus connection : connectionList) {
-				Socket s = connection.getSocket();
-				if (equals(socket, s) && keepAlive) {
-					connection.releaseConnection();
-					return;
-				} else if (socket.equals(s)) {
-					try {
+			try {
+				for (ConnectionStatus connection : connectionList) {
+					Socket s = connection.getSocket();
+					if (equals(socket, s) && keepAlive) {
+						connection.releaseConnection();
+//						socket.shutdownInput();
+//						socket.shutdownOutput();
+						return;
+					} else if (socket.equals(s)) {
 						s.close();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
 					}
 				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 	}

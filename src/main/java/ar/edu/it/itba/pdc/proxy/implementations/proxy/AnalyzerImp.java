@@ -260,6 +260,9 @@ public class AnalyzerImp implements Analyzer {
 				keepReading = decoder.keepReading();
 				data = true;
 			}
+			if(receivedMsg == -1) {
+				System.out.println("llego -1");
+			}
 			dataStorage.addProxyServerBytes(totalCount);
 			analyzeLog.info("Response completed from server");
 			if (blockAnalizer.analyzeChunkedSize(decoder, clientOs, totalCount)) {
@@ -294,6 +297,7 @@ public class AnalyzerImp implements Analyzer {
 					externalSConnection);
 		} catch (IOException e) {
 			connectionManager.releaseConnection(externalServer, false);
+			e.printStackTrace();
 			throw e;
 		}
 
@@ -304,14 +308,8 @@ public class AnalyzerImp implements Analyzer {
 	}
 
 	private void closeStreams() throws IOException {
-		if (clientIs != null)
-			clientIs.close();
-		if (clientOs != null)
-			clientOs.close();
-		if (externalIs != null)
-			externalIs.close();
-		if (externalOs != null)
-			externalOs.close();
+//		socket.shutdownInput();
+		socket.shutdownOutput();
 	}
 
 	private boolean analyzeConnection() {
