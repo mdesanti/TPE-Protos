@@ -46,7 +46,7 @@ public class DecoderImpl implements Decoder {
 	private boolean READING_CONTENT = false;
 	private boolean FINISHED = false;
 
-	public DecoderImpl(Configurator configurator ) {
+	public DecoderImpl(Configurator configurator) {
 		headers = new HTTPPacket();
 		aux = new byte[100];
 		this.configurator = configurator;
@@ -555,7 +555,7 @@ public class DecoderImpl implements Decoder {
 						.append("\r\n");
 		}
 		sb.append("Accept-Encoding: identity\r\n");
-		// sb.append("Via: mu0-Proxy\r\n");
+		sb.append("Via: mu0-Proxy\r\n");
 		sb.append("\r\n");
 		return new RebuiltHeader(sb.toString().getBytes(), sb.toString()
 				.length());
@@ -577,7 +577,7 @@ public class DecoderImpl implements Decoder {
 				sb.append(key).append(": ")
 						.append(allHeaders.get(key) + "\r\n");
 		}
-		// sb.append("Via: mu0-Proxy\r\n");
+		sb.append("Via: mu0-Proxy\r\n");
 		sb.append("\r\n");
 		return new RebuiltHeader(sb.toString().getBytes(), sb.toString()
 				.length());
