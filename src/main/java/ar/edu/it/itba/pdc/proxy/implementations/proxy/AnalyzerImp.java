@@ -185,8 +185,9 @@ public class AnalyzerImp implements Analyzer {
 						resp.array().length);
 			}
 			if (totalCount == 0) {
-				decoder.generateProxyResponse(clientOs, "500");
-				connectionManager.releaseConnection(externalServer, false);
+//				decoder.generateProxyResponse(clientOs, "500");
+//				connectionManager.releaseConnection(externalServer, false);
+				connectionManager.cleanAll(externalServer);
 				keepConnection = false;
 				return;
 			}
@@ -278,7 +279,7 @@ public class AnalyzerImp implements Analyzer {
 			connectionManager.releaseConnection(externalServer,
 					externalSConnection);
 		} catch (IOException e) {
-			connectionManager.releaseConnection(externalServer, false);
+			connectionManager.cleanAll(externalServer);
 			keepConnection = false;
 			e.printStackTrace();
 			throw e;

@@ -373,6 +373,8 @@ public class DecoderImpl implements Decoder {
 		N_EXPECTED = false;
 		R_EXPECTED = false;
 		READING_CONTENT = false;
+		SECN_EXPECTED = false;
+		SECR_EXPECTED = false;
 		FINISHED = false;
 		auxIndex = 0;
 	}

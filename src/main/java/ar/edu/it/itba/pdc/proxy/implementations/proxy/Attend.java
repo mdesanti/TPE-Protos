@@ -20,6 +20,7 @@ public class Attend implements Runnable {
 	private Monitor monitor;
 	private Decoder decoder;
 	private Logger attend;
+	private ConnectionManager cm;
 
 	public Attend(Socket socket, ConnectionManager connectionManager,
 			Configurator configurator, Monitor monitor) {
@@ -29,6 +30,7 @@ public class Attend implements Runnable {
 		this.monitor = monitor;
 		this.decoder = new DecoderImpl(configurator);
 		this.attend = Logger.getLogger(this.getClass());
+		this.cm = connectionManager;
 	}
 
 	public void run() {

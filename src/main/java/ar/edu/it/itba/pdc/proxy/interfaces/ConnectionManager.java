@@ -9,4 +9,6 @@ public interface ConnectionManager extends Runnable {
 	
 	public void releaseConnection(Socket socket, boolean keepAlive);
 	
+	public void cleanAll(Socket socket);
+	
 }
