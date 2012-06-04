@@ -461,8 +461,8 @@ public class DecoderImpl implements Decoder {
 			html.append("<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
 					+ "<html><head>"
 					+ "<title>451 Tamano de archivo bloqueado</title>"
-					+ "</head><body>" + "<h1>Tamano de archivo Bloqueada</h1>"
-					+ "<p>Su proxy bloqueo archivos de este tamano<br />"
+					+ "</head><body>" + "<h1>Tama–o de archivo bloqueado</h1>"
+					+ "<p>Su proxy bloque— archivos de este tama–o<br />"
 					+ "</p>" + "</body></html>");
 
 		} else if (cause.equals("452")) {

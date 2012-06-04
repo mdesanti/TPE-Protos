@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 
 import org.apache.log4j.Logger;
@@ -50,9 +49,10 @@ public class AnalyzerImp implements Analyzer {
 		this.connectionManager = connectionManager;
 		this.configurator = configurator;
 		this.dataStorage = monitor.getDataStorage();
-		this.analyzeLog = Logger.getLogger(this.getClass());
+		this.analyzeLog = Logger.getLogger("proxy.server.attend.analyze");
 		this.decoder = new DecoderImpl(BUFFSIZE);
-		this.blockAnalizer = new BlockAnalizerImpl(configurator, decoder);
+		this.blockAnalizer = new BlockAnalizerImpl(configurator, decoder,
+				analyzeLog);
 		decoder.setConfigurator(configurator);
 	}
 
@@ -79,22 +79,21 @@ public class AnalyzerImp implements Analyzer {
 				blockAnalizer.generateProxyResponse(clientOs, "400");
 				closeStreams();
 			} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
 			}
 		} catch (IOException e) {
 			try {
 				closeStreams();
 				socket.close();
 			} catch (IOException e1) {
-				e1.printStackTrace();
 			}
 			keepConnection = false;
 			return;
-		} catch (BufferOverflowException e) {
-			e.printStackTrace();
 		} catch (Exception e) {
-			e.printStackTrace();
+			try {
+				blockAnalizer.generateProxyResponse(clientOs, "500");
+				closeStreams();
+			} catch (IOException e1) {
+			}
 		}
 	}
 
@@ -112,27 +111,15 @@ public class AnalyzerImp implements Analyzer {
 
 			requestHeaders = decoder.getHeaders();
 			isHEADRequest = requestHeaders.isHEADRequest();
-			String connection = requestHeaders.getHeader("Connection");
-			String proxyConnection = requestHeaders
-					.getHeader("Proxy-Connection");
-			String httpVersion = requestHeaders.getHeader("HTTPVersion");
-			if (connection == null && proxyConnection == null
-					&& httpVersion.contains("1.1")) {
-				keepConnection = true;
-			} else if (connection == null && proxyConnection == null
-					&& httpVersion.contains("1.0")) {
-				keepConnection = false;
-			} else if ((connection != null && connection.contains("close"))
-					|| (proxyConnection != null && proxyConnection
-							.contains("close"))) {
-				keepConnection = false;
-			} else {
-				keepConnection = true;
-			}
-			analyzeLog.info("Received " + requestHeaders.getHeader("Method")
-					+ " from client " + socket.getInetAddress());
+
+			keepConnection = analyzeConnection();
+
+			analyzeLog.info("Received headers from client "
+					+ socket.getInetAddress() + " :"
+					+ requestHeaders.dumpHeaders());
+
+			// Analyze if something will be blocked
 			if (blockAnalizer.analizeRequest(decoder, clientOs)) {
-				analyzeLog.info("Block analyzer blocked request. Returning");
 				dataStorage.addBlock();
 				return false;
 			}
@@ -147,6 +134,7 @@ public class AnalyzerImp implements Analyzer {
 			} else {
 				host = host.replace(" ", "");
 			}
+
 			analyzeLog.info("Requesting for connection to: " + host);
 			try {
 				while ((externalServer = connectionManager.getConnection(host)) == null) {
@@ -158,7 +146,8 @@ public class AnalyzerImp implements Analyzer {
 			externalOs = externalServer.getOutputStream();
 
 			// Sends rebuilt header to server
-			analyzeLog.info("Sending rebuilt headers to server");
+			analyzeLog.info("Sending rebuilt headers to server --- "
+					+ new String(rh.getHeader()));
 			externalOs.write(rh.getHeader(), 0, rh.getSize());
 
 			// If client sends something in the body..
@@ -170,6 +159,7 @@ public class AnalyzerImp implements Analyzer {
 			} else {
 				decoder.analize(buffer.array(), count);
 			}
+
 			// if client continues to send info, read it and send it to server
 			totalCount = 0;
 			while (decoder.keepReading()
@@ -184,7 +174,6 @@ public class AnalyzerImp implements Analyzer {
 		} catch (IOException e) {
 			if (externalServer != null)
 				connectionManager.releaseConnection(externalServer, false);
-			e.printStackTrace();
 			return false;
 		}
 		return true;
@@ -219,31 +208,23 @@ public class AnalyzerImp implements Analyzer {
 			// Parse response heaaders
 			decoder.parseHeaders(resp.array(), totalCount, "response");
 			responseHeaders = decoder.getHeaders();
-			String connection = responseHeaders.getHeader("Connection");
-			String httpVersion = responseHeaders.getHeader("HTTPVersion");
-			if ((connection == null && httpVersion.contains("1.1"))
-					|| (connection != null && connection.toUpperCase()
-							.contains("KEEP-ALIVE"))) {
-				externalSConnection = true;
-			} else if (connection == null && httpVersion.contains("1.1")) {
-				externalSConnection = true;
-			}
-			if (connection == null || connection.contains("close")) {
-				externalSConnection = false;
-			}
+			
+			externalSConnection = analyzeResponseConnection();
 
 			if (blockAnalizer.analizeResponse(decoder, clientOs)) {
 				dataStorage.addBlock();
-				analyzeLog
-						.info("Response blocked by proxy. Closing connection and returning");
 				return;
 			}
 			// Sends only headers to client
 			analyzeLog.info("Got response from "
 					+ requestHeaders.getHeader("Host").replace(" ", "")
 					+ " with status code "
-					+ responseHeaders.getHeader("StatusCode"));
+					+ responseHeaders.getHeader("StatusCode") + "||||||"
+					+ responseHeaders.dumpHeaders());
+			
+			
 			boolean applyTransform = decoder.applyTransformations();
+			
 			RebuiltHeader rh = decoder.rebuildResponseHeaders();
 			if ((!configurator.applyRotations())
 					|| (configurator.applyRotations() && !applyTransform)) {
@@ -289,12 +270,6 @@ public class AnalyzerImp implements Analyzer {
 			while (keepReading && ((receivedMsg = externalIs.read(buf)) != -1)) {
 				analyzeLog.info("Getting response from server");
 				totalCount += receivedMsg;
-				if (blockAnalizer.analizeChunkedSize(decoder, clientOs, totalCount)) {
-					analyzeLog
-							.info("Response blocked by proxy. Closing connection and returning");
-					dataStorage.addBlock();
-					return;
-				}
 				decoder.analize(buf, receivedMsg);
 				decoder.applyRestrictions(buf, receivedMsg, requestHeaders);
 				if (!applyTransform) {
@@ -306,14 +281,12 @@ public class AnalyzerImp implements Analyzer {
 			dataStorage.addProxyServerBytes(totalCount);
 			analyzeLog.info("Response completed from server");
 			if (blockAnalizer.analizeChunkedSize(decoder, clientOs, totalCount)) {
-				analyzeLog
-						.info("Response blocked by proxy. Closing connection and returning");
 				dataStorage.addBlock();
 				return;
 			}
 			if (applyTransform && data) {
 				if (configurator.applyRotations() && decoder.isImage()) {
-
+					analyzeLog.info("Rotating image");
 					byte[] rotated = decoder.getRotatedImage();
 					if (rotated == null) {
 						connectionManager.releaseConnection(externalServer,
@@ -329,6 +302,7 @@ public class AnalyzerImp implements Analyzer {
 					dataStorage.addTransformation();
 				}
 				if (configurator.applyTextTransformation() && decoder.isText()) {
+					analyzeLog.info("Transforming text/plain");
 					byte[] transformed = decoder.getTransformed();
 					clientOs.write(transformed, 0, transformed.length);
 					dataStorage.addTransformation();
@@ -356,6 +330,41 @@ public class AnalyzerImp implements Analyzer {
 			externalIs.close();
 		if (externalOs != null)
 			externalOs.close();
+	}
+
+	private boolean analyzeConnection() {
+		String connection = requestHeaders.getHeader("Connection");
+		String proxyConnection = requestHeaders.getHeader("Proxy-Connection");
+		String httpVersion = requestHeaders.getHeader("HTTPVersion");
+		if (connection == null && proxyConnection == null
+				&& httpVersion.contains("1.1")) {
+			return true;
+		} else if (connection == null && proxyConnection == null
+				&& httpVersion.contains("1.0")) {
+			return false;
+		} else if ((connection != null && connection.contains("close"))
+				|| (proxyConnection != null && proxyConnection
+						.contains("close"))) {
+			return false;
+		} else {
+			return true;
+		}
+	}
+
+	private boolean analyzeResponseConnection() {
+		String connection = responseHeaders.getHeader("Connection");
+		String httpVersion = responseHeaders.getHeader("HTTPVersion");
+		if ((connection == null && httpVersion.contains("1.1"))
+				|| (connection != null && connection.toUpperCase().contains(
+						"KEEP-ALIVE"))) {
+			return true;
+		} else if (connection == null && httpVersion.contains("1.1")) {
+			return true;
+		}
+		if (connection == null || connection.contains("close")) {
+			return false;
+		}
+		return true;
 	}
 
 }
