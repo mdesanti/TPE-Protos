@@ -1,9 +1,7 @@
 package ar.edu.it.itba.pdc.v2.interfaces;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.Socket;
-import java.net.UnknownHostException;
 
 public interface ConnectionManager extends Runnable {
 

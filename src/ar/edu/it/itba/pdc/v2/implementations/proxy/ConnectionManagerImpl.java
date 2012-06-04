@@ -101,7 +101,7 @@ public class ConnectionManagerImpl implements ConnectionManager {
 		Socket s = null;
 		try {
 			s = new Socket(addr, port);
-			dataStorage.addServerOpenConection(1);
+			dataStorage.addServerOpenConnection(1);
 		} catch (ConnectException e) {
 			return null;
 		}

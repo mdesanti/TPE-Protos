@@ -78,10 +78,10 @@ public class MonitorDecoder implements ConnectionDecoder {
 	private String analizeComandoCons(String filter) {
 		if (filter.equals("C"))
 			return this.options.get("OK") + "\ncomando-cons(C)="
-					+ storage.getClientOpenConections() + "\n";
+					+ storage.getClientOpenConnections() + "\n";
 		if (filter.equals("S"))
 			return this.options.get("OK") + "\ncomando-count(S)="
-					+ storage.getServersOpenConections() + "\n";
+					+ storage.getServersOpenConnections() + "\n";
 
 		return this.options.get("BAD_REQUEST");
 

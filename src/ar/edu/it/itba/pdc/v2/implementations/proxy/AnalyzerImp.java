@@ -76,7 +76,7 @@ public class AnalyzerImp implements Analyzer {
 			closeStreams();
 		} catch (UnknownHostException e) {
 			try {
-				blockAnalizer.generateProxyResponse(clientOs, "400");
+				decoder.generateProxyResponse(clientOs, "400");
 				closeStreams();
 			} catch (IOException e1) {
 			}
@@ -90,7 +90,7 @@ public class AnalyzerImp implements Analyzer {
 			return;
 		} catch (Exception e) {
 			try {
-				blockAnalizer.generateProxyResponse(clientOs, "500");
+				decoder.generateProxyResponse(clientOs, "500");
 				closeStreams();
 			} catch (IOException e1) {
 			}
@@ -105,7 +105,7 @@ public class AnalyzerImp implements Analyzer {
 
 			// Parse request headers
 			if (!decoder.parseHeaders(buffer.array(), count, "request")) {
-				blockAnalizer.generateProxyResponse(clientOs, "501");
+				decoder.generateProxyResponse(clientOs, "501");
 				return false;
 			}
 
@@ -119,13 +119,13 @@ public class AnalyzerImp implements Analyzer {
 					+ requestHeaders.dumpHeaders());
 
 			// Analyze if something will be blocked
-			if (blockAnalizer.analizeRequest(decoder, clientOs)) {
+			if (blockAnalizer.analyzeRequest(decoder, clientOs)) {
 				dataStorage.addBlock();
 				return false;
 			}
 
 			// Rebuilt the headers according to proxy rules and implementations
-			RebuiltHeader rh = decoder.rebuildHeaders();
+			RebuiltHeader rh = decoder.rebuildRequestHeaders();
 
 			String host = decoder.getHeader("Host");
 			if (host == null) {
@@ -140,7 +140,7 @@ public class AnalyzerImp implements Analyzer {
 				while ((externalServer = connectionManager.getConnection(host)) == null) {
 				}
 			} catch (UnknownHostException e) {
-				blockAnalizer.generateProxyResponse(clientOs, "400");
+				decoder.generateProxyResponse(clientOs, "400");
 				return false;
 			}
 			externalOs = externalServer.getOutputStream();
@@ -155,9 +155,9 @@ public class AnalyzerImp implements Analyzer {
 				byte[] extra = decoder.getExtra(buffer.array(), count);
 				externalOs.write(extra, 0,
 						count - requestHeaders.getReadBytes());
-				decoder.analize(extra, count - requestHeaders.getReadBytes());
+				decoder.analyze(extra, count - requestHeaders.getReadBytes());
 			} else {
-				decoder.analize(buffer.array(), count);
+				decoder.analyze(buffer.array(), count);
 			}
 
 			// if client continues to send info, read it and send it to server
@@ -167,7 +167,7 @@ public class AnalyzerImp implements Analyzer {
 				totalCount += receivedMsg;
 				analyzeLog.info("Reading upload data from client "
 						+ socket.getInetAddress());
-				decoder.analize(buf, receivedMsg);
+				decoder.analyze(buf, receivedMsg);
 				externalOs.write(buf, 0, receivedMsg);
 			}
 			dataStorage.addClientProxyBytes(totalCount);
@@ -200,7 +200,7 @@ public class AnalyzerImp implements Analyzer {
 						resp.array().length);
 			}
 			if (totalCount == 0) {
-				blockAnalizer.generateProxyResponse(clientOs, "500");
+				decoder.generateProxyResponse(clientOs, "500");
 				connectionManager.releaseConnection(externalServer, false);
 				keepConnection = false;
 				return;
@@ -211,7 +211,7 @@ public class AnalyzerImp implements Analyzer {
 			
 			externalSConnection = analyzeResponseConnection();
 
-			if (blockAnalizer.analizeResponse(decoder, clientOs)) {
+			if (blockAnalizer.analyzeResponse(decoder, clientOs)) {
 				dataStorage.addBlock();
 				return;
 			}
@@ -241,7 +241,7 @@ public class AnalyzerImp implements Analyzer {
 			}
 			if (responseHeaders.getReadBytes() < totalCount) {
 				byte[] extra = decoder.getExtra(resp.array(), totalCount);
-				decoder.analize(extra,
+				decoder.analyze(extra,
 						totalCount - responseHeaders.getReadBytes());
 				decoder.applyRestrictions(extra,
 						totalCount - responseHeaders.getReadBytes(),
@@ -270,7 +270,7 @@ public class AnalyzerImp implements Analyzer {
 			while (keepReading && ((receivedMsg = externalIs.read(buf)) != -1)) {
 				analyzeLog.info("Getting response from server");
 				totalCount += receivedMsg;
-				decoder.analize(buf, receivedMsg);
+				decoder.analyze(buf, receivedMsg);
 				decoder.applyRestrictions(buf, receivedMsg, requestHeaders);
 				if (!applyTransform) {
 					clientOs.write(buf, 0, receivedMsg);
@@ -280,7 +280,7 @@ public class AnalyzerImp implements Analyzer {
 			}
 			dataStorage.addProxyServerBytes(totalCount);
 			analyzeLog.info("Response completed from server");
-			if (blockAnalizer.analizeChunkedSize(decoder, clientOs, totalCount)) {
+			if (blockAnalizer.analyzeChunkedSize(decoder, clientOs, totalCount)) {
 				dataStorage.addBlock();
 				return;
 			}

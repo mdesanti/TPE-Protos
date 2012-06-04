@@ -10,8 +10,6 @@ import javax.ws.rs.core.MediaType;
 
 import org.apache.log4j.Logger;
 
-import ar.edu.it.itba.pdc.v2.implementations.HTML;
-import ar.edu.it.itba.pdc.v2.implementations.RebuiltHeader;
 import ar.edu.it.itba.pdc.v2.interfaces.BlockAnalizer;
 import ar.edu.it.itba.pdc.v2.interfaces.Configurator;
 import ar.edu.it.itba.pdc.v2.interfaces.Decoder;
@@ -28,7 +26,7 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 		this.logger = logger;
 	}
 
-	public boolean analizeRequest(Decoder decoder, OutputStream clientOs)
+	public boolean analyzeRequest(Decoder decoder, OutputStream clientOs)
 			throws IOException {
 		this.decoder = decoder;
 		if (analizeBlockAll(clientOs))
@@ -40,7 +38,7 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 		return false;
 	}
 
-	public boolean analizeResponse(Decoder decoder, OutputStream clientOs)
+	public boolean analyzeResponse(Decoder decoder, OutputStream clientOs)
 			throws IOException {
 		this.decoder = decoder;
 		if (analizeBlockMediaType(clientOs))
@@ -50,7 +48,7 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 		return false;
 	}
 
-	public boolean analizeChunkedSize(Decoder decoder, OutputStream clientOs,
+	public boolean analyzeChunkedSize(Decoder decoder, OutputStream clientOs,
 			int totalSize) throws IOException {
 		if (decoder.getHeader("Transfer-Encoding") == null) {
 			return false;
@@ -59,25 +57,18 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 			return false;
 		if (totalSize > configurator.getMaxSize()) {
 			logger.info("Block analyzer blocked request with code 451. Returning");
-			generateProxyResponse(clientOs, "451");
+			decoder.generateProxyResponse(clientOs, "451");
 
 			return true;
 		}
 		return false;
 	}
 
-	private RebuiltHeader generateProxyResponseHeader(String cause) {
-		return decoder.generateBlockedHeader(cause);
-	}
-
-	private HTML generateProxyResponseHTML(String cause) {
-		return decoder.generateBlockedHTML(cause);
-	}
-
+	
 	private boolean analizeBlockAll(OutputStream clientOs) throws IOException {
 		if (configurator.blockAll()) {
 			logger.info("Block analyzer blocked request with code 452. Returning");
-			generateProxyResponse(clientOs, "452");
+			decoder.generateProxyResponse(clientOs, "452");
 			return true;
 		}
 		return false;
@@ -91,7 +82,7 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 					.getHeader("Host").replace(" ", ""));
 			if (!configurator.isAccepted(InetAddress.getByName(url.getHost()))) {
 				logger.info("Block analyzer blocked request with code 453. Returning");
-				generateProxyResponse(clientOs, "453");
+				decoder.generateProxyResponse(clientOs, "453");
 
 				return true;
 			}
@@ -116,7 +107,7 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 		if (configurator.getMaxSize() != -1
 				&& length > configurator.getMaxSize()) {
 			logger.info("Block analyzer blocked request with code 451. Returning");
-			generateProxyResponse(clientOs, "451");
+			decoder.generateProxyResponse(clientOs, "451");
 
 			return true;
 		}
@@ -127,7 +118,7 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 		if (decoder.getHeader("RequestedURI")!=null && !configurator.isAccepted(decoder.getHeader("RequestedURI").replace(
 				" ", ""))) {
 			logger.info("Block analyzer blocked request with code 455. Returning");
-			generateProxyResponse(clientOs, "455");
+			decoder.generateProxyResponse(clientOs, "455");
 			return true;
 		}
 		return false;
@@ -140,18 +131,11 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 				&& !configurator.isAccepted(MediaType.valueOf(decoder
 						.getHeader("Content-Type").replace(" ", "")))) {
 			logger.info("Block analyzer blocked request with code 456. Returning");
-			generateProxyResponse(clientOs, "456");
+			decoder.generateProxyResponse(clientOs, "456");
 			return true;
 		}
 		return false;
 
 	}
 
-	public void generateProxyResponse(OutputStream clientOs, String cause)
-			throws IOException {
-		RebuiltHeader newHeader = generateProxyResponseHeader(cause);
-		HTML html = generateProxyResponseHTML(cause);
-		clientOs.write(newHeader.getHeader(), 0, newHeader.getSize());
-		clientOs.write(html.getHTML(), 0, html.getSize());
-	}
 }

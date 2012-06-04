@@ -7,7 +7,6 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.regex.Pattern;
 
 import javax.ws.rs.core.MediaType;
 

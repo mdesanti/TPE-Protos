@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -265,7 +266,7 @@ public class DecoderImpl implements Decoder {
 
 	}
 
-	public void analize(byte[] bytes, int count) {
+	public void analyze(byte[] bytes, int count) {
 
 		if (!headers.contentExpected()) {
 			keepReadingBytes = 0;
@@ -374,8 +375,8 @@ public class DecoderImpl implements Decoder {
 		auxIndex = 0;
 	}
 
-	public boolean parseHeaders(byte[] data, int count,String action) {
-		return headers.parseHeaders(data, count,action);
+	public boolean parseHeaders(byte[] data, int count, String action) {
+		return headers.parseHeaders(data, count, action);
 	}
 
 	public HTTPHeaders getHeaders() {
@@ -486,14 +487,13 @@ public class DecoderImpl implements Decoder {
 					+ "</head><body>" + "<h1>Bad Request</h1>"
 					+ "<p>Bad Request<br />" + "</p>" + "</body></html>");
 
-		}
-		 else if (cause.equals("501")) {
-				html.append("<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
-						+ "<html><head>" + "<title>501 Not Implemented</title>"
-						+ "</head><body>" + "<h1>Not Implemented</h1>"
-						+ "<p>Bad Request<br />" + "</p>" + "</body></html>");
+		} else if (cause.equals("501")) {
+			html.append("<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
+					+ "<html><head>" + "<title>501 Not Implemented</title>"
+					+ "</head><body>" + "<h1>Not Implemented</h1>"
+					+ "<p>Bad Request<br />" + "</p>" + "</body></html>");
 
-			}
+		}
 		return new HTML(html.toString().getBytes(), html.toString().length());
 	}
 
@@ -518,15 +518,16 @@ public class DecoderImpl implements Decoder {
 		}
 		// sb.append("Via: mu0-Proxy\r\n");
 		sb.append("\r\n");
-		return new RebuiltHeader(sb.toString().getBytes(), sb.toString().length());
+		return new RebuiltHeader(sb.toString().getBytes(), sb.toString()
+				.length());
 	}
 
-	public RebuiltHeader rebuildHeaders() {
+	public RebuiltHeader rebuildRequestHeaders() {
 		Map<String, String> allHeaders = headers.getAllHeaders();
 		try {
 			URL url = new URL(allHeaders.get("RequestedURI"));
 			String path = url.getPath();
-			if(path.isEmpty()) {
+			if (path.isEmpty()) {
 				path += "/";
 			}
 			if (url.getQuery() != null)
@@ -577,7 +578,13 @@ public class DecoderImpl implements Decoder {
 		return new RebuiltHeader(sb.toString().getBytes(), sb.toString()
 				.length());
 	}
-	
-	
+
+	public void generateProxyResponse(OutputStream clientOs, String cause)
+			throws IOException {
+		RebuiltHeader newHeader = generateBlockedHeader(cause);
+		HTML html = generateBlockedHTML(cause);
+		clientOs.write(newHeader.getHeader(), 0, newHeader.getSize());
+		clientOs.write(html.getHTML(), 0, html.getSize());
+	}
 
 }

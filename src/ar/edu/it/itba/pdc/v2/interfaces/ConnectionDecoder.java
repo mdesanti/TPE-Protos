@@ -1,12 +1,12 @@
 package ar.edu.it.itba.pdc.v2.interfaces;
 
-import java.net.InetAddress;
-import java.util.Set;
-import java.util.regex.Pattern;
-
-import javax.ws.rs.core.MediaType;
-
 public interface ConnectionDecoder {
-
+	/**
+	 * Analyze an input string according to the Configurator protocol and
+	 * returns a status code and message
+	 * 
+	 * @param s
+	 * @return
+	 */
 	public String decode(String s);
 }
