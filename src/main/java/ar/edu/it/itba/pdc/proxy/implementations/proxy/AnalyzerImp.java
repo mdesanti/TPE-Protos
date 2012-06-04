@@ -58,46 +58,36 @@ public class AnalyzerImp implements Analyzer {
 		this.socket = socket;
 
 		try {
-			boolean continueResponse = analizeRequest(buffer, count);
+			boolean continueResponse = analyzeRequest(buffer, count);
 			if (continueResponse) {
-				analizeResponse();
+				analyzeResponse();
 
 			}
-			totalCount = 0;
-			decoder.reset();
-			receivedMsg = 0;
-			keepReading = false;
-			requestHeaders = null;
-			responseHeaders = null;
-			buf = new byte[BUFFSIZE];
-			externalServer = null;
+			resetAll();
 			closeStreams();
 		} catch (UnknownHostException e) {
 			try {
+				resetAll();
 				decoder.generateProxyResponse(clientOs, "400");
 				closeStreams();
 				socket.close();
+				keepConnection = false;
 			} catch (IOException e1) {
 			}
-		} catch (IOException e) {
-			try {
-				closeStreams();
-				socket.close();
-			} catch (IOException e1) {
-			}
-			keepConnection = false;
-			return;
 		} catch (Exception e) {
 			try {
+				resetAll();
 				decoder.generateProxyResponse(clientOs, "500");
 				closeStreams();
 				socket.close();
+				keepConnection = false;
 			} catch (IOException e1) {
+				resetAll();
 			}
 		}
 	}
 
-	private boolean analizeRequest(ByteBuffer buffer, int count)
+	private boolean analyzeRequest(ByteBuffer buffer, int count)
 			throws Exception {
 		try {
 			clientOs = socket.getOutputStream();
@@ -136,12 +126,7 @@ public class AnalyzerImp implements Analyzer {
 			}
 
 			analyzeLog.info("Requesting for connection to: " + host);
-			try {
-				while ((externalServer = connectionManager.getConnection(host)) == null) {
-				}
-			} catch (UnknownHostException e) {
-				decoder.generateProxyResponse(clientOs, "400");
-				return false;
+			while ((externalServer = connectionManager.getConnection(host)) == null) {
 			}
 			externalOs = externalServer.getOutputStream();
 
@@ -174,13 +159,13 @@ public class AnalyzerImp implements Analyzer {
 		} catch (IOException e) {
 			if (externalServer != null)
 				connectionManager.releaseConnection(externalServer, false);
-			return false;
+			throw e;
 		}
 		return true;
 
 	}
 
-	private void analizeResponse() throws Exception {
+	private void analyzeResponse() throws Exception {
 		boolean externalSConnection = true;
 		// Reads response from server and write it to client
 		decoder.reset();
@@ -219,8 +204,7 @@ public class AnalyzerImp implements Analyzer {
 			analyzeLog.info("Got response from "
 					+ requestHeaders.getHeader("Host").replace(" ", "")
 					+ " with status code "
-					+ responseHeaders.getHeader("StatusCode") + "||||||"
-					+ responseHeaders.dumpHeaders());
+					+ responseHeaders.getHeader("StatusCode"));
 
 			boolean applyTransform = decoder.applyTransformations();
 
@@ -310,7 +294,7 @@ public class AnalyzerImp implements Analyzer {
 					externalSConnection);
 		} catch (IOException e) {
 			connectionManager.releaseConnection(externalServer, false);
-			System.out.println(e.getMessage());
+			throw e;
 		}
 
 	}
@@ -362,6 +346,17 @@ public class AnalyzerImp implements Analyzer {
 			return false;
 		}
 		return true;
+	}
+
+	private void resetAll() {
+		totalCount = 0;
+		decoder.reset();
+		receivedMsg = 0;
+		keepReading = false;
+		requestHeaders = null;
+		responseHeaders = null;
+		buf = new byte[BUFFSIZE];
+		externalServer = null;
 	}
 
 }
