@@ -301,6 +301,12 @@ public class AnalyzerImp implements Analyzer {
 				System.out.println("ENTRA WHILE" + keepReading);
 				analyzeLog.info("Getting response from server");
 				totalCount += receivedMsg;
+				if (blockAnalizer.analizeChunkedSize(decoder, clientOs, totalCount)) {
+					analyzeLog
+							.info("Response blocked by proxy. Closing connection and returning");
+					dataStorage.addBlock();
+					return;
+				}
 				decoder.analize(buf, receivedMsg);
 				decoder.applyRestrictions(buf, receivedMsg, requestHeaders);
 				if (!applyTransform) {

@@ -79,7 +79,7 @@ public class Start {
 			ConnectionManager cm = new ConnectionManagerImpl(monitor, pd);
 			Thread connManagerThread = new Thread(cm);
 			proxy.info("Instantiating server");
-			ThreadedSocketServer server = new ThreadedSocketServer(pd.getMonitorPort(),
+			ThreadedSocketServer server = new ThreadedSocketServer(pd.getServerPort(),
 					InetAddress.getByName("localhost"), new ClientHandler(),
 					configurator, monitor, cm);
 			proxy.info("Creating server thread");
