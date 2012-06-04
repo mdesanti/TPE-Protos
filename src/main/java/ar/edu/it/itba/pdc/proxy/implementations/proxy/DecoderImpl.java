@@ -281,12 +281,7 @@ public class DecoderImpl implements Decoder {
 		if (isChunked()) {
 			for (int j = 0; j < count; j++) {
 				if (BUILDING_NUMBER && !N_EXPECTED) {
-					if (bytes[j] == '0' && auxIndex == 0) {
-						FINISHED = true;
-						R_EXPECTED = true;
-						N_EXPECTED = false;
-						BUILDING_NUMBER = false;
-					} else if (bytes[j] == '\r') {
+					if (bytes[j] == '\r') {
 						N_EXPECTED = true;
 					} else {
 						aux[auxIndex++] = bytes[j];
@@ -556,7 +551,7 @@ public class DecoderImpl implements Decoder {
 						.append("\r\n");
 		}
 		sb.append("Accept-Encoding: identity\r\n");
-		// sb.append("Via: mu0-Proxy\r\n");
+		sb.append("Via: mu0-Proxy\r\n");
 		sb.append("\r\n");
 		return new RebuiltHeader(sb.toString().getBytes(), sb.toString()
 				.length());
@@ -578,7 +573,7 @@ public class DecoderImpl implements Decoder {
 				sb.append(key).append(": ")
 						.append(allHeaders.get(key) + "\r\n");
 		}
-		// sb.append("Via: mu0-Proxy\r\n");
+		sb.append("Via: mu0-Proxy\r\n");
 		sb.append("\r\n");
 		return new RebuiltHeader(sb.toString().getBytes(), sb.toString()
 				.length());
