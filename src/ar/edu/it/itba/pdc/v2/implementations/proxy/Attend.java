@@ -18,30 +18,25 @@ import ar.edu.it.itba.pdc.v2.interfaces.Decoder;
 public class Attend implements Runnable {
 
 	private Socket socket;
-	private ConnectionHandler handler;
-	private ConnectionManager connectionManager;
 	private Analyzer analyzer;
-	private Configurator configurator;
 	private Monitor monitor;
+	private Decoder decoder;
+	private Logger attend;
 
 	public Attend(Socket socket, ConnectionHandler handler,
-			ConnectionManager connectionManager, Analyzer analyzer,
-			Configurator configurator, Monitor monitor) {
-		this.handler = handler;
+			ConnectionManager connectionManager, Configurator configurator,
+			Monitor monitor) {
 		this.socket = socket;
-		this.connectionManager = connectionManager;
-		this.analyzer = analyzer;
-		this.configurator = configurator;
+		this.analyzer = new AnalyzerImp(connectionManager, configurator,
+				monitor);
 		this.monitor = monitor;
+		this.decoder = new DecoderImpl(configurator);
+		this.attend = Logger.getLogger(this.getClass());
 	}
 
 	public void run() {
-		Logger attend = Logger.getLogger(this.getClass());
-		Decoder decoder = new DecoderImpl(20 * 1024);
 		byte[] buffer = new byte[500];
-		analyzer = new AnalyzerImp(connectionManager, configurator, monitor);
 		ByteBuffer req = ByteBuffer.allocate(20 * 1024);
-		String s = socket.getRemoteSocketAddress().toString();
 		try {
 			int receivedMsg = 0, totalCount = 0;
 
@@ -49,7 +44,7 @@ public class Attend implements Runnable {
 
 			boolean keepReading = true;
 
-			// read until headers are complete
+			// Reads until headers are complete
 			attend.debug("Before reading headers from client");
 			attend.info("Reading headers from client");
 			while (keepReading && ((receivedMsg = clientIs.read(buffer)) != -1)) {
@@ -62,9 +57,12 @@ public class Attend implements Runnable {
 				attend.info("Received -1 from client. Closing connection");
 				socket.close();
 			}
+
 			attend.debug("Headers completely read. Sending to analyzer");
 			monitor.getDataStorage().addClientProxyBytes(totalCount);
+
 			analyzer.analyze(req, totalCount, socket);
+
 			if (!socket.isConnected() || socket.isClosed()
 					|| !analyzer.keepConnection()) {
 				attend.info("Analyzer returned. Closing socket");

@@ -113,13 +113,6 @@ public interface Decoder {
 	public RebuiltHeader rebuildResponseHeaders();
 
 	/**
-	 * Adds and sets a configurator to the decoder.
-	 * 
-	 * @param configurator
-	 */
-	public void setConfigurator(Configurator configurator);
-
-	/**
 	 * 
 	 * @return True if transformations will be made by the proxy.
 	 */

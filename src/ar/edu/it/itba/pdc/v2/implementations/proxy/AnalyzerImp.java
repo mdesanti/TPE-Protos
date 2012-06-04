@@ -50,10 +50,9 @@ public class AnalyzerImp implements Analyzer {
 		this.configurator = configurator;
 		this.dataStorage = monitor.getDataStorage();
 		this.analyzeLog = Logger.getLogger("proxy.server.attend.analyze");
-		this.decoder = new DecoderImpl(BUFFSIZE);
+		this.decoder = new DecoderImpl(configurator);
 		this.blockAnalizer = new BlockAnalizerImpl(configurator, decoder,
 				analyzeLog);
-		decoder.setConfigurator(configurator);
 	}
 
 	public void analyze(ByteBuffer buffer, int count, Socket socket) {
@@ -208,7 +207,7 @@ public class AnalyzerImp implements Analyzer {
 			// Parse response heaaders
 			decoder.parseHeaders(resp.array(), totalCount, "response");
 			responseHeaders = decoder.getHeaders();
-			
+
 			externalSConnection = analyzeResponseConnection();
 
 			if (blockAnalizer.analyzeResponse(decoder, clientOs)) {
@@ -221,10 +220,9 @@ public class AnalyzerImp implements Analyzer {
 					+ " with status code "
 					+ responseHeaders.getHeader("StatusCode") + "||||||"
 					+ responseHeaders.dumpHeaders());
-			
-			
+
 			boolean applyTransform = decoder.applyTransformations();
-			
+
 			RebuiltHeader rh = decoder.rebuildResponseHeaders();
 			if ((!configurator.applyRotations())
 					|| (configurator.applyRotations() && !applyTransform)) {
@@ -232,7 +230,6 @@ public class AnalyzerImp implements Analyzer {
 			}
 
 			// Sends the rest of the body to client...
-			decoder.setConfigurator(configurator);
 			boolean data = false;
 			if (!decoder.contentExpected()) {
 				connectionManager.releaseConnection(externalServer, false);

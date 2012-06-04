@@ -44,9 +44,10 @@ public class DecoderImpl implements Decoder {
 	private boolean READING_CONTENT = false;
 	private boolean FINISHED = false;
 
-	public DecoderImpl(int buffSize) {
+	public DecoderImpl(Configurator configurator ) {
 		headers = new HTTPPacket();
 		aux = new byte[100];
+		this.configurator = configurator;
 	}
 
 	public byte[] getExtra(byte[] data, int count) {

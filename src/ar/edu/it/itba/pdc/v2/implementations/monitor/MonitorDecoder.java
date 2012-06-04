@@ -9,13 +9,13 @@ import ar.edu.it.itba.pdc.v2.interfaces.DataStorage;
 
 public class MonitorDecoder implements ConnectionDecoder {
 
-	private final String invalidParams = "Invalid parameters\n";
 	private Map<String, String> options;
 	private DataStorage storage = DataStorageImpl.getInstance();
 
 	public MonitorDecoder() {
 		fillOptions();
 	}
+
 	public DataStorage getStorage() {
 		return storage;
 	}
