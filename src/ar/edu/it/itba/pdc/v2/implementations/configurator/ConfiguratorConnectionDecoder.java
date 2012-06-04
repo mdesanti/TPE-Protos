@@ -175,10 +175,10 @@ public class ConfiguratorConnectionDecoder implements
 		} else if (type.equals("SIZE")) {
 			try {
 				Integer max = Integer.parseInt(arg);
-				maxSize = -1;
-				decoderLog.info("Unlocking files bigger than " + max);
+				maxSize = max;
+				decoderLog.info("Blocking files bigger than " + max);
 				return "200 - Sizes bigger than " + maxSize
-						+ " are now unblocked\n";
+						+ " are now blocked\n";
 			} catch (NumberFormatException e) {
 				return "400 - Invalid size\n";
 			}
