@@ -50,9 +50,9 @@ public class AnalyzerImp implements Analyzer {
 		this.connectionManager = connectionManager;
 		this.configurator = configurator;
 		this.dataStorage = monitor.getDataStorage();
-		this.analyzeLog = Logger.getLogger("proxy.server.attend.analyze");
+		this.analyzeLog = Logger.getLogger(this.getClass());
 		this.decoder = new DecoderImpl(BUFFSIZE);
-		this.blockAnalizer = new BlockAnalizerImpl(configurator,decoder);
+		this.blockAnalizer = new BlockAnalizerImpl(configurator, decoder);
 		decoder.setConfigurator(configurator);
 	}
 
@@ -105,11 +105,11 @@ public class AnalyzerImp implements Analyzer {
 			clientIs = socket.getInputStream();
 
 			// Parse request headers
-			if(!decoder.parseHeaders(buffer.array(), count,"request")){
+			if (!decoder.parseHeaders(buffer.array(), count, "request")) {
 				blockAnalizer.generateProxyResponse(clientOs, "501");
 				return false;
 			}
-				
+
 			requestHeaders = decoder.getHeaders();
 			isHEADRequest = requestHeaders.isHEADRequest();
 			String connection = requestHeaders.getHeader("Connection");
@@ -129,10 +129,8 @@ public class AnalyzerImp implements Analyzer {
 			} else {
 				keepConnection = true;
 			}
-			analyzeLog.info("Received headers from client "
-					+ socket.getInetAddress() + " :"
-					+ requestHeaders.dumpHeaders());
-
+			analyzeLog.info("Received " + requestHeaders.getHeader("Method")
+					+ " from client " + socket.getInetAddress());
 			if (blockAnalizer.analizeRequest(decoder, clientOs)) {
 				analyzeLog.info("Block analyzer blocked request. Returning");
 				dataStorage.addBlock();
@@ -152,7 +150,6 @@ public class AnalyzerImp implements Analyzer {
 			analyzeLog.info("Requesting for connection to: " + host);
 			try {
 				while ((externalServer = connectionManager.getConnection(host)) == null) {
-					// System.out.println("No deberia pasar");
 				}
 			} catch (UnknownHostException e) {
 				blockAnalizer.generateProxyResponse(clientOs, "400");
@@ -161,12 +158,8 @@ public class AnalyzerImp implements Analyzer {
 			externalOs = externalServer.getOutputStream();
 
 			// Sends rebuilt header to server
-			analyzeLog.info("Sending rebuilt headers to server --- "
-					+ new String(rh.getHeader()));
-			// System.out.println(new String(rh.getHeader()));
+			analyzeLog.info("Sending rebuilt headers to server");
 			externalOs.write(rh.getHeader(), 0, rh.getSize());
-			// externalOs.write(buffer.array(), 0,
-			// requestHeaders.getReadBytes());
 
 			// If client sends something in the body..
 			if (requestHeaders.getReadBytes() < count) {
@@ -224,7 +217,7 @@ public class AnalyzerImp implements Analyzer {
 				return;
 			}
 			// Parse response heaaders
-			decoder.parseHeaders(resp.array(), totalCount,"response");
+			decoder.parseHeaders(resp.array(), totalCount, "response");
 			responseHeaders = decoder.getHeaders();
 			String connection = responseHeaders.getHeader("Connection");
 			String httpVersion = responseHeaders.getHeader("HTTPVersion");
@@ -249,14 +242,11 @@ public class AnalyzerImp implements Analyzer {
 			analyzeLog.info("Got response from "
 					+ requestHeaders.getHeader("Host").replace(" ", "")
 					+ " with status code "
-					+ responseHeaders.getHeader("StatusCode") + "||||||"
-					+ responseHeaders.dumpHeaders());
+					+ responseHeaders.getHeader("StatusCode"));
 			boolean applyTransform = decoder.applyTransformations();
 			RebuiltHeader rh = decoder.rebuildResponseHeaders();
 			if ((!configurator.applyRotations())
 					|| (configurator.applyRotations() && !applyTransform)) {
-				// clientOs.write(resp.array(), 0,
-				// responseHeaders.getReadBytes());
 				clientOs.write(rh.getHeader(), 0, rh.getSize());
 			}
 
@@ -296,9 +286,7 @@ public class AnalyzerImp implements Analyzer {
 			}
 			if (isHEADRequest)
 				keepReading = false;
-			System.out.println("PASA" + keepReading);
 			while (keepReading && ((receivedMsg = externalIs.read(buf)) != -1)) {
-				System.out.println("ENTRA WHILE" + keepReading);
 				analyzeLog.info("Getting response from server");
 				totalCount += receivedMsg;
 				decoder.analize(buf, receivedMsg);
@@ -310,7 +298,6 @@ public class AnalyzerImp implements Analyzer {
 				data = true;
 			}
 			dataStorage.addProxyServerBytes(totalCount);
-			System.out.println("SALE WHILE" + keepReading);
 			analyzeLog.info("Response completed from server");
 			if (blockAnalizer.analizeChunkedSize(decoder, clientOs, totalCount)) {
 				analyzeLog
@@ -343,7 +330,6 @@ public class AnalyzerImp implements Analyzer {
 			}
 			connectionManager.releaseConnection(externalServer,
 					externalSConnection);
-			// System.out.println("TERMINO");
 		} catch (IOException e) {
 			connectionManager.releaseConnection(externalServer, false);
 			System.out.println(e.getMessage());

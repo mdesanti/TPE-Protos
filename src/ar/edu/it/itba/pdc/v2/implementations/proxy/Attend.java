@@ -36,13 +36,12 @@ public class Attend implements Runnable {
 	}
 
 	public void run() {
-		Logger attend = Logger.getLogger("proxy.server.attend");
+		Logger attend = Logger.getLogger(this.getClass());
 		Decoder decoder = new DecoderImpl(20 * 1024);
 		byte[] buffer = new byte[500];
 		analyzer = new AnalyzerImp(connectionManager, configurator, monitor);
 		ByteBuffer req = ByteBuffer.allocate(20 * 1024);
 		String s = socket.getRemoteSocketAddress().toString();
-		// while (!socket.isClosed()) {
 		try {
 			int receivedMsg = 0, totalCount = 0;
 
@@ -77,8 +76,4 @@ public class Attend implements Runnable {
 			return;
 		}
 	}
-
-	// System.out.printf("Se desconecto %s\n", s);
-	// }
-
 }

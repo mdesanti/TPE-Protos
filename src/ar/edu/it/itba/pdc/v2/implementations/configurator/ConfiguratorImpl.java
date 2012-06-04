@@ -28,7 +28,7 @@ public class ConfiguratorImpl implements Configurator {
 	}
 
 	public void run() {
-		Logger configLog = Logger.getLogger("proxy.configurator");
+		Logger configLog = Logger.getLogger(this.getClass());
 		configLog.setLevel(Level.INFO);
 		ServerSocket socketServer = null;
 		try {

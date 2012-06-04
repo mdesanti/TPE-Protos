@@ -28,7 +28,7 @@ public class ConfiguratorConnectionDecoder implements
 	private Set<String> blockedMediaType;
 	private Set<String> blockedURIs;
 	private int maxSize = -1;
-	private Logger decoderLog = Logger.getLogger("proxy.configurator.handler");
+	private Logger decoderLog = Logger.getLogger(this.getClass());
 
 	public ConfiguratorConnectionDecoder() {
 		reply = new HashMap<String, String>();
@@ -131,6 +131,7 @@ public class ConfiguratorConnectionDecoder implements
 			} else if (args[0].equals("EXIT")) {
 				decoderLog.info("EXIT command received. Closing connection");
 				closeConnection = true;
+				logged = false;
 				return "Bye bye\n";
 			} else if (args[0].equals("HELP")) {
 				return printHelp();
