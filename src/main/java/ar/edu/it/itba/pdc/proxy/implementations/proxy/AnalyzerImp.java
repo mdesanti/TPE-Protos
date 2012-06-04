@@ -337,8 +337,7 @@ public class AnalyzerImp implements Analyzer {
 		if (connection == null && proxyConnection == null
 				&& httpVersion.contains("1.1")) {
 			return true;
-		} else if (connection == null && proxyConnection == null
-				&& httpVersion.contains("1.0")) {
+		} else if (httpVersion.contains("1.0")) {
 			return false;
 		} else if ((connection != null && connection.contains("close"))
 				|| (proxyConnection != null && proxyConnection
