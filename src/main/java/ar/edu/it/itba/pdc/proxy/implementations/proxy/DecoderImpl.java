@@ -180,7 +180,7 @@ public class DecoderImpl implements Decoder {
 			}
 			try {
 				FileWriter fw = new FileWriter(fileName, true);
-				ByteBuffer buf = ByteBuffer.wrap(bytes);
+				ByteBuffer buf = ByteBuffer.wrap(bytes, 0, count);
 				CharBuffer cbuf = charset.decode(buf);
 				fw.write(cbuf.array(), 0, cbuf.length());
 				fw.close();
@@ -232,6 +232,7 @@ public class DecoderImpl implements Decoder {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		File f = new File(fileName);
 		fileName = null;
 		return modified;
 	}
