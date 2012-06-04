@@ -28,18 +28,26 @@ public class HTTPPacket implements HTTPHeaders {
 	/**
 	 * Asumes all the headers are in the data sent
 	 * */
-	public void parseHeaders(byte[] data, int count) {
+	public boolean parseHeaders(byte[] data, int count, String action) {
 
-		CharBuffer cb = Charset.forName("ISO-8859-1").decode(ByteBuffer.wrap(data, 0, count));
+		CharBuffer cb = Charset.forName("ISO-8859-1").decode(
+				ByteBuffer.wrap(data, 0, count));
 		String s = new String(cb.array());
 		String headers[] = s.split("\r\n");
 		String startLine = headers[0];
-
-		if (startLine.contains("GET") || startLine.contains("POST")
-				|| startLine.contains("HEAD")) {
-			parseRequest(headers);
-		} else if (startLine.contains("HTTP")) {
-			parseResponse(headers);
+		if (action.equals("request")) {
+			if (startLine.contains("GET") || startLine.contains("POST")
+					|| startLine.contains("HEAD")) {
+				parseRequest(headers);
+				return true;
+			}
+			return false;
+		} else {
+			if (startLine.contains("HTTP")) {
+				parseResponse(headers);
+				return true;
+			}
+			return false;
 		}
 	}
 
@@ -57,9 +65,9 @@ public class HTTPPacket implements HTTPHeaders {
 		headers.put("HTTPVersion", httpVersion);
 
 		parseHeaders(lines);
-		if(args[0].equals("GET") || args[0].equals("HEAD")) {
+		if (args[0].equals("GET") || args[0].equals("HEAD")) {
 			contentExpected = false;
-			if(args[0].equals("HEAD")) {
+			if (args[0].equals("HEAD")) {
 				isHEAD = true;
 			}
 		}
@@ -127,22 +135,18 @@ public class HTTPPacket implements HTTPHeaders {
 
 	}
 
-	
 	public String getHeader(String header) {
 		return this.headers.get(header);
 	}
 
-	
 	public int getReadBytes() {
 		return headerBytes;
 	}
 
-	
 	public boolean contentExpected() {
 		return contentExpected;
 	}
 
-	
 	public String dumpHeaders() {
 		StringBuffer sb = new StringBuffer();
 		for (String h : headers.keySet()) {
@@ -153,15 +157,14 @@ public class HTTPPacket implements HTTPHeaders {
 
 	}
 
-	
 	public Map<String, String> getAllHeaders() {
 		return headers;
 	}
-	
+
 	public void addHeader(String name, String value) {
 		headers.put(name, value);
 	}
-	
+
 	public boolean isHEADRequest() {
 		return isHEAD;
 	}

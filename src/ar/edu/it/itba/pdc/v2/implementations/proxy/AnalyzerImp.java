@@ -51,8 +51,8 @@ public class AnalyzerImp implements Analyzer {
 		this.configurator = configurator;
 		this.dataStorage = monitor.getDataStorage();
 		this.analyzeLog = Logger.getLogger("proxy.server.attend.analyze");
-		this.blockAnalizer = new BlockAnalizerImpl(configurator);
 		this.decoder = new DecoderImpl(BUFFSIZE);
+		this.blockAnalizer = new BlockAnalizerImpl(configurator,decoder);
 		decoder.setConfigurator(configurator);
 	}
 
@@ -105,7 +105,11 @@ public class AnalyzerImp implements Analyzer {
 			clientIs = socket.getInputStream();
 
 			// Parse request headers
-			decoder.parseHeaders(buffer.array(), count);
+			if(!decoder.parseHeaders(buffer.array(), count,"request")){
+				blockAnalizer.generateProxyResponse(clientOs, "501");
+				return false;
+			}
+				
 			requestHeaders = decoder.getHeaders();
 			isHEADRequest = requestHeaders.isHEADRequest();
 			String connection = requestHeaders.getHeader("Connection");
@@ -220,7 +224,7 @@ public class AnalyzerImp implements Analyzer {
 				return;
 			}
 			// Parse response heaaders
-			decoder.parseHeaders(resp.array(), totalCount);
+			decoder.parseHeaders(resp.array(), totalCount,"response");
 			responseHeaders = decoder.getHeaders();
 			String connection = responseHeaders.getHeader("Connection");
 			String httpVersion = responseHeaders.getHeader("HTTPVersion");

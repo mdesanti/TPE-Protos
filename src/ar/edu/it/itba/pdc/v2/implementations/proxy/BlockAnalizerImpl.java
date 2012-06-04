@@ -19,8 +19,9 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 	private Decoder decoder;
 	private Configurator configurator;
 
-	public BlockAnalizerImpl(Configurator configurator) {
+	public BlockAnalizerImpl(Configurator configurator,Decoder decoder) {
 		this.configurator = configurator;
+		this.decoder = decoder;
 	}
 
 	public boolean analizeRequest(Decoder decoder, OutputStream clientOs)
@@ -115,7 +116,7 @@ public class BlockAnalizerImpl implements BlockAnalizer {
 	}
 
 	private boolean analizeBlockURL(OutputStream clientOs) throws IOException {
-		if (!configurator.isAccepted(decoder.getHeader("RequestedURI").replace(
+		if (decoder.getHeader("RequestedURI")!=null && !configurator.isAccepted(decoder.getHeader("RequestedURI").replace(
 				" ", ""))) {
 			generateProxyResponse(clientOs, "455");
 			return true;
