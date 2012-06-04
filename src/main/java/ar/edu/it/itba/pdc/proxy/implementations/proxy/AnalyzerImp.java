@@ -257,6 +257,7 @@ public class AnalyzerImp implements Analyzer {
 					clientOs.write(buf, 0, receivedMsg);
 				}
 				keepReading = decoder.keepReading();
+				
 				data = true;
 			}
 			if(receivedMsg == -1) {
@@ -353,7 +354,7 @@ public class AnalyzerImp implements Analyzer {
 		return true;
 	}
 
-	private void resetAll() {
+	public void resetAll() {
 		totalCount = 0;
 		decoder.reset();
 		receivedMsg = 0;

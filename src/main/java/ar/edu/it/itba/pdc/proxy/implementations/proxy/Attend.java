@@ -32,9 +32,11 @@ public class Attend implements Runnable {
 	}
 
 	public void run() {
-		byte[] buffer = new byte[500];
-		ByteBuffer req = ByteBuffer.allocate(20 * 1024);
 		while (!socket.isClosed()) {
+			byte[] buffer = new byte[500];
+			ByteBuffer req = ByteBuffer.allocate(20 * 1024);
+			analyzer.resetAll();
+			decoder.reset();
 			try {
 				int receivedMsg = 0, totalCount = 0;
 
@@ -62,12 +64,12 @@ public class Attend implements Runnable {
 
 				analyzer.analyze(req, totalCount, socket);
 
-//				if (!socket.isConnected() || socket.isClosed()
-//						|| !analyzer.keepConnection()) {
-//					attend.info("Analyzer returned. Closing socket");
+				if (!socket.isConnected() || socket.isClosed()
+						|| !analyzer.keepConnection()) {
+					attend.info("Analyzer returned. Closing socket");
 					req.clear();
 					socket.close();
-//				}
+				}
 
 			} catch (IOException e) {
 				return;

@@ -23,5 +23,7 @@ public interface Analyzer {
 	 *         must keep alive. False if it must close
 	 */
 	public boolean keepConnection();
+	
+	public void resetAll();
 
 }

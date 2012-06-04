@@ -564,10 +564,11 @@ public class DecoderImpl implements Decoder {
 		StringBuilder sb = new StringBuilder();
 
 		allHeaders.remove("Connection");
+		allHeaders.remove("Keep-Alive");
 		sb.append(allHeaders.get("HTTPVersion")).append(" ");
 		sb.append(allHeaders.get("StatusCode")).append(" ");
 		sb.append(allHeaders.get("Reason")).append("\r\n");
-		sb.append("Connection: close\r\n");
+		sb.append("Connection: keep-alive\r\n");
 
 		for (String key : allHeaders.keySet()) {
 			if (!key.equals("HTTPVersion") && !key.equals("StatusCode")
