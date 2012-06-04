@@ -16,6 +16,7 @@ import java.util.Set;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import ar.edu.it.itba.pdc.v2.ProxyData;
 import ar.edu.it.itba.pdc.v2.implementations.configurator.ConnectionStatus;
 import ar.edu.it.itba.pdc.v2.implementations.monitor.Monitor;
 import ar.edu.it.itba.pdc.v2.interfaces.ConnectionManager;
@@ -26,13 +27,15 @@ public class ConnectionManagerImpl implements ConnectionManager {
 	private Logger connectionLog = Logger
 			.getLogger(ConnectionManagerImpl.class);
 	private DataStorage dataStorage;
+	private ProxyData pd;
 
-	public ConnectionManagerImpl(Monitor monitor) {
+	public ConnectionManagerImpl(Monitor monitor, ProxyData pd) {
 		connections = new HashMap<InetAddress, List<ConnectionStatus>>();
 		connectionLog.setLevel(Level.INFO);
 		this.dataStorage = monitor.getDataStorage();
+		this.pd = pd;
 	}
-	
+
 	public void run() {
 		while (!Thread.interrupted()) {
 			try {
@@ -41,16 +44,16 @@ public class ConnectionManagerImpl implements ConnectionManager {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-//			connectionLog.info("Cleaning closed sockets");
+			// connectionLog.info("Cleaning closed sockets");
 			Set<InetAddress> keys = connections.keySet();
 			synchronized (connections) {
-				for(InetAddress addr: keys) {
+				for (InetAddress addr : keys) {
 					List<ConnectionStatus> openConn = connections.get(addr);
 					Iterator<ConnectionStatus> iter = openConn.iterator();
-					while(iter.hasNext()) {
+					while (iter.hasNext()) {
 						ConnectionStatus cs = iter.next();
 						Socket s = cs.getSocket();
-						if((s.isClosed() || !s.isConnected()) && !cs.isInUse()) {
+						if ((s.isClosed() || !s.isConnected()) && !cs.isInUse()) {
 							iter.remove();
 						}
 					}
@@ -60,10 +63,16 @@ public class ConnectionManagerImpl implements ConnectionManager {
 		}
 	}
 
-	public Socket getConnection(String host) throws IOException,UnknownHostException {
+	public Socket getConnection(String host) throws IOException,
+			UnknownHostException {
 		URL url = new URL("http://" + host);
-		InetAddress addr = InetAddress.getByName(url.getHost());
 		connectionLog.info("Requested connection for " + url.toString());
+		InetAddress addr;
+		if (pd.extistsIntermediateProxy()) {
+			addr = pd.getIntermProxyAddr();
+		} else {
+			addr = InetAddress.getByName(url.getHost());
+		}
 		synchronized (connections) {
 
 			List<ConnectionStatus> connectionList = connections.get(addr);
@@ -83,7 +92,12 @@ public class ConnectionManagerImpl implements ConnectionManager {
 			}
 		}
 		connectionLog.info("Created new connection to " + url.toString());
-		int port = (url.getPort() == -1) ? 80 : url.getPort();
+		int port;
+		if(pd.extistsIntermediateProxy()) {
+			port = pd.getIntermProxyPort();
+		} else {
+			port = (url.getPort() == -1) ? 80 : url.getPort();
+		}
 		Socket s = null;
 		try {
 			s = new Socket(addr, port);
@@ -92,7 +106,7 @@ public class ConnectionManagerImpl implements ConnectionManager {
 			return null;
 		}
 		synchronized (connections) {
-			
+
 			connections.get(addr).add(new ConnectionStatus(s, true));
 		}
 		return s;
