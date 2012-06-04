@@ -28,7 +28,7 @@ public class ConfiguratorConnectionDecoder implements
 	private Set<String> blockedMediaType;
 	private Set<String> blockedURIs;
 	private int maxSize = -1;
-	private Logger decoderLog = Logger.getLogger("proxy.configurator.handler");
+	private Logger decoderLog = Logger.getLogger(this.getClass());
 
 	public ConfiguratorConnectionDecoder() {
 		reply = new HashMap<String, String>();
@@ -131,6 +131,7 @@ public class ConfiguratorConnectionDecoder implements
 			} else if (args[0].equals("EXIT")) {
 				decoderLog.info("EXIT command received. Closing connection");
 				closeConnection = true;
+				logged = false;
 				return "Bye bye\n";
 			} else if (args[0].equals("HELP")) {
 				return printHelp();
@@ -174,10 +175,10 @@ public class ConfiguratorConnectionDecoder implements
 		} else if (type.equals("SIZE")) {
 			try {
 				Integer max = Integer.parseInt(arg);
-				maxSize = max;
-				decoderLog.info("Blocking files bigger than " + max);
+				maxSize = -1;
+				decoderLog.info("Unlocking files bigger than " + max);
 				return "200 - Sizes bigger than " + maxSize
-						+ " are now blocked\n";
+						+ " are now unblocked\n";
 			} catch (NumberFormatException e) {
 				return "400 - Invalid size\n";
 			}

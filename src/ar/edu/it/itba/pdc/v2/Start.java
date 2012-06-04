@@ -23,7 +23,7 @@ public class Start {
 
 	public static void main(String args[]) {
 		BasicConfigurator.configure();
-		proxy = Logger.getLogger("proxy");
+		proxy = Logger.getLogger("START");
 		proxy.setLevel(Level.INFO);
 		ProxyData pd;
 		if((pd = loadProperties()) != null) {

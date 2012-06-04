@@ -31,7 +31,7 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 	}
 
 	public void handle(Socket socket) throws IOException {
-		Logger configHandler = Logger.getLogger("proxy.configurator.handler");
+		Logger configHandler = Logger.getLogger(this.getClass());
 		configHandler.setLevel(Level.INFO);
 		byte[] buffer = new byte[maxMessageLength];
 		ByteBuffer cumBuffer = ByteBuffer.allocate(maxMessageLength);
