@@ -209,8 +209,7 @@ public class AnalyzerImp implements Analyzer {
 			boolean applyTransform = decoder.applyTransformations();
 
 			RebuiltHeader rh = decoder.rebuildResponseHeaders();
-			if ((!configurator.applyRotations())
-					|| (configurator.applyRotations() && !applyTransform)) {
+			if (!(configurator.applyRotations() && decoder.isImage())) {
 				clientOs.write(rh.getHeader(), 0, rh.getSize());
 			}
 
@@ -265,34 +264,16 @@ public class AnalyzerImp implements Analyzer {
 			}
 			dataStorage.addProxyServerBytes(totalCount);
 			analyzeLog.info("Response completed from server");
+			
 			if (blockAnalizer.analyzeChunkedSize(decoder, clientOs, totalCount)) {
 				dataStorage.addBlock();
 				return;
 			}
-			if (applyTransform && data) {
-				if (configurator.applyRotations() && decoder.isImage()) {
-					analyzeLog.info("Rotating image");
-					byte[] rotated = decoder.getRotatedImage();
-					if (rotated == null) {
-						connectionManager.releaseConnection(externalServer,
-								false);
-						keepConnection = false;
-						return;
-					}
-					RebuiltHeader newHeader = decoder
-							.modifiedContentLength(rotated.length);
-					clientOs.write(newHeader.getHeader(), 0,
-							newHeader.getSize());
-					clientOs.write(rotated, 0, rotated.length);
-					dataStorage.addTransformation();
-				}
-				if (configurator.applyTextTransformation() && decoder.isText()) {
-					analyzeLog.info("Transforming text/plain");
-					byte[] transformed = decoder.getTransformed();
-					clientOs.write(transformed, 0, transformed.length);
-					dataStorage.addTransformation();
-				}
-			}
+
+			// Applies proxy transformations. Returns if an error occurred.
+			if (!applyProxyTransformations(applyTransform, data))
+				return;
+
 			connectionManager.releaseConnection(externalServer,
 					externalSConnection);
 		} catch (IOException e) {
@@ -301,6 +282,33 @@ public class AnalyzerImp implements Analyzer {
 			throw e;
 		}
 
+	}
+
+	private boolean applyProxyTransformations(boolean applyTransform,
+			boolean data) throws IOException {
+		if (applyTransform && data) {
+			if (configurator.applyRotations() && decoder.isImage()) {
+				analyzeLog.info("Rotating image");
+				byte[] rotated = decoder.getRotatedImage();
+				if (rotated == null) {
+					connectionManager.releaseConnection(externalServer, false);
+					keepConnection = false;
+					return false;
+				}
+				RebuiltHeader newHeader = decoder
+						.modifiedContentLength(rotated.length);
+				clientOs.write(newHeader.getHeader(), 0, newHeader.getSize());
+				clientOs.write(rotated, 0, rotated.length);
+				dataStorage.addTransformation();
+			}
+			if (configurator.applyTextTransformation() && decoder.isText()) {
+				analyzeLog.info("Transforming text/plain");
+				byte[] transformed = decoder.getTransformed();
+				clientOs.write(transformed, 0, transformed.length);
+				dataStorage.addTransformation();
+			}
+		}
+		return true;
 	}
 
 	public boolean keepConnection() {
