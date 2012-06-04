@@ -129,16 +129,16 @@ public class DecoderImpl implements Decoder {
 			if (fileName == null) {
 				String path[] = requestHeaders.getHeader("RequestedURI").split(
 						"/");
-				File f = new File("/tmp/prueba");
+				File f = new File("/tmp/proxyFiles");
 				f.mkdir();
 				if (path[path.length - 1].length() < 10)
-					fileName = "/tmp/prueba/"
+					fileName = "/tmp/proxyFiles/"
 							+ String.valueOf(System.currentTimeMillis())
 							+ Thread.currentThread().getId()
 							+ path[path.length - 1];
 				else {
 
-					fileName = "/tmp/prueba/"
+					fileName = "/tmp/proxyFiles/"
 							+ path[path.length - 1].substring(0, 6)
 							+ String.valueOf(System.currentTimeMillis())
 							+ Thread.currentThread().getId()
@@ -166,12 +166,12 @@ public class DecoderImpl implements Decoder {
 
 				String path[] = requestHeaders.getHeader("RequestedURI").split(
 						"/");
-				File f = new File("/tmp/prueba");
+				File f = new File("/tmp/proxyFiles");
 				f.mkdir();
 				if (path[path.length - 1].length() < 10)
-					fileName = "/tmp/prueba/" + path[path.length - 1] + ".txt";
+					fileName = "/tmp/proxyFiles/" + path[path.length - 1] + ".txt";
 				else {
-					fileName = "/tmp/prueba/"
+					fileName = "/tmp/proxyFiles/"
 							+ path[path.length - 1].substring(0, 6) + "."
 							+ "txt";
 				}
