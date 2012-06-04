@@ -281,7 +281,6 @@ public class AnalyzerImp implements Analyzer {
 		} catch (IOException e) {
 			connectionManager.cleanAll(externalServer);
 			keepConnection = false;
-			e.printStackTrace();
 			throw e;
 		}
 

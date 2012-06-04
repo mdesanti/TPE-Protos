@@ -6,10 +6,12 @@ public class ConnectionStatus {
 	
 	private Socket socket;
 	private boolean inUse;
+	private long time;
 	
-	public ConnectionStatus(Socket socket, boolean inUse) {
+	public ConnectionStatus(Socket socket, boolean inUse, long time) {
 		this.socket = socket;
 		this.inUse = inUse;
+		this.time = time;
 	}
 	
 	public Socket getSocket() {
@@ -26,6 +28,10 @@ public class ConnectionStatus {
 	
 	public void takeConnection() {
 		this.inUse = true;
+	}
+	
+	public long getTime() {
+		return time;
 	}
 
 	@Override

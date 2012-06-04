@@ -29,6 +29,7 @@ public class ConnectionManagerImpl implements ConnectionManager {
 			.getLogger(ConnectionManagerImpl.class);
 	private DataStorage dataStorage;
 	private ProxyData pd;
+	private static int TIMEOUT = 5000;
 
 	public ConnectionManagerImpl(Monitor monitor, ProxyData pd) {
 		connections = new HashMap<InetAddress, List<ConnectionStatus>>();
@@ -55,7 +56,7 @@ public class ConnectionManagerImpl implements ConnectionManager {
 					while (iter.hasNext()) {
 						ConnectionStatus cs = iter.next();
 						Socket s = cs.getSocket();
-						if ((s.isClosed() || !s.isConnected()) && !cs.isInUse()) {
+						if ((s.isClosed() || !s.isConnected()) && !cs.isInUse() && System.currentTimeMillis()-cs.getTime() >= TIMEOUT) {
 							iter.remove();
 						}
 					}
@@ -108,7 +109,7 @@ public class ConnectionManagerImpl implements ConnectionManager {
 		}
 		synchronized (connections) {
 
-			connections.get(addr).add(new ConnectionStatus(s, true));
+			connections.get(addr).add(new ConnectionStatus(s, true, System.currentTimeMillis()));
 		}
 		return s;
 
