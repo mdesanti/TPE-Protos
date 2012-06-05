@@ -85,6 +85,8 @@ public class ConfiguratorConnectionDecoder implements
 						try {
 						block  = new BrowserBlock(Browser.valueOf(args[2]));
 						browserBlock.add((BrowserBlock)block);
+						specification = true;
+						return "200 - Specify actions for " + ((BrowserBlock)block).getBrowser().toString() + "\n";
 						} catch (IllegalArgumentException e) {
 							return reply.get("WRONG_PARAMETERS");
 						}
@@ -96,6 +98,8 @@ public class ConfiguratorConnectionDecoder implements
 						try {
 							block  = new OSBlock(OperatingSystem.valueOf(args[2]));
 							OSBlock.add((OSBlock)block);
+							specification = true;
+							return "200 - Specify actions for " + ((OSBlock)block).getOS().toString() + "\n";
 							} catch (IllegalArgumentException e) {
 								return reply.get("WRONG_PARAMETERS");
 							}
@@ -112,11 +116,14 @@ public class ConfiguratorConnectionDecoder implements
 					} else {
 						block = new IPBlock(ip);
 						ipBlock.add((IPBlock)block);
+						specification = true;
+						return "200 - Specify actions for " + ((IPBlock)block).getIp() + "\n";
 					}
 				} else {
 					return reply.get("WRONG_COMMAND");
 				}
-				specification = true;
+			} else {
+				return "400 - Must specify broser, os or ip\n";
 			}
 		} else {
 			String[] args = s.split(" ");
@@ -205,7 +212,7 @@ public class ConfiguratorConnectionDecoder implements
 				return reply.get("WRONG_COMMAND");
 			}
 		}
-		return s;
+		return reply.get("WRONG_COMMAND");
 	}
 
 	private String analyzeBlockCommand(String[] line) {
