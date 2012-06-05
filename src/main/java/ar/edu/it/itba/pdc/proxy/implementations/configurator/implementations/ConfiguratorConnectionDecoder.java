@@ -198,6 +198,9 @@ public class ConfiguratorConnectionDecoder implements
 				return "Bye bye\n";
 			} else if (args[0].equals("HELP")) {
 				return printHelp();
+			} else if(args[0].equals("CHANGE")) {
+				specification = false;
+				block = null;
 			} else {
 				return reply.get("WRONG_COMMAND");
 			}
