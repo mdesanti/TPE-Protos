@@ -571,6 +571,8 @@ public class DecoderImpl implements Decoder {
 
 		allHeaders.remove("Connection");
 		allHeaders.remove("Keep-Alive");
+		allHeaders.remove("HTTPVersion");
+		allHeaders.put("HTTPVersion","HTTP/1.1");
 		sb.append(allHeaders.get("HTTPVersion")).append(" ");
 		sb.append(allHeaders.get("StatusCode")).append(" ");
 		sb.append(allHeaders.get("Reason")).append("\r\n");

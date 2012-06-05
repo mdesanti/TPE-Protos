@@ -352,7 +352,7 @@ public class AnalyzerImp implements Analyzer {
 		} else if (connection == null && httpVersion.contains("1.1")) {
 			return true;
 		}
-		if (connection == null || connection.contains("close")) {
+		if (connection == null || connection.contains("close") ||  httpVersion.contains("1.0")) {
 			return false;
 		}
 		return true;

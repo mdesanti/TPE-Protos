@@ -113,12 +113,8 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 		int bs = decoder.getMaxSizeFor(b);
 		int oss = decoder.getMaxSizeFor(os);
 		int ips = decoder.getMaxSizeFor(ip);
-		if (bs >= oss && bs >= ips) {
-			return bs;
-		}
-		if (oss >= bs && oss >= ips)
-			return oss;
-		return ips;
+		int less = bs < oss ? bs : oss;
+		return less < ips ? less : ips;
 
 	}
 
