@@ -24,7 +24,6 @@ import ar.edu.it.itba.pdc.proxy.interfaces.ConnectionManager;
 
 public class ConnectionManagerImpl implements ConnectionManager {
 	private Map<InetAddress, List<ConnectionStatus>> connections;
-	private List<Socket> clientConn;
 	private Logger connectionLog = Logger
 			.getLogger(ConnectionManagerImpl.class);
 	private DataStorage dataStorage;
@@ -33,7 +32,6 @@ public class ConnectionManagerImpl implements ConnectionManager {
 
 	public ConnectionManagerImpl(Monitor monitor, ProxyData pd) {
 		connections = new HashMap<InetAddress, List<ConnectionStatus>>();
-		clientConn = new LinkedList<Socket>();
 		connectionLog.setLevel(Level.INFO);
 		this.dataStorage = monitor.getDataStorage();
 		this.pd = pd;
