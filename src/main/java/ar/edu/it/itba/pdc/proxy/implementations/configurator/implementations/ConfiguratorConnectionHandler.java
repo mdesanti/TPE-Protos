@@ -123,6 +123,8 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 	}
 
 	public boolean isAccepted(InetAddress addr, Object[] set) {
+		if(set == null)
+			return true;
 		for (Object blocked : set) {
 			if (blocked.equals((InetAddress) addr))
 				return false;
@@ -138,6 +140,8 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 	}
 	
 	public boolean isAccepted(String str, Object[] set) {
+		if(set == null)
+			return true;
 		for (Object blocked : set) {
 			String regex = (String) blocked;
 			if (str.matches(regex)) {
@@ -155,6 +159,8 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 	}
 
 	public boolean isAccepted(MediaType mtype, Object[] set) {
+		if(set == null)
+			return true;
 		for (Object blocked : set) {
 			if (mtype.toString().equals((String) blocked)) {
 				return false;

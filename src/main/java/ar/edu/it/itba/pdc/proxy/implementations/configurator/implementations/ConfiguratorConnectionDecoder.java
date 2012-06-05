@@ -16,11 +16,11 @@ import nl.bitwalker.useragentutils.OperatingSystem;
 
 import org.apache.log4j.Logger;
 
+import ar.edu.it.itba.pdc.proxy.implementations.configurator.block.Block;
+import ar.edu.it.itba.pdc.proxy.implementations.configurator.block.BrowserBlock;
+import ar.edu.it.itba.pdc.proxy.implementations.configurator.block.IPBlock;
+import ar.edu.it.itba.pdc.proxy.implementations.configurator.block.OSBlock;
 import ar.edu.it.itba.pdc.proxy.implementations.configurator.interfaces.ConfiguratorConnectionDecoderInt;
-import ar.edu.it.itba.pdc.proxy.implementations.proxy.block.Block;
-import ar.edu.it.itba.pdc.proxy.implementations.proxy.block.BrowserBlock;
-import ar.edu.it.itba.pdc.proxy.implementations.proxy.block.IPBlock;
-import ar.edu.it.itba.pdc.proxy.implementations.proxy.block.OSBlock;
 
 public class ConfiguratorConnectionDecoder implements
 		ConfiguratorConnectionDecoderInt {
@@ -81,10 +81,24 @@ public class ConfiguratorConnectionDecoder implements
 				if (args[1].contains("BROWSER")) {
 					if ((index = containsBrowser(args[2])) != -1) {
 						block = browserBlock.get(index);
+					} else {
+						try {
+						block  = new BrowserBlock(Browser.valueOf(args[2]));
+						browserBlock.add((BrowserBlock)block);
+						} catch (IllegalArgumentException e) {
+							return reply.get("WRONG_PARAMETERS");
+						}
 					}
 				} else if (args[1].contains("OS")) {
 					if ((index = containsOS(args[2])) != -1) {
 						block = OSBlock.get(index);
+					} else {
+						try {
+							block  = new OSBlock(OperatingSystem.valueOf(args[2]));
+							OSBlock.add((OSBlock)block);
+							} catch (IllegalArgumentException e) {
+								return reply.get("WRONG_PARAMETERS");
+							}
 					}
 				} else if (args[1].contains("IP")) {
 					InetAddress ip;
@@ -95,6 +109,9 @@ public class ConfiguratorConnectionDecoder implements
 					}
 					if ((index = containsIP(ip)) != -1) {
 						block = ipBlock.get(index);
+					} else {
+						block = new IPBlock(ip);
+						ipBlock.add((IPBlock)block);
 					}
 				} else {
 					return reply.get("WRONG_COMMAND");
@@ -327,106 +344,148 @@ public class ConfiguratorConnectionDecoder implements
 
 	public Object[] getBlockedAddressesFor(Browser b) {
 		int index = containsBrowser(b.toString());
+		if(index == -1)
+			return null;
 		return browserBlock.get(index).getBlockedAddresses().toArray();
 	}
 
 	public Object[] getBlockedAddressesFor(InetAddress addr) {
 		int index = containsIP(addr);
+		if(index == -1)
+			return null;
 		return ipBlock.get(index).getBlockedAddresses().toArray();
 	}
 	
 	public Object[] getBlockedAddressesFor(OperatingSystem os) {
 		int index = containsOS(os.toString());
+		if(index == -1)
+			return null;
 		return OSBlock.get(index).getBlockedAddresses().toArray();
 	}
 
 	public Object[] getBlockedMediaTypeFor(Browser b) {
 		int index = containsBrowser(b.toString());
+		if(index == -1)
+			return null;
 		return browserBlock.get(index).getBlockedMediaType().toArray();
 	}
 	
 	public Object[] getBlockedMediaTypeFor(InetAddress addr) {
 		int index = containsIP(addr);
+		if(index == -1)
+			return null;
 		return ipBlock.get(index).getBlockedMediaType().toArray();
 	}
 	
 	public Object[] getBlockedMediaTypeFor(OperatingSystem os) {
 		int index = containsOS(os.toString());
+		if(index == -1)
+			return null;
 		return OSBlock.get(index).getBlockedMediaType().toArray();
 	}
 	
 	public Object[] getBlockedURIsFor(Browser b) {
 		int index = containsBrowser(b.toString());
+		if(index == -1)
+			return null;
 		return browserBlock.get(index).getBlockedURIs().toArray();
 	}
 	
 	public Object[] getBlockedURIsFor(InetAddress addr) {
 		int index = containsIP(addr);
+		if(index == -1)
+			return null;
 		return ipBlock.get(index).getBlockedURIs().toArray();
 	}
 	
 	public Object[] getBlockedURIsFor(OperatingSystem os) {
 		int index = containsOS(os.toString());
+		if(index == -1)
+			return null;
 		return OSBlock.get(index).getBlockedURIs().toArray();
 	}
 
 	public int getMaxSizeFor(Browser b) {
 		int index = containsBrowser(b.toString());
+		if(index == -1)
+			return -1;
 		return browserBlock.get(index).getMaxSize();
 	}
 	
 	public int getMaxSizeFor(InetAddress addr) {
 		int index = containsIP(addr);
+		if(index == -1)
+			return -1;
 		return ipBlock.get(index).getMaxSize();
 	}
 	
 	public int getMaxSizeFor(OperatingSystem os) {
 		int index = containsOS(os.toString());
+		if(index == -1)
+			return -1;
 		return OSBlock.get(index).getMaxSize();
 	}
 
 	public boolean applyRotationsFor(Browser b) {
 		int index = containsBrowser(b.toString());
+		if(index == -1)
+			return false;
 		return browserBlock.get(index).isApplyRotations();
 	}
 	
 	public boolean applyRotationsFor(InetAddress addr) {
 		int index = containsIP(addr);
+		if(index == -1)
+			return false;
 		return ipBlock.get(index).isApplyRotations();
 	}
 	
 	public boolean applyRotationsFor(OperatingSystem os) {
 		int index = containsOS(os.toString());
+		if(index == -1)
+			return false;
 		return OSBlock.get(index).isApplyRotations();
 	}
 
 	public boolean applyTransformationsFor(Browser b) {
 		int index = containsBrowser(b.toString());
+		if(index == -1)
+			return false;
 		return browserBlock.get(index).isApplyTransformations();
 	}
 	
 	public boolean applyTransformationsFor(InetAddress addr) {
 		int index = containsIP(addr);
+		if(index == -1)
+			return false;
 		return ipBlock.get(index).isApplyTransformations();
 	}
 	
 	public boolean applyTransformationsFor(OperatingSystem os) {
 		int index = containsOS(os.toString());
+		if(index == -1)
+			return false;
 		return OSBlock.get(index).isApplyTransformations();
 	}
 	
 	public boolean blockAllFor(Browser b) {
 		int index = containsBrowser(b.toString());
+		if(index == -1)
+			return false;
 		return browserBlock.get(index).isBlockAll();
 	}
 	
 	public boolean blockAllFor(InetAddress addr) {
 		int index = containsIP(addr);
+		if(index == -1)
+			return false;
 		return ipBlock.get(index).isBlockAll();
 	}
 	
 	public boolean blockAllFor(OperatingSystem os) {
 		int index = containsOS(os.toString());
+		if(index == -1)
+			return false;
 		return OSBlock.get(index).isBlockAll();
 	}
 

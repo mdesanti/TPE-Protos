@@ -7,6 +7,8 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
+import nl.bitwalker.useragentutils.UserAgent;
+
 import org.apache.log4j.Logger;
 
 import ar.edu.it.itba.pdc.proxy.implementations.configurator.interfaces.Configurator;
@@ -42,6 +44,7 @@ public class AnalyzerImp implements Analyzer {
 	private boolean keepConnection = true;
 	private DataStorage dataStorage;
 	private boolean isHEADRequest = false;
+	private UserAgent ua;
 
 	public AnalyzerImp(ConnectionManager connectionManager,
 			Configurator configurator, Monitor monitor) {
@@ -98,6 +101,7 @@ public class AnalyzerImp implements Analyzer {
 				decoder.generateProxyResponse(clientOs, "501");
 				return false;
 			}
+			ua = UserAgent.parseUserAgentString(decoder.getHeader("User-Agent"));
 
 			requestHeaders = decoder.getHeaders();
 			isHEADRequest = requestHeaders.isHEADRequest();
@@ -109,7 +113,7 @@ public class AnalyzerImp implements Analyzer {
 					+ requestHeaders.dumpHeaders());
 
 			// Analyze if something will be blocked
-			if (blockAnalizer.analyzeRequest(decoder, clientOs)) {
+			if (blockAnalizer.analyzeRequest(decoder, clientOs, ua.getBrowser(), ua.getOperatingSystem(), socket.getLocalAddress())) {
 				dataStorage.addBlock();
 				return false;
 			}
@@ -197,7 +201,7 @@ public class AnalyzerImp implements Analyzer {
 
 			externalSConnection = analyzeResponseConnection();
 
-			if (blockAnalizer.analyzeResponse(decoder, clientOs)) {
+			if (blockAnalizer.analyzeResponse(decoder, clientOs, ua.getBrowser(), ua.getOperatingSystem(), socket.getLocalAddress())) {
 				dataStorage.addBlock();
 				return;
 			}
@@ -207,10 +211,10 @@ public class AnalyzerImp implements Analyzer {
 					+ " with status code "
 					+ responseHeaders.getHeader("StatusCode"));
 
-			boolean applyTransform = decoder.applyTransformations();
+			boolean applyTransform = decoder.applyTransformations(ua.getBrowser(), ua.getOperatingSystem(), socket.getLocalAddress());
 
 			RebuiltHeader rh = decoder.rebuildResponseHeaders();
-			if (!(configurator.applyRotations() && decoder.isImage())) {
+			if (!(configurator.applyRotationsFor(ua.getBrowser(), ua.getOperatingSystem(), socket.getLocalAddress()) && decoder.isImage())) {
 				clientOs.write(rh.getHeader(), 0, rh.getSize());
 			}
 
@@ -227,7 +231,7 @@ public class AnalyzerImp implements Analyzer {
 						totalCount - responseHeaders.getReadBytes());
 				decoder.applyRestrictions(extra,
 						totalCount - responseHeaders.getReadBytes(),
-						requestHeaders);
+						requestHeaders, ua.getBrowser(), ua.getOperatingSystem(), socket.getLocalAddress());
 				if (!applyTransform) {
 					clientOs.write(extra, 0,
 							totalCount - responseHeaders.getReadBytes());
@@ -253,7 +257,7 @@ public class AnalyzerImp implements Analyzer {
 				analyzeLog.info("Getting response from server");
 				totalCount += receivedMsg;
 				decoder.analyze(buf, receivedMsg);
-				decoder.applyRestrictions(buf, receivedMsg, requestHeaders);
+				decoder.applyRestrictions(buf, receivedMsg, requestHeaders, ua.getBrowser(), ua.getOperatingSystem(), socket.getLocalAddress());
 				if (!applyTransform) {
 					clientOs.write(buf, 0, receivedMsg);
 				}
@@ -267,7 +271,7 @@ public class AnalyzerImp implements Analyzer {
 			dataStorage.addProxyServerBytes(totalCount);
 			analyzeLog.info("Response completed from server");
 			
-			if (blockAnalizer.analyzeChunkedSize(decoder, clientOs, totalCount)) {
+			if (blockAnalizer.analyzeChunkedSize(decoder, clientOs, totalCount, ua.getBrowser(), ua.getOperatingSystem(), socket.getLocalAddress())) {
 				dataStorage.addBlock();
 				return;
 			}
@@ -289,7 +293,7 @@ public class AnalyzerImp implements Analyzer {
 	private boolean applyProxyTransformations(boolean applyTransform,
 			boolean data) throws IOException {
 		if (applyTransform && data) {
-			if (configurator.applyRotations() && decoder.isImage()) {
+			if (configurator.applyRotationsFor(ua.getBrowser(), ua.getOperatingSystem(), socket.getLocalAddress()) && decoder.isImage()) {
 				analyzeLog.info("Rotating image");
 				byte[] rotated = decoder.getRotatedImage();
 				if (rotated == null) {
@@ -303,7 +307,7 @@ public class AnalyzerImp implements Analyzer {
 				clientOs.write(rotated, 0, rotated.length);
 				dataStorage.addTransformation();
 			}
-			if (configurator.applyTextTransformation() && decoder.isText()) {
+			if (configurator.applyTextTransformationFor(ua.getBrowser(), ua.getOperatingSystem(), socket.getLocalAddress()) && decoder.isText()) {
 				analyzeLog.info("Transforming text/plain");
 				byte[] transformed = decoder.getTransformed();
 				clientOs.write(transformed, 0, transformed.length);

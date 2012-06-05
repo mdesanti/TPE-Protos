@@ -10,12 +10,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.Map;
+
+import nl.bitwalker.useragentutils.Browser;
+import nl.bitwalker.useragentutils.OperatingSystem;
 
 import ar.edu.it.itba.pdc.proxy.implementations.configurator.interfaces.Configurator;
 import ar.edu.it.itba.pdc.proxy.implementations.utils.HTML;
@@ -115,18 +119,18 @@ public class DecoderImpl implements Decoder {
 		}
 	}
 
-	public boolean applyTransformations() {
+	public boolean applyTransformations(Browser b, OperatingSystem os, InetAddress ip) {
 		this.analizeMediaType();
-		return (configurator.applyRotations() && isImage)
-				|| (configurator.applyTextTransformation() && isText);
+		return (configurator.applyRotationsFor(b, os, ip) && isImage)
+				|| (configurator.applyTextTransformationFor(b, os, ip) && isText);
 	}
 
 	public void applyRestrictions(byte[] bytes, int count,
-			HTTPHeaders requestHeaders) {
+			HTTPHeaders requestHeaders, Browser b, OperatingSystem os, InetAddress ip) {
 
 		this.analizeMediaType();
 
-		if (isImage && configurator.applyRotations()) {
+		if (isImage && configurator.applyRotationsFor(b, os, ip)) {
 			if (fileName == null) {
 				String path[] = requestHeaders.getHeader("RequestedURI").split(
 						"/");
@@ -155,7 +159,7 @@ public class DecoderImpl implements Decoder {
 			} catch (IOException e) {
 			}
 
-		} else if (isText && configurator.applyTextTransformation()) {
+		} else if (isText && configurator.applyTextTransformationFor(b, os, ip)) {
 			if (fileName == null) {
 				String[] params = headers.getHeader("Content-Type").split(";");
 				if (params.length < 2) {

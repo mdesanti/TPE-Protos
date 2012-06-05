@@ -2,6 +2,10 @@ package ar.edu.it.itba.pdc.proxy.interfaces;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.InetAddress;
+
+import nl.bitwalker.useragentutils.Browser;
+import nl.bitwalker.useragentutils.OperatingSystem;
 
 
 public interface BlockAnalyzer {
@@ -15,7 +19,7 @@ public interface BlockAnalyzer {
 	 * @return True if something is blocked. False if nothing is blocked.
 	 * @throws IOException
 	 */
-	public boolean analyzeRequest(Decoder decoder, OutputStream clientOs)
+	public boolean analyzeRequest(Decoder decoder, OutputStream clientOs, Browser b, OperatingSystem os, InetAddress ip)
 			throws IOException;
 
 	/**
@@ -27,7 +31,7 @@ public interface BlockAnalyzer {
 	 * @return
 	 * @throws IOException
 	 */
-	public boolean analyzeResponse(Decoder decoder, OutputStream clientOs)
+	public boolean analyzeResponse(Decoder decoder, OutputStream clientOs, Browser b, OperatingSystem os, InetAddress ip)
 			throws IOException;
 
 	/**
@@ -40,6 +44,6 @@ public interface BlockAnalyzer {
 	 * @throws IOException
 	 */
 	public boolean analyzeChunkedSize(Decoder decoder, OutputStream clientOs,
-			int totalSize) throws IOException;
+			int totalSize, Browser b, OperatingSystem os, InetAddress ip) throws IOException;
 
 }

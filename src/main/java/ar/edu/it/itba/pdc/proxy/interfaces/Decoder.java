@@ -2,6 +2,10 @@ package ar.edu.it.itba.pdc.proxy.interfaces;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.InetAddress;
+
+import nl.bitwalker.useragentutils.Browser;
+import nl.bitwalker.useragentutils.OperatingSystem;
 
 import ar.edu.it.itba.pdc.proxy.implementations.utils.HTML;
 import ar.edu.it.itba.pdc.proxy.implementations.utils.RebuiltHeader;
@@ -30,7 +34,7 @@ public interface Decoder {
 	 * @param requestHeader
 	 */
 	public void applyRestrictions(byte[] bytes, int count,
-			HTTPHeaders requestHeader);
+			HTTPHeaders requestHeader, Browser b, OperatingSystem os, InetAddress ip);
 
 	/**
 	 * Returns a rotated image.
@@ -116,7 +120,7 @@ public interface Decoder {
 	 * 
 	 * @return True if transformations will be made by the proxy.
 	 */
-	public boolean applyTransformations();
+	public boolean applyTransformations(Browser b, OperatingSystem os, InetAddress ip);
 
 	/**
 	 * Returns true if the response is an image.
