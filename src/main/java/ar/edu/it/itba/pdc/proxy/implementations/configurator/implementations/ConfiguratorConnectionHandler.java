@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
@@ -60,7 +61,13 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 					.substring(0, total));
 			configHandler.info("Responding " + answer + " to client");
 
-			os.write(answer.getBytes());
+			try {
+				os.write(answer.getBytes());
+			} catch (SocketException e) {
+				configHandler
+						.info("Client closed connection abruptly. Exiting handler");
+				return;
+			}
 			cumBuffer.clear();
 			keepReading = true;
 			receivedLength = 0;
@@ -119,11 +126,11 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 			InetAddress ip) {
 		return isAccepted(addr, decoder.getBlockedAddressesFor(b))
 				&& isAccepted(addr, decoder.getBlockedAddressesFor(ip))
-						&& isAccepted(addr, decoder.getBlockedAddressesFor(os));
+				&& isAccepted(addr, decoder.getBlockedAddressesFor(os));
 	}
 
 	public boolean isAccepted(InetAddress addr, Object[] set) {
-		if(set == null)
+		if (set == null)
 			return true;
 		for (Object blocked : set) {
 			if (blocked.equals((InetAddress) addr))
@@ -136,11 +143,11 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 			InetAddress ip) {
 		return isAccepted(str, decoder.getBlockedURIsFor(b))
 				&& isAccepted(str, decoder.getBlockedURIsFor(ip))
-						&& isAccepted(str, decoder.getBlockedURIsFor(os));
+				&& isAccepted(str, decoder.getBlockedURIsFor(os));
 	}
-	
+
 	public boolean isAccepted(String str, Object[] set) {
-		if(set == null)
+		if (set == null)
 			return true;
 		for (Object blocked : set) {
 			String regex = (String) blocked;
@@ -150,16 +157,16 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 		}
 		return true;
 	}
-	
+
 	public boolean isAccepted(MediaType mt, Browser b, OperatingSystem os,
 			InetAddress ip) {
 		return isAccepted(mt, decoder.getBlockedMediaTypeFor(b))
 				&& isAccepted(mt, decoder.getBlockedMediaTypeFor(ip))
-						&& isAccepted(mt, decoder.getBlockedMediaTypeFor(os));
+				&& isAccepted(mt, decoder.getBlockedMediaTypeFor(os));
 	}
 
 	public boolean isAccepted(MediaType mtype, Object[] set) {
-		if(set == null)
+		if (set == null)
 			return true;
 		for (Object blocked : set) {
 			if (mtype.toString().equals((String) blocked)) {

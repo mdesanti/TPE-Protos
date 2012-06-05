@@ -6,6 +6,9 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 import ar.edu.it.itba.pdc.proxy.implementations.monitor.exceptions.BadCredentialException;
 import ar.edu.it.itba.pdc.proxy.implementations.monitor.interfaces.DataStorage;
 
@@ -13,8 +16,11 @@ public class MonitorHandler {
 
 	private int bufSize;
 	private MonitorDecoder decoder = new MonitorDecoder();
+	private Logger configLog;
 
 	public MonitorHandler(int bufSize) {
+		configLog= Logger.getLogger(this.getClass());
+		configLog.setLevel(Level.INFO);
 		this.bufSize = bufSize;
 	}
 
@@ -47,9 +53,15 @@ public class MonitorHandler {
 			if (!logged) {
 				s = decoder.logIn(s);
 				att.logIn();
-			} else
+			} else{
 				s = decoder.decode(s);
+				if(s == null){
+					clntChan.close();
+					return;
+				}
+			}
 		} catch (BadCredentialException e) {
+			configLog.info("Log in failed.");
 			s = "User or password are incorrect, please try again\n";
 		}
 		buf.clear();

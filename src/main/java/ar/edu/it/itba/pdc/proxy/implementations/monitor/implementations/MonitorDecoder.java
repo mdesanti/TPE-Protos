@@ -3,6 +3,9 @@ package ar.edu.it.itba.pdc.proxy.implementations.monitor.implementations;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 import ar.edu.it.itba.pdc.proxy.implementations.monitor.exceptions.BadCredentialException;
 import ar.edu.it.itba.pdc.proxy.implementations.monitor.interfaces.ConnectionDecoder;
 import ar.edu.it.itba.pdc.proxy.implementations.monitor.interfaces.DataStorage;
@@ -11,9 +14,12 @@ public class MonitorDecoder implements ConnectionDecoder {
 
 	private Map<String, String> options;
 	private DataStorage storage = DataStorageImpl.getInstance();
+	private Logger configLog;
 
 	public MonitorDecoder() {
 		fillOptions();
+		configLog= Logger.getLogger(this.getClass());
+		configLog.setLevel(Level.INFO);
 	}
 
 	public DataStorage getStorage() {
@@ -30,11 +36,20 @@ public class MonitorDecoder implements ConnectionDecoder {
 
 			String[] args = s.split(" ");
 			String method = args[0];
+			if (args.length == 1) {
+				if (!method.equals("EXIT")){
+					return options.get("BAD_REQUEST");
+				}else {
+					configLog.info("EXIT command received. Closing connection");
+					return null;
+				}
+			}
 			String option = args[1];
 			String filter = args[2];
 
-			if (!method.equals("GET"))
+			if (!method.equals("GET")) {
 				return options.get("BAD_REQUEST");
+			}
 			if (option.equals("BYTES"))
 				return analizeComandoBytes(filter);
 			if (option.equals("COUNT"))
@@ -108,8 +123,10 @@ public class MonitorDecoder implements ConnectionDecoder {
 			String user = userAndPass[0];
 			String pass = userAndPass[1];
 
-			if (user.equals("admin") && pass.equals("123"))
+			if (user.equals("admin") && pass.equals("123")){
+				configLog.info("User is now logged.");
 				return "Hello, you may use \"HELP\" to list commands\n";
+			}
 		} catch (Exception e) {
 
 			throw new BadCredentialException();
