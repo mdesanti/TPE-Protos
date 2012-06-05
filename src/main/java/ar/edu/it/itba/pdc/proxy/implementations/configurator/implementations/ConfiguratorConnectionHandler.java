@@ -10,6 +10,9 @@ import java.nio.charset.Charset;
 
 import javax.ws.rs.core.MediaType;
 
+import nl.bitwalker.useragentutils.Browser;
+import nl.bitwalker.useragentutils.OperatingSystem;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -50,7 +53,8 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 				cumBuffer.put(buffer, cumBuffer.position(), receivedLength);
 				keepReading = reachedEnd(buffer);
 			}
-			configHandler.info("Received line from client: " + new String(cumBuffer.array()).substring(0, total));
+			configHandler.info("Received line from client: "
+					+ new String(cumBuffer.array()).substring(0, total));
 
 			String answer = decoder.decode(new String(cumBuffer.array())
 					.substring(0, total));
@@ -62,7 +66,8 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 			receivedLength = 0;
 			total = 0;
 		}
-		configHandler.info("Client closed connection. Closing socket, reseting decoder and exiting handler");
+		configHandler
+				.info("Client closed connection. Closing socket, reseting decoder and exiting handler");
 		socket.close();
 		decoder.reset();
 	}
@@ -72,42 +77,86 @@ public class ConfiguratorConnectionHandler implements ConnectionHandler {
 		return dataAsString.contains("\r\n");
 	}
 
-	public boolean applyRotations() {
-		return decoder.applyRotations();
+	public boolean applyRotations(Browser b) {
+		return decoder.applyRotationsFor(b);
 	}
 
-	public boolean applyTextTransformation() {
-		return decoder.applyTransformations();
+	public boolean applyRotations(OperatingSystem b) {
+		return decoder.applyRotationsFor(b);
 	}
 
-	public int getMaxSize() {
-		return decoder.getMaxSize();
+	public boolean applyRotations(InetAddress b) {
+		return decoder.applyRotationsFor(b);
 	}
 
-	public boolean isAccepted(InetAddress addr) {
-		Object[] set = decoder.getBlockedAddresses();
+	public boolean applyTextTransformation(Browser b) {
+		return decoder.applyTransformationsFor(b);
+	}
+
+	public boolean applyTextTransformation(OperatingSystem b) {
+		return decoder.applyTransformationsFor(b);
+	}
+
+	public boolean applyTextTransformation(InetAddress b) {
+		return decoder.applyTransformationsFor(b);
+	}
+
+	public int getMaxSize(Browser b, OperatingSystem os, InetAddress ip) {
+
+		int bs = decoder.getMaxSizeFor(b);
+		int oss = decoder.getMaxSizeFor(os);
+		int ips = decoder.getMaxSizeFor(ip);
+		if (bs >= oss && bs >= ips) {
+			return bs;
+		}
+		if (oss >= bs && oss >= ips)
+			return oss;
+		return ips;
+
+	}
+
+	public boolean isAccepted(InetAddress addr, Browser b, OperatingSystem os,
+			InetAddress ip) {
+		return isAccepted(addr, decoder.getBlockedAddressesFor(b))
+				&& isAccepted(addr, decoder.getBlockedAddressesFor(ip))
+						&& isAccepted(addr, decoder.getBlockedAddressesFor(os));
+	}
+
+	public boolean isAccepted(InetAddress addr, Object[] set) {
 		for (Object blocked : set) {
-			if (blocked.equals((InetAddress)addr))
+			if (blocked.equals((InetAddress) addr))
 				return false;
 		}
 		return true;
 	}
 
-	public boolean isAccepted(String str) {
-		Object[] set = decoder.getBlockedURIs();
+	public boolean isAccepted(String str, Browser b, OperatingSystem os,
+			InetAddress ip) {
+		return isAccepted(str, decoder.getBlockedURIsFor(b))
+				&& isAccepted(str, decoder.getBlockedURIsFor(ip))
+						&& isAccepted(str, decoder.getBlockedURIsFor(os));
+	}
+	
+	public boolean isAccepted(String str, Object[] set) {
 		for (Object blocked : set) {
-			String regex = (String)blocked;
+			String regex = (String) blocked;
 			if (str.matches(regex)) {
 				return false;
 			}
 		}
 		return true;
 	}
+	
+	public boolean isAccepted(MediaType mt, Browser b, OperatingSystem os,
+			InetAddress ip) {
+		return isAccepted(mt, decoder.getBlockedMediaTypeFor(b))
+				&& isAccepted(mt, decoder.getBlockedMediaTypeFor(ip))
+						&& isAccepted(mt, decoder.getBlockedMediaTypeFor(os));
+	}
 
-	public boolean isAccepted(MediaType mtype) {
-		Object[] set = decoder.getBlockedMediaType();
+	public boolean isAccepted(MediaType mtype, Object[] set) {
 		for (Object blocked : set) {
-			if (mtype.toString().equals((String)blocked)) {
+			if (mtype.toString().equals((String) blocked)) {
 				return false;
 			}
 		}

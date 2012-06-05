@@ -7,6 +7,9 @@ import java.net.Socket;
 
 import javax.ws.rs.core.MediaType;
 
+import nl.bitwalker.useragentutils.Browser;
+import nl.bitwalker.useragentutils.OperatingSystem;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -54,35 +57,37 @@ public class ConfiguratorImpl implements Configurator {
 		}
 	}
 
-	public boolean applyRotations() {
-		return handler.applyRotations();
+	
+	public boolean applyRotationsFor(Browser b, OperatingSystem os, InetAddress ip) {
+		return handler.applyRotations(os) || handler.applyRotations(b) || handler.applyRotations(ip);
 	}
 
-	public boolean applyTextTransformation() {
-		return handler.applyTextTransformation();
+	public boolean applyTextTransformationFor(Browser b, OperatingSystem os, InetAddress ip) {
+		return handler.applyTextTransformation(b) || handler.applyTextTransformation(os) || handler.applyTextTransformation(ip);
 	}
 
-	public boolean applyTransformation() {
-		return applyRotations() || applyTextTransformation();
+	public boolean applyTransformationFor(Browser b, OperatingSystem os, InetAddress ip) {
+		return applyRotationsFor(b, os, ip) || applyTextTransformationFor(b, os, ip);
 	}
 
-	public int getMaxSize() {
-		return handler.getMaxSize();
+	public int getMaxSize(Browser b, OperatingSystem os, InetAddress ip) {
+		return handler.getMaxSize(b, os, ip);
 	}
 
-	public boolean isAccepted(InetAddress addr) {
-		return handler.isAccepted(addr);
+	public boolean isAccepted(InetAddress addr, Browser b, OperatingSystem os, InetAddress ip) {
+		return handler.isAccepted(addr, b, os, ip);
 	}
 
-	public boolean isAccepted(String str) {
-		return handler.isAccepted(str);
+	public boolean isAccepted(String str, Browser b, OperatingSystem os, InetAddress ip) {
+		return handler.isAccepted(str, b, os, ip);
 	}
 
-	public boolean isAccepted(MediaType str) {
-		return handler.isAccepted(str);
+	public boolean isAccepted(MediaType str, Browser b, OperatingSystem os, InetAddress ip) {
+		return handler.isAccepted(str, b, os, ip);
 	}
 	
-	public boolean blockAll() {
-		return decoder.blockAll();
+	public boolean blockAll(Browser b, OperatingSystem os, InetAddress ip) {
+		return decoder.blockAllFor(b) && decoder.blockAllFor(ip) && decoder.blockAllFor(ip);
 	}
+
 }

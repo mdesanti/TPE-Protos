@@ -2,40 +2,55 @@ package ar.edu.it.itba.pdc.proxy.implementations.configurator.implementations;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import javax.ws.rs.core.MediaType;
 
+import nl.bitwalker.useragentutils.Browser;
+import nl.bitwalker.useragentutils.OperatingSystem;
+
 import org.apache.log4j.Logger;
 
 import ar.edu.it.itba.pdc.proxy.implementations.configurator.interfaces.ConfiguratorConnectionDecoderInt;
+import ar.edu.it.itba.pdc.proxy.implementations.proxy.block.Block;
+import ar.edu.it.itba.pdc.proxy.implementations.proxy.block.BrowserBlock;
+import ar.edu.it.itba.pdc.proxy.implementations.proxy.block.IPBlock;
+import ar.edu.it.itba.pdc.proxy.implementations.proxy.block.OSBlock;
 
 public class ConfiguratorConnectionDecoder implements
 		ConfiguratorConnectionDecoderInt {
 
 	private boolean logged = false;
+	private boolean specification = false;
 	private boolean closeConnection = false;
 	private boolean applyTransformations = false;
 	private boolean applyRotations = false;
 	private boolean blockAll = false;
+	private List<BrowserBlock> browserBlock;
+	private List<OSBlock> OSBlock;
+	private List<IPBlock> ipBlock;
 	private Map<String, String> reply;
-	private Set<InetAddress> blockedAddresses;
-	private Set<String> blockedMediaType;
-	private Set<String> blockedURIs;
+	// private Set<InetAddress> blockedAddresses;
+	// private Set<String> blockedMediaType;
+	// private Set<String> blockedURIs;
 	private int maxSize = -1;
 	private Logger decoderLog = Logger.getLogger(this.getClass());
+	private Block block;
 
 	public ConfiguratorConnectionDecoder() {
 		reply = new HashMap<String, String>();
 		fillReply();
-		blockedAddresses = new TreeSet<InetAddress>();
-		blockedMediaType = new TreeSet<String>();
-		blockedURIs = new TreeSet<String>();
+		browserBlock = new ArrayList<BrowserBlock>();
+		OSBlock = new ArrayList<OSBlock>();
+		ipBlock = new ArrayList<IPBlock>();
+		// blockedAddresses = new TreeSet<InetAddress>();
+		// blockedMediaType = new TreeSet<String>();
+		// blockedURIs = new TreeSet<String>();
 	}
 
 	public boolean closeConnection() {
@@ -56,6 +71,36 @@ public class ConfiguratorConnectionDecoder implements
 				closeConnection = true;
 				return reply.get("LOGIN_ERROR");
 			}
+		} else if (!specification) {
+			String[] args = s.split(" ");
+			if (args.length != 3) {
+				return reply.get("WRONG_COMMAND");
+			}
+			if (args[0].contains("FOR")) {
+				int index;
+				if (args[1].contains("BROWSER")) {
+					if ((index = containsBrowser(args[2])) != -1) {
+						block = browserBlock.get(index);
+					}
+				} else if (args[1].contains("OS")) {
+					if ((index = containsOS(args[2])) != -1) {
+						block = OSBlock.get(index);
+					}
+				} else if (args[1].contains("IP")) {
+					InetAddress ip;
+					try {
+						ip = InetAddress.getByName(args[2]);
+					} catch (UnknownHostException e) {
+						return reply.get("WRONG_PARAMETERS");
+					}
+					if ((index = containsIP(ip)) != -1) {
+						block = ipBlock.get(index);
+					}
+				} else {
+					return reply.get("WRONG_COMMAND");
+				}
+				specification = true;
+			}
 		} else {
 			String[] args = s.split(" ");
 			if (args[0].equals("BLOCK")) {
@@ -68,11 +113,11 @@ public class ConfiguratorConnectionDecoder implements
 				}
 				if (args[1].equals("ON")) {
 					decoderLog.info("Transformations turned on");
-					applyTransformations = true;
+					block.setApplyTransformations(true);
 					return reply.get("TRANSF_ON");
 				} else if (args[1].equals("OFF")) {
 					decoderLog.info("Transformations turned off");
-					applyTransformations = false;
+					block.setApplyTransformations(false);
 					return reply.get("TRANSF_OFF");
 				} else {
 					return reply.get("WRONG_PARAMETERS");
@@ -83,11 +128,11 @@ public class ConfiguratorConnectionDecoder implements
 				}
 				if (args[1].equals("ON")) {
 					decoderLog.info("Rotations turned on");
-					applyRotations = true;
+					block.setApplyRotations(true);
 					return reply.get("ROT_ON");
 				} else if (args[1].equals("OFF")) {
 					decoderLog.info("Rotations turned off");
-					applyRotations = false;
+					block.setApplyRotations(false);
 					return reply.get("ROT_OFF");
 				} else {
 					return reply.get("WRONG_PARAMETERS");
@@ -113,15 +158,15 @@ public class ConfiguratorConnectionDecoder implements
 					StringBuffer sb = new StringBuffer();
 					sb.append("200 - Blocked list:\n");
 					sb.append("Media Types:\n");
-					for (String mt : blockedMediaType) {
+					for (String mt : block.getBlockedMediaType()) {
 						sb.append("\t" + mt.toString() + "\n");
 					}
 					sb.append("URIs:\n");
-					for (String p : blockedURIs) {
+					for (String p : block.getBlockedURIs()) {
 						sb.append("\t" + p + "\n");
 					}
 					sb.append("IP addresses:\n");
-					for (InetAddress addr : blockedAddresses) {
+					for (InetAddress addr : block.getBlockedAddresses()) {
 						sb.append("\t" + addr.toString() + "\n");
 					}
 					return sb.toString();
@@ -132,6 +177,7 @@ public class ConfiguratorConnectionDecoder implements
 				decoderLog.info("EXIT command received. Closing connection");
 				closeConnection = true;
 				logged = false;
+				block = null;
 				return "Bye bye\n";
 			} else if (args[0].equals("HELP")) {
 				return printHelp();
@@ -139,11 +185,12 @@ public class ConfiguratorConnectionDecoder implements
 				return reply.get("WRONG_COMMAND");
 			}
 		}
+		return s;
 	}
 
 	private String analyzeBlockCommand(String[] line) {
 		if (line.length == 2 && line[1].equals("ALL")) {
-			blockAll = true;
+			block.setBlockAll(true);
 			return "200 - All access blocked\n";
 		}
 		if (line.length != 3)
@@ -155,9 +202,7 @@ public class ConfiguratorConnectionDecoder implements
 			try {
 				addr = InetAddress.getByName(arg);
 				decoderLog.info("Blocking " + addr.toString());
-				synchronized (blockedAddresses) {
-					blockedAddresses.add(addr);
-				}
+				block.addBlockedAddress(addr);
 				return "200 - " + arg + " blocked\n";
 			} catch (Exception e) {
 				return reply.get("WRONG_PARAMETERS");
@@ -168,14 +213,12 @@ public class ConfiguratorConnectionDecoder implements
 				return "400 - Invalid media type\n";
 			}
 			decoderLog.info("Blocking " + mt.toString());
-			synchronized (blockedMediaType) {
-				blockedMediaType.add(mt.toString());
-			}
+			block.addBlockedMType(mt.toString());
 			return "200 - " + mt.toString() + " blocked\n";
 		} else if (type.equals("SIZE")) {
 			try {
 				Integer max = Integer.parseInt(arg);
-				maxSize = max;
+				block.setMaxSize(max);
 				decoderLog.info("Blocking files bigger than " + max);
 				return "200 - Sizes bigger than " + maxSize
 						+ " are now blocked\n";
@@ -186,9 +229,7 @@ public class ConfiguratorConnectionDecoder implements
 			try {
 				Pattern p = Pattern.compile(arg);
 				decoderLog.info("Blocking " + p.toString());
-				synchronized (blockedURIs) {
-					blockedURIs.add(p.pattern());
-				}
+				block.addBlockedURI(p.pattern());
 				return "200 - " + arg + " blocked\n";
 			} catch (PatternSyntaxException e) {
 				return "400 - Invalid pattern\n";
@@ -212,9 +253,7 @@ public class ConfiguratorConnectionDecoder implements
 			try {
 				addr = InetAddress.getByName(arg);
 				decoderLog.info("Unblocking " + addr.toString());
-				synchronized (blockedAddresses) {
-					blockedAddresses.remove(addr);
-				}
+				block.removeBlockedIP(addr);
 				return "200 - " + arg + " blocked\n";
 			} catch (UnknownHostException e) {
 				return reply.get("WRONG_PARAMETERS");
@@ -225,14 +264,12 @@ public class ConfiguratorConnectionDecoder implements
 				return "400 - Invalid media type\n";
 			}
 			decoderLog.info("Unblocking " + mt.toString());
-			synchronized (blockedMediaType) {
-				blockedMediaType.remove(mt.toString());
-			}
+			block.removeBlockedMType(mt.toString());
 			return "200 - " + mt.getType() + mt.getSubtype() + " unblocked\n";
 		} else if (type.equals("SIZE")) {
 			try {
 				Integer max = Integer.parseInt(arg);
-				maxSize = max;
+				block.setMaxSize(max);
 				if (max == -1) {
 					return "200 - All sizes are permited\n";
 				}
@@ -245,9 +282,7 @@ public class ConfiguratorConnectionDecoder implements
 		} else if (type.equals("URI")) {
 			try {
 				Pattern p = Pattern.compile(arg);
-				synchronized (blockedURIs) {
-					blockedURIs.remove(p.pattern());
-				}
+				block.removeBlockedURI(p.pattern());
 				decoderLog.info("Unblocking " + p.toString());
 				return "200 - " + p.pattern() + " unblocked\n";
 			} catch (PatternSyntaxException e) {
@@ -290,42 +325,137 @@ public class ConfiguratorConnectionDecoder implements
 		return sb.toString();
 	}
 
-	public Object[] getBlockedAddresses() {
-		synchronized (blockedAddresses) {
-			return blockedAddresses.toArray();
-		}
+	public Object[] getBlockedAddressesFor(Browser b) {
+		int index = containsBrowser(b.toString());
+		return browserBlock.get(index).getBlockedAddresses().toArray();
 	}
 
-	public Object[] getBlockedMediaType() {
-		synchronized (blockedMediaType) {
-			return blockedMediaType.toArray();
-		}
+	public Object[] getBlockedAddressesFor(InetAddress addr) {
+		int index = containsIP(addr);
+		return ipBlock.get(index).getBlockedAddresses().toArray();
+	}
+	
+	public Object[] getBlockedAddressesFor(OperatingSystem os) {
+		int index = containsOS(os.toString());
+		return OSBlock.get(index).getBlockedAddresses().toArray();
 	}
 
-	public Object[] getBlockedURIs() {
-		synchronized (blockedURIs) {
-			return blockedURIs.toArray();
-		}
+	public Object[] getBlockedMediaTypeFor(Browser b) {
+		int index = containsBrowser(b.toString());
+		return browserBlock.get(index).getBlockedMediaType().toArray();
+	}
+	
+	public Object[] getBlockedMediaTypeFor(InetAddress addr) {
+		int index = containsIP(addr);
+		return ipBlock.get(index).getBlockedMediaType().toArray();
+	}
+	
+	public Object[] getBlockedMediaTypeFor(OperatingSystem os) {
+		int index = containsOS(os.toString());
+		return OSBlock.get(index).getBlockedMediaType().toArray();
+	}
+	
+	public Object[] getBlockedURIsFor(Browser b) {
+		int index = containsBrowser(b.toString());
+		return browserBlock.get(index).getBlockedURIs().toArray();
+	}
+	
+	public Object[] getBlockedURIsFor(InetAddress addr) {
+		int index = containsIP(addr);
+		return ipBlock.get(index).getBlockedURIs().toArray();
+	}
+	
+	public Object[] getBlockedURIsFor(OperatingSystem os) {
+		int index = containsOS(os.toString());
+		return OSBlock.get(index).getBlockedURIs().toArray();
 	}
 
-	public int getMaxSize() {
-		return maxSize;
+	public int getMaxSizeFor(Browser b) {
+		int index = containsBrowser(b.toString());
+		return browserBlock.get(index).getMaxSize();
+	}
+	
+	public int getMaxSizeFor(InetAddress addr) {
+		int index = containsIP(addr);
+		return ipBlock.get(index).getMaxSize();
+	}
+	
+	public int getMaxSizeFor(OperatingSystem os) {
+		int index = containsOS(os.toString());
+		return OSBlock.get(index).getMaxSize();
 	}
 
-	public boolean applyRotations() {
-		return applyRotations;
+	public boolean applyRotationsFor(Browser b) {
+		int index = containsBrowser(b.toString());
+		return browserBlock.get(index).isApplyRotations();
+	}
+	
+	public boolean applyRotationsFor(InetAddress addr) {
+		int index = containsIP(addr);
+		return ipBlock.get(index).isApplyRotations();
+	}
+	
+	public boolean applyRotationsFor(OperatingSystem os) {
+		int index = containsOS(os.toString());
+		return OSBlock.get(index).isApplyRotations();
 	}
 
-	public boolean applyTransformations() {
-		return applyTransformations;
+	public boolean applyTransformationsFor(Browser b) {
+		int index = containsBrowser(b.toString());
+		return browserBlock.get(index).isApplyTransformations();
+	}
+	
+	public boolean applyTransformationsFor(InetAddress addr) {
+		int index = containsIP(addr);
+		return ipBlock.get(index).isApplyTransformations();
+	}
+	
+	public boolean applyTransformationsFor(OperatingSystem os) {
+		int index = containsOS(os.toString());
+		return OSBlock.get(index).isApplyTransformations();
+	}
+	
+	public boolean blockAllFor(Browser b) {
+		int index = containsBrowser(b.toString());
+		return browserBlock.get(index).isBlockAll();
+	}
+	
+	public boolean blockAllFor(InetAddress addr) {
+		int index = containsIP(addr);
+		return ipBlock.get(index).isBlockAll();
+	}
+	
+	public boolean blockAllFor(OperatingSystem os) {
+		int index = containsOS(os.toString());
+		return OSBlock.get(index).isBlockAll();
 	}
 
 	public void reset() {
 		closeConnection = false;
 	}
 
-	public boolean blockAll() {
-		return blockAll;
+	private int containsBrowser(String brow) {
+		for (int i = 0; i < browserBlock.size(); i++) {
+			if (browserBlock.get(i).getBrowser().toString().equals(brow))
+				return i;
+		}
+		return -1;
+	}
+
+	private int containsOS(String OS) {
+		for (int i = 0; i < OSBlock.size(); i++) {
+			if (OSBlock.get(i).getOS().toString().equals(OS))
+				return i;
+		}
+		return -1;
+	}
+
+	private int containsIP(InetAddress ip) {
+		for (int i = 0; i < ipBlock.size(); i++) {
+			if (ipBlock.get(i).getIp().equals(ip))
+				return i;
+		}
+		return -1;
 	}
 
 }
