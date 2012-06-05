@@ -73,6 +73,9 @@ public class ConfiguratorConnectionDecoder implements
 			}
 		} else if (!specification) {
 			String[] args = s.split(" ");
+			if (args[0].equals("HELP")) {
+				return printHelp();
+			}
 			if (args.length != 3) {
 				return reply.get("WRONG_COMMAND");
 			}
@@ -81,12 +84,18 @@ public class ConfiguratorConnectionDecoder implements
 				if (args[1].contains("BROWSER")) {
 					if ((index = containsBrowser(args[2])) != -1) {
 						block = browserBlock.get(index);
+						specification = true;
+						return "200 - Specify actions for "
+								+ ((BrowserBlock) block).getBrowser()
+										.toString() + "\n";
 					} else {
 						try {
-						block  = new BrowserBlock(Browser.valueOf(args[2]));
-						browserBlock.add((BrowserBlock)block);
-						specification = true;
-						return "200 - Specify actions for " + ((BrowserBlock)block).getBrowser().toString() + "\n";
+							block = new BrowserBlock(Browser.valueOf(args[2]));
+							browserBlock.add((BrowserBlock) block);
+							specification = true;
+							return "200 - Specify actions for "
+									+ ((BrowserBlock) block).getBrowser()
+											.toString() + "\n";
 						} catch (IllegalArgumentException e) {
 							return reply.get("WRONG_PARAMETERS");
 						}
@@ -94,15 +103,21 @@ public class ConfiguratorConnectionDecoder implements
 				} else if (args[1].contains("OS")) {
 					if ((index = containsOS(args[2])) != -1) {
 						block = OSBlock.get(index);
+						specification = true;
+						return "200 - Specify actions for "
+								+ ((OSBlock) block).getOS().toString() + "\n";
 					} else {
 						try {
-							block  = new OSBlock(OperatingSystem.valueOf(args[2]));
-							OSBlock.add((OSBlock)block);
+							block = new OSBlock(
+									OperatingSystem.valueOf(args[2]));
+							OSBlock.add((OSBlock) block);
 							specification = true;
-							return "200 - Specify actions for " + ((OSBlock)block).getOS().toString() + "\n";
-							} catch (IllegalArgumentException e) {
-								return reply.get("WRONG_PARAMETERS");
-							}
+							return "200 - Specify actions for "
+									+ ((OSBlock) block).getOS().toString()
+									+ "\n";
+						} catch (IllegalArgumentException e) {
+							return reply.get("WRONG_PARAMETERS");
+						}
 					}
 				} else if (args[1].contains("IP")) {
 					InetAddress ip;
@@ -113,17 +128,21 @@ public class ConfiguratorConnectionDecoder implements
 					}
 					if ((index = containsIP(ip)) != -1) {
 						block = ipBlock.get(index);
+						specification = true;
+						return "200 - Specify actions for "
+								+ ((IPBlock) block).getIp() + "\n";
 					} else {
 						block = new IPBlock(ip);
-						ipBlock.add((IPBlock)block);
+						ipBlock.add((IPBlock) block);
 						specification = true;
-						return "200 - Specify actions for " + ((IPBlock)block).getIp() + "\n";
+						return "200 - Specify actions for "
+								+ ((IPBlock) block).getIp() + "\n";
 					}
 				} else {
 					return reply.get("WRONG_COMMAND");
 				}
 			} else {
-				return "400 - Must specify broser, os or ip\n";
+				return "400 - Must specify Browser, OS or IP\n";
 			}
 		} else {
 			String[] args = s.split(" ");
@@ -205,14 +224,14 @@ public class ConfiguratorConnectionDecoder implements
 				return "Bye bye\n";
 			} else if (args[0].equals("HELP")) {
 				return printHelp();
-			} else if(args[0].equals("CHANGE")) {
+			} else if (args[0].equals("CHANGE")) {
 				specification = false;
 				block = null;
+				return "200 - Change accepted\n";
 			} else {
 				return reply.get("WRONG_COMMAND");
 			}
 		}
-		return reply.get("WRONG_COMMAND");
 	}
 
 	private String analyzeBlockCommand(String[] line) {
@@ -344,157 +363,160 @@ public class ConfiguratorConnectionDecoder implements
 	private String printHelp() {
 		decoderLog.info("HELP command received");
 		StringBuffer sb = new StringBuffer();
-		sb.append("Available commands: BLOCK - UNBLOCK - TRANSFORMATIONS - ROTATIONS - GET\n");
-		sb.append("BLOCK or UNBLOCK usage: (BLOCK | UNBLOCK)SP(IP|URI|MTYPE|SIZE)SP(VALUE)\n");
-		sb.append("TRANSFORMATIONS or ROTATIONS usage: (TRANSFORMATIONS|ROTATIONS)SP(ON|OFF)\n");
-		sb.append("GET usage: GET SP (ROTATIONS|TRANSFORMATIONS|BLOCK)\n");
+		sb.append("Available commands: BLOCK - UNBLOCK - TRANSFORMATIONS - ROTATIONS - GET - FOR - CHANGE\n");
+		sb.append("BLOCK or UNBLOCK usage: (BLOCK | UNBLOCK) SP (IP|URI|MTYPE|SIZE) SP (VALUE)\n");
+		sb.append("TRANSFORMATIONS or ROTATIONS usage: (TRANSFORMATIONS|ROTATIONS) SP (ON|OFF)\n");
+		sb.append("GET usage: GET SP CONF SP (ROTATIONS|TRANSFORMATIONS|BLOCK)\n");
+		sb.append("FOR usage: FOR SP (BROWSER|IP|OS| SP (VALUE)\n");
+		sb.append("CHANGE usage: CHANGE\n");
+		sb.append("FOR example values: OS: LINUX | MAC_OS_X | WINDOWS_7 - BROWSER: FIREFOX | CHROME | IE\n");
 
 		return sb.toString();
 	}
 
 	public Object[] getBlockedAddressesFor(Browser b) {
 		int index = containsBrowser(b.toString());
-		if(index == -1)
+		if (index == -1)
 			return null;
 		return browserBlock.get(index).getBlockedAddresses().toArray();
 	}
 
 	public Object[] getBlockedAddressesFor(InetAddress addr) {
 		int index = containsIP(addr);
-		if(index == -1)
+		if (index == -1)
 			return null;
 		return ipBlock.get(index).getBlockedAddresses().toArray();
 	}
-	
+
 	public Object[] getBlockedAddressesFor(OperatingSystem os) {
 		int index = containsOS(os.toString());
-		if(index == -1)
+		if (index == -1)
 			return null;
 		return OSBlock.get(index).getBlockedAddresses().toArray();
 	}
 
 	public Object[] getBlockedMediaTypeFor(Browser b) {
 		int index = containsBrowser(b.toString());
-		if(index == -1)
+		if (index == -1)
 			return null;
 		return browserBlock.get(index).getBlockedMediaType().toArray();
 	}
-	
+
 	public Object[] getBlockedMediaTypeFor(InetAddress addr) {
 		int index = containsIP(addr);
-		if(index == -1)
+		if (index == -1)
 			return null;
 		return ipBlock.get(index).getBlockedMediaType().toArray();
 	}
-	
+
 	public Object[] getBlockedMediaTypeFor(OperatingSystem os) {
 		int index = containsOS(os.toString());
-		if(index == -1)
+		if (index == -1)
 			return null;
 		return OSBlock.get(index).getBlockedMediaType().toArray();
 	}
-	
+
 	public Object[] getBlockedURIsFor(Browser b) {
 		int index = containsBrowser(b.toString());
-		if(index == -1)
+		if (index == -1)
 			return null;
 		return browserBlock.get(index).getBlockedURIs().toArray();
 	}
-	
+
 	public Object[] getBlockedURIsFor(InetAddress addr) {
 		int index = containsIP(addr);
-		if(index == -1)
+		if (index == -1)
 			return null;
 		return ipBlock.get(index).getBlockedURIs().toArray();
 	}
-	
+
 	public Object[] getBlockedURIsFor(OperatingSystem os) {
 		int index = containsOS(os.toString());
-		if(index == -1)
+		if (index == -1)
 			return null;
 		return OSBlock.get(index).getBlockedURIs().toArray();
 	}
 
 	public int getMaxSizeFor(Browser b) {
 		int index = containsBrowser(b.toString());
-		if(index == -1)
+		if (index == -1)
 			return -1;
 		return browserBlock.get(index).getMaxSize();
 	}
-	
+
 	public int getMaxSizeFor(InetAddress addr) {
 		int index = containsIP(addr);
-		if(index == -1)
+		if (index == -1)
 			return -1;
 		return ipBlock.get(index).getMaxSize();
 	}
-	
+
 	public int getMaxSizeFor(OperatingSystem os) {
 		int index = containsOS(os.toString());
-		if(index == -1)
+		if (index == -1)
 			return -1;
 		return OSBlock.get(index).getMaxSize();
 	}
 
 	public boolean applyRotationsFor(Browser b) {
 		int index = containsBrowser(b.toString());
-		if(index == -1)
+		if (index == -1)
 			return false;
 		return browserBlock.get(index).isApplyRotations();
 	}
-	
+
 	public boolean applyRotationsFor(InetAddress addr) {
 		int index = containsIP(addr);
-		if(index == -1)
+		if (index == -1)
 			return false;
 		return ipBlock.get(index).isApplyRotations();
 	}
-	
+
 	public boolean applyRotationsFor(OperatingSystem os) {
 		int index = containsOS(os.toString());
-		if(index == -1)
+		if (index == -1)
 			return false;
 		return OSBlock.get(index).isApplyRotations();
 	}
 
 	public boolean applyTransformationsFor(Browser b) {
 		int index = containsBrowser(b.toString());
-		if(index == -1)
+		if (index == -1)
 			return false;
 		return browserBlock.get(index).isApplyTransformations();
 	}
-	
+
 	public boolean applyTransformationsFor(InetAddress addr) {
 		int index = containsIP(addr);
-		if(index == -1)
+		if (index == -1)
 			return false;
 		return ipBlock.get(index).isApplyTransformations();
 	}
-	
+
 	public boolean applyTransformationsFor(OperatingSystem os) {
 		int index = containsOS(os.toString());
-		if(index == -1)
+		if (index == -1)
 			return false;
 		return OSBlock.get(index).isApplyTransformations();
 	}
-	
+
 	public boolean blockAllFor(Browser b) {
 		int index = containsBrowser(b.toString());
-		if(index == -1)
+		if (index == -1)
 			return false;
 		return browserBlock.get(index).isBlockAll();
 	}
-	
+
 	public boolean blockAllFor(InetAddress addr) {
 		int index = containsIP(addr);
-		if(index == -1)
+		if (index == -1)
 			return false;
 		return ipBlock.get(index).isBlockAll();
 	}
-	
+
 	public boolean blockAllFor(OperatingSystem os) {
 		int index = containsOS(os.toString());
-		if(index == -1)
+		if (index == -1)
 			return false;
 		return OSBlock.get(index).isBlockAll();
 	}
