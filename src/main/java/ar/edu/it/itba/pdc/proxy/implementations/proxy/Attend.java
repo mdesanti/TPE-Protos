@@ -3,6 +3,7 @@ package ar.edu.it.itba.pdc.proxy.implementations.proxy;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 
 import org.apache.log4j.Logger;
@@ -49,6 +50,7 @@ public class Attend implements Runnable {
 				// Reads until headers are complete
 				attend.debug("Before reading headers from client");
 				attend.info("Reading headers from client");
+				socket.setSoTimeout(500);
 				while (keepReading
 						&& ((receivedMsg = clientIs.read(buffer)) != -1)) {
 					totalCount += receivedMsg;
@@ -74,6 +76,12 @@ public class Attend implements Runnable {
 				}
 
 			} catch (IOException e) {
+				try {
+					socket.close();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 				return;
 			}
 		}

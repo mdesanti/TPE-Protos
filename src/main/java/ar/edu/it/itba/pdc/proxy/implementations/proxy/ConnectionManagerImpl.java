@@ -26,13 +26,16 @@ public class ConnectionManagerImpl implements ConnectionManager {
 	private Map<InetAddress, List<ConnectionStatus>> connections;
 	private Logger connectionLog = Logger
 			.getLogger(ConnectionManagerImpl.class);
+	private List<ConnectionStatus> clientConn;
 	private DataStorage dataStorage;
 	private ProxyData pd;
-	private static int TIMEOUT = 5000;
+	private static int STIMEOUT = 5000;
+	private static int CTIMEOUT = 1500;
 
 	public ConnectionManagerImpl(Monitor monitor, ProxyData pd) {
 		connections = new HashMap<InetAddress, List<ConnectionStatus>>();
 		connectionLog.setLevel(Level.INFO);
+		clientConn = new LinkedList<ConnectionStatus>();
 		this.dataStorage = monitor.getDataStorage();
 		this.pd = pd;
 	}
@@ -40,7 +43,7 @@ public class ConnectionManagerImpl implements ConnectionManager {
 	public void run() {
 		while (!Thread.interrupted()) {
 			try {
-				Thread.sleep(3000);
+				Thread.sleep(1500);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -54,12 +57,31 @@ public class ConnectionManagerImpl implements ConnectionManager {
 					while (iter.hasNext()) {
 						ConnectionStatus cs = iter.next();
 						Socket s = cs.getSocket();
-						if ((s.isClosed() || !s.isConnected()) && !cs.isInUse() && System.currentTimeMillis()-cs.getTime() >= TIMEOUT) {
+						if ((s.isClosed() || !s.isConnected())
+								&& !cs.isInUse()
+								&& System.currentTimeMillis() - cs.getTime() >= STIMEOUT) {
 							iter.remove();
 						}
 					}
 				}
 			}
+//			synchronized (clientConn) {
+//				Iterator<ConnectionStatus> iter = clientConn.iterator();
+//				while (iter.hasNext()) {
+//					ConnectionStatus cs = iter.next();
+//					Socket s = cs.getSocket();
+//					if (System.currentTimeMillis() - cs.getTime() >= CTIMEOUT) {
+//						try {
+//							System.out.println("Closing client conn");
+//							s.close();
+//						} catch (IOException e) {
+//							// TODO Auto-generated catch block
+//							e.printStackTrace();
+//						}
+//						iter.remove();
+//					}
+//				}
+//			}
 
 		}
 	}
@@ -107,7 +129,8 @@ public class ConnectionManagerImpl implements ConnectionManager {
 		}
 		synchronized (connections) {
 
-			connections.get(addr).add(new ConnectionStatus(s, true, System.currentTimeMillis()));
+			connections.get(addr).add(
+					new ConnectionStatus(s, true, System.currentTimeMillis()));
 		}
 		return s;
 
@@ -123,7 +146,7 @@ public class ConnectionManagerImpl implements ConnectionManager {
 					if (equals(socket, s) && keepAlive) {
 						connection.releaseConnection();
 						return;
-					} else if (equals(socket,s)) {
+					} else if (equals(socket, s)) {
 						s.close();
 					}
 				}
@@ -133,7 +156,7 @@ public class ConnectionManagerImpl implements ConnectionManager {
 			}
 		}
 	}
-	
+
 	public void cleanAll(Socket socket) {
 		synchronized (connections) {
 			List<ConnectionStatus> connectionList = connections.get(socket
@@ -141,7 +164,20 @@ public class ConnectionManagerImpl implements ConnectionManager {
 			connectionList.clear();
 		}
 	}
-	
+
+	public void registerClientConnection(Socket socket) {
+		synchronized (clientConn) {
+			clientConn.add(new ConnectionStatus(socket, true, System
+					.currentTimeMillis()));
+		}
+	}
+
+	public void releaseClientConnection(Socket socket) {
+		synchronized (clientConn) {
+			clientConn.remove(new ConnectionStatus(socket, true, 0));
+		}
+	}
+
 	private boolean equals(Socket s1, Socket s2) {
 		return s1.getLocalPort() == s2.getLocalPort()
 				&& s1.getLocalSocketAddress()

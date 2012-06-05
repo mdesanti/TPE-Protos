@@ -11,4 +11,8 @@ public interface ConnectionManager extends Runnable {
 	
 	public void cleanAll(Socket socket);
 	
+	public void releaseClientConnection(Socket s);
+	
+	public void registerClientConnection(Socket s);
+	
 }
