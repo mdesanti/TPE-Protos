@@ -162,13 +162,21 @@ public class ConnectionManagerImpl implements ConnectionManager {
 	}
 
 	private boolean isReadable(Socket s) {
+		int timeout = -1;
 		try {
+			timeout = s.getSoTimeout();
 			s.setSoTimeout(50);
 			int i = s.getInputStream().read();
 			if(i == -1) {
 				return false;
 			}
 		} catch (SocketTimeoutException e) {
+			try {
+				s.setSoTimeout(timeout);
+			} catch (SocketException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 			return true;
 		} catch (SocketException e) {
 			return false;
