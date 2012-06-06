@@ -543,7 +543,7 @@ public class ConfiguratorConnectionDecoder implements
 
 	private int containsIP(InetAddress ip) {
 		for (int i = 0; i < ipBlock.size(); i++) {
-			if (ipBlock.get(i).getIp().equals(ip))
+			if (ipBlock.get(i).getIp().toString().equals(ip.toString()))
 				return i;
 		}
 		return -1;
