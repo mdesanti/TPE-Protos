@@ -114,7 +114,7 @@ public interface Decoder {
 	 * 
 	 * @return
 	 */
-	public RebuiltHeader rebuildResponseHeaders();
+	public RebuiltHeader rebuildResponseHeaders(boolean keepAlive);
 
 	/**
 	 * 
@@ -161,7 +161,7 @@ public interface Decoder {
 	 * @param contentLength
 	 * @return
 	 */
-	public RebuiltHeader modifiedContentLength(int contentLength);
+	public RebuiltHeader modifiedContentLength(int contentLength, boolean transformationApplied);
 
 	/**
 	 * Returns true if the request or the response has something in the body.

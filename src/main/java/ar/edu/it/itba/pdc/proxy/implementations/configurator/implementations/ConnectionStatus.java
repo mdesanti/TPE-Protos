@@ -6,12 +6,12 @@ public class ConnectionStatus {
 	
 	private Socket socket;
 	private boolean inUse;
-	private long time;
+	private long created;
 	
-	public ConnectionStatus(Socket socket, boolean inUse, long time) {
+	public ConnectionStatus(Socket socket, boolean inUse, long created) {
 		this.socket = socket;
 		this.inUse = inUse;
-		this.time = time;
+		this.created = created;
 	}
 	
 	public Socket getSocket() {
@@ -30,8 +30,8 @@ public class ConnectionStatus {
 		this.inUse = true;
 	}
 	
-	public long getTime() {
-		return time;
+	public long getCreated() {
+		return created;
 	}
 
 	@Override
@@ -41,6 +41,7 @@ public class ConnectionStatus {
 		result = prime * result + ((socket == null) ? 0 : socket.hashCode());
 		return result;
 	}
+	
 
 	@Override
 	public boolean equals(Object obj) {

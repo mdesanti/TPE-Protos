@@ -105,6 +105,11 @@ public class AnalyzerImp implements Analyzer {
 					.parseUserAgentString(decoder.getHeader("User-Agent"));
 
 			requestHeaders = decoder.getHeaders();
+			//RFC states Host header MUST be present in 1.1 request
+			if(requestHeaders.getHeader("HTTPVersion").contains("1.1") && requestHeaders.getHeader("Host") == null) {
+				decoder.generateProxyResponse(socket.getOutputStream(), "400");
+				return false;
+			}
 			isHEADRequest = requestHeaders.isHEADRequest();
 
 			keepConnection = analyzeConnection();
@@ -220,7 +225,7 @@ public class AnalyzerImp implements Analyzer {
 					ua.getBrowser(), ua.getOperatingSystem(),
 					socket.getLocalAddress());
 
-			RebuiltHeader rh = decoder.rebuildResponseHeaders();
+			RebuiltHeader rh = decoder.rebuildResponseHeaders(keepConnection);
 			if (!(configurator.applyRotationsFor(ua.getBrowser(),
 					ua.getOperatingSystem(), socket.getLocalAddress()) && decoder
 					.isImage())) {
@@ -231,7 +236,6 @@ public class AnalyzerImp implements Analyzer {
 			boolean data = false;
 			if (!decoder.contentExpected()) {
 				connectionManager.releaseConnection(externalServer, false);
-				keepConnection = false;
 				return;
 			}
 			if (responseHeaders.getReadBytes() < totalCount) {
@@ -300,6 +304,7 @@ public class AnalyzerImp implements Analyzer {
 		} catch (IOException e) {
 			connectionManager.cleanAll(externalServer);
 			// keepConnection = false;
+			e.printStackTrace();
 			throw e;
 		}
 
@@ -319,7 +324,7 @@ public class AnalyzerImp implements Analyzer {
 					return false;
 				}
 				RebuiltHeader newHeader = decoder
-						.modifiedContentLength(rotated.length);
+						.modifiedContentLength(rotated.length, true);
 				clientOs.write(newHeader.getHeader(), 0, newHeader.getSize());
 				clientOs.write(rotated, 0, rotated.length);
 				dataStorage.addTransformation();

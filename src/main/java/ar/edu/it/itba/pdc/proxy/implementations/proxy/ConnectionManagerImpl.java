@@ -61,7 +61,7 @@ public class ConnectionManagerImpl implements ConnectionManager {
 						Socket s = cs.getSocket();
 						if ((s.isClosed() || !s.isConnected())
 								&& !cs.isInUse()
-								&& System.currentTimeMillis() - cs.getTime() >= STIMEOUT) {
+								&& System.currentTimeMillis() - cs.getCreated() >= STIMEOUT) {
 							iter.remove();
 						}
 					}
@@ -149,19 +149,6 @@ public class ConnectionManagerImpl implements ConnectionManager {
 			List<ConnectionStatus> connectionList = connections.get(socket
 					.getInetAddress());
 			connectionList.clear();
-		}
-	}
-
-	public void registerClientConnection(Socket socket) {
-		synchronized (clientConn) {
-			clientConn.add(new ConnectionStatus(socket, true, System
-					.currentTimeMillis()));
-		}
-	}
-
-	public void releaseClientConnection(Socket socket) {
-		synchronized (clientConn) {
-			clientConn.remove(new ConnectionStatus(socket, true, 0));
 		}
 	}
 
