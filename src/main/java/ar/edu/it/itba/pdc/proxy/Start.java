@@ -48,7 +48,7 @@ public class Start {
 					.getProperty("monitorPort"));
 			proxy.info("Monitor port loaded. Listening on port " + monitorPort);
 			String intermProxyAddr = proxyProp.getProperty("intermProxyAddr");
-			String intermProxyPort = proxyProp.getProperty("intermProxyAddr");
+			String intermProxyPort = proxyProp.getProperty("intermProxyPort");
 			if (intermProxyAddr == null || intermProxyAddr.isEmpty()) {
 				proxy.info("No intermediate proxy configuration was found");
 				return new ProxyData(configPort, serverPort, monitorPort,

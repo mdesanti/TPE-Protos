@@ -74,7 +74,7 @@ public class AnalyzerImp implements Analyzer {
 				decoder.generateProxyResponse(clientOs, "400");
 				closeStreams();
 				socket.close();
-				keepConnection = false;
+//				keepConnection = false;
 			} catch (IOException e1) {
 			}
 		} catch (Exception e) {
@@ -83,7 +83,7 @@ public class AnalyzerImp implements Analyzer {
 				decoder.generateProxyResponse(clientOs, "500");
 				closeStreams();
 				socket.close();
-				keepConnection = false;
+//				keepConnection = false;
 			} catch (IOException e1) {
 				resetAll();
 			}
@@ -284,7 +284,7 @@ public class AnalyzerImp implements Analyzer {
 					externalSConnection);
 		} catch (IOException e) {
 			connectionManager.cleanAll(externalServer);
-			keepConnection = false;
+//			keepConnection = false;
 			throw e;
 		}
 

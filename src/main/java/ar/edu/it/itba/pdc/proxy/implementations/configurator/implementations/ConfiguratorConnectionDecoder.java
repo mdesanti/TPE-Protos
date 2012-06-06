@@ -266,7 +266,7 @@ public class ConfiguratorConnectionDecoder implements
 				Integer max = Integer.parseInt(arg);
 				block.setMaxSize(max);
 				decoderLog.info("Blocking files bigger than " + max);
-				return "200 - Sizes bigger than " + maxSize
+				return "200 - Sizes bigger than " + block.getMaxSize()
 						+ " are now blocked\n";
 			} catch (NumberFormatException e) {
 				return "400 - Invalid size\n";

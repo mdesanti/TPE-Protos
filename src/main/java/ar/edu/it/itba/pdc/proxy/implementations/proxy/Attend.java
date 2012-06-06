@@ -77,6 +77,7 @@ public class Attend implements Runnable {
 
 			} catch (IOException e) {
 				try {
+					attend.info("Closing socket to client " + socket.getRemoteSocketAddress());
 					socket.close();
 				} catch (IOException e1) {
 					// TODO Auto-generated catch block

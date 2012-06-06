@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.HashMap;
@@ -65,23 +67,6 @@ public class ConnectionManagerImpl implements ConnectionManager {
 					}
 				}
 			}
-//			synchronized (clientConn) {
-//				Iterator<ConnectionStatus> iter = clientConn.iterator();
-//				while (iter.hasNext()) {
-//					ConnectionStatus cs = iter.next();
-//					Socket s = cs.getSocket();
-//					if (System.currentTimeMillis() - cs.getTime() >= CTIMEOUT) {
-//						try {
-//							System.out.println("Closing client conn");
-//							s.close();
-//						} catch (IOException e) {
-//							// TODO Auto-generated catch block
-//							e.printStackTrace();
-//						}
-//						iter.remove();
-//					}
-//				}
-//			}
 
 		}
 	}
@@ -105,9 +90,11 @@ public class ConnectionManagerImpl implements ConnectionManager {
 			}
 			for (ConnectionStatus connection : connectionList) {
 				Socket s = connection.getSocket();
-				if (!connection.isInUse() && !s.isClosed() && s.isConnected()) {
+				if (!connection.isInUse() && !s.isClosed() && s.isConnected()
+						&& isReadable(s)) {
 					connectionLog
 							.info("Reused connection to " + url.toString());
+
 					connection.takeConnection();
 					return s;
 				}
@@ -185,5 +172,23 @@ public class ConnectionManagerImpl implements ConnectionManager {
 				&& s1.getPort() == s2.getPort()
 				&& s1.getRemoteSocketAddress().equals(
 						s2.getRemoteSocketAddress());
+	}
+
+	private boolean isReadable(Socket s) {
+		try {
+			s.setSoTimeout(50);
+			int i = s.getInputStream().read();
+			if(i == -1) {
+				return false;
+			}
+		} catch (SocketTimeoutException e) {
+			return true;
+		} catch (SocketException e) {
+			return false;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
+		}
+		return true;
 	}
 }
