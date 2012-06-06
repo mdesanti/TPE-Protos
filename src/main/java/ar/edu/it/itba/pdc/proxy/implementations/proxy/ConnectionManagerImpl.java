@@ -184,6 +184,7 @@ public class ConnectionManagerImpl implements ConnectionManager {
 			e.printStackTrace();
 			return false;
 		}
-		return true;
+		//socket shouldn't have remaining data to read
+		return false;
 	}
 }
