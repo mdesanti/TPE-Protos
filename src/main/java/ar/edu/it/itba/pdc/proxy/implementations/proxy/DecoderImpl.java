@@ -451,57 +451,57 @@ public class DecoderImpl implements Decoder {
 		StringBuilder html = new StringBuilder();
 		if (cause.equals("455")) {
 			html.append("<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
-					+ "<html><head>" + "<title>455 URL bloqueada</title>"
-					+ "</head><body>" + "<h1>URL Bloqueada</h1>"
-					+ "<p>Su proxy bloqueo esta url<br />" + "</p>"
+					+ "<html><head>" + "<title>455 URL blocked</title>"
+					+ "</head><body>" + "<h1>455 - URL blocked</h1>"
+					+ "<p>Your proxy blocked access to this URL.<br />" + "</p>"
 					+ "</body></html>");
 
 		} else if (cause.equals("456")) {
-			html.append("<h1>MediaType Bloqueada</h1>"
-					+ "<p>Su proxy bloqueo este tipo de archivos<br />"
+			html.append("<h1>Media Type blocked</h1>"
+					+ "<p>Your proxy blocked access to this media type.<br />"
 					+ "</p>");
 
 		} else if (cause.equals("453")) {
 			html.append("<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
-					+ "<html><head>" + "<title>453 IP bloqueada</title>"
-					+ "</head><body>" + "<h1>IP Bloqueada</h1>"
-					+ "<p>Su proxy bloqueo esta IP<br />" + "</p>"
+					+ "<html><head>" + "<title>453 IP blocked</title>"
+					+ "</head><body>" + "<h1>453 - IP blocked</h1>"
+					+ "<p>Your proxy blocked access to this IP.<br />" + "</p>"
 					+ "</body></html>");
 
 		} else if (cause.equals("451")) {
 			html.append("<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
 					+ "<html><head>"
-					+ "<title>451 Tamano de archivo bloqueado</title>"
-					+ "</head><body>" + "<h1>Tama–o de archivo bloqueado</h1>"
-					+ "<p>Su proxy bloque— archivos de este tama–o<br />"
+					+ "<title>451 File size blocked</title>"
+					+ "</head><body>" + "<h1>451 - File size blocked</h1>"
+					+ "<p>Your proxy blocked files with this certain size.<br />"
 					+ "</p>" + "</body></html>");
 
 		} else if (cause.equals("452")) {
 			html.append("<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
-					+ "<html><head>" + "<title>452 Se bloqueo todo</title>"
-					+ "</head><body>" + "<h1>Todo bloqueado</h1>"
-					+ "<p>Su proxy bloqueo todo<br />" + "</p>"
+					+ "<html><head>" + "<title>452 All Blocked</title>"
+					+ "</head><body>" + "<h1>452 - All Blocked</h1>"
+					+ "<p>Your proxy blocked all access.<br />" + "</p>"
 					+ "</body></html>");
 
 		} else if (cause.equals("500")) {
 			html.append("<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
 					+ "<html><head>"
 					+ "<title>500 Internal Server Error</title>"
-					+ "</head><body>" + "<h1>Internal Server Error</h1>"
+					+ "</head><body>" + "<h1>500 - Internal Server Error</h1>"
 					+ "<p>Internal Server Error<br />" + "</p>"
 					+ "</body></html>");
 
 		} else if (cause.equals("400")) {
 			html.append("<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
 					+ "<html><head>" + "<title>400 Bad Request</title>"
-					+ "</head><body>" + "<h1>Bad Request</h1>"
+					+ "</head><body>" + "<h1>400 - Bad Request</h1>"
 					+ "<p>Bad Request<br />" + "</p>" + "</body></html>");
 
 		} else if (cause.equals("501")) {
 			html.append("<!DOCTYPE HTML PUBLIC ''-//IETF//DTD HTML 2.0//EN'>"
 					+ "<html><head>" + "<title>501 Not Implemented</title>"
-					+ "</head><body>" + "<h1>Not Implemented</h1>"
-					+ "<p>Bad Request<br />" + "</p>" + "</body></html>");
+					+ "</head><body>" + "<h1>501 - Method Not Implemented</h1>"
+					+ "<p>Your proxy does not implement this method.<br />" + "</p>" + "</body></html>");
 
 		}
 		return new HTML(html.toString().getBytes(), html.toString().length());

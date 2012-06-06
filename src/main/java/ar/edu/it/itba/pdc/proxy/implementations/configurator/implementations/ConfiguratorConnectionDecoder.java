@@ -315,13 +315,13 @@ public class ConfiguratorConnectionDecoder implements
 		} else if (type.equals("SIZE")) {
 			try {
 				Integer max = Integer.parseInt(arg);
-				block.setMaxSize(max);
+				block.setMaxSize(-1);
 				if (max == -1) {
 					return "200 - All sizes are permited\n";
 				}
 				decoderLog.info("Unblocking files bigger than" + max);
-				return "200 - Sizes bigger than " + maxSize
-						+ " are now blocked\n";
+				return "200 - Sizes bigger than " + max
+						+ " are now unblocked\n";
 			} catch (NumberFormatException e) {
 				return "400 - Invalid size\n";
 			}
