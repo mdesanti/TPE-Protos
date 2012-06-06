@@ -6,6 +6,7 @@ public class ProxyData {
 
 	private int configPort = -1;
 	private int serverPort = -1;
+	private InetAddress serverInterf = null;
 	private int monitorPort = -1;
 	private boolean intermProxy = false;
 	private InetAddress intermProxyAddr = null;
@@ -13,13 +14,14 @@ public class ProxyData {
 
 	public ProxyData(int configPort, int serverPort, int monitorPort,
 			boolean intermProxy, InetAddress intermProxyAddr,
-			int intermProxyPort) {
+			int intermProxyPort, InetAddress serverInterf) {
 		this.configPort = configPort;
 		this.serverPort = serverPort;
 		this.monitorPort = monitorPort;
 		this.intermProxy = intermProxy;
 		this.intermProxyAddr = intermProxyAddr;
 		this.intermProxyPort = intermProxyPort;
+		this.serverInterf = serverInterf;
 	}
 
 	public int getConfigPort() {

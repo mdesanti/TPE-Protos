@@ -37,6 +37,10 @@ public class Start {
 			FileInputStream in = new FileInputStream("proxy.properties");
 			proxyProp.load(in);
 			in.close();
+			String interf = proxyProp.getProperty("serverInterf");
+			if(interf == null | interf.isEmpty())
+				interf = "localhost";
+			InetAddress serverInterf = InetAddress.getByName(interf);
 			int configPort = Integer.valueOf(proxyProp
 					.getProperty("configuratorPort"));
 			proxy.info("Configurator port loaded. Listening on port "
@@ -52,14 +56,14 @@ public class Start {
 			if (intermProxyAddr == null || intermProxyAddr.isEmpty()) {
 				proxy.info("No intermediate proxy configuration was found");
 				return new ProxyData(configPort, serverPort, monitorPort,
-						false, null, -1);
+						false, null, -1, serverInterf);
 			} else {
 				InetAddress addr = InetAddress.getByName(intermProxyAddr);
 				int port = Integer.valueOf(intermProxyPort);
 				proxy.info("Intermediate proxy configuration found. Address: "
 						+ addr.toString() + " - Port: " + port);
 				return new ProxyData(configPort, serverPort, monitorPort, true,
-						addr, port);
+						addr, port, serverInterf);
 			}
 		} catch (IOException e) {
 			System.out
