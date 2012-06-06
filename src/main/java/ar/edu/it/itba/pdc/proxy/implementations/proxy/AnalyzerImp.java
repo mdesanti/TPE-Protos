@@ -74,7 +74,7 @@ public class AnalyzerImp implements Analyzer {
 				decoder.generateProxyResponse(clientOs, "400");
 				closeStreams();
 				socket.close();
-//				keepConnection = false;
+				// keepConnection = false;
 			} catch (IOException e1) {
 			}
 		} catch (Exception e) {
@@ -83,7 +83,7 @@ public class AnalyzerImp implements Analyzer {
 				decoder.generateProxyResponse(clientOs, "500");
 				closeStreams();
 				socket.close();
-//				keepConnection = false;
+				// keepConnection = false;
 			} catch (IOException e1) {
 				resetAll();
 			}
@@ -101,7 +101,8 @@ public class AnalyzerImp implements Analyzer {
 				decoder.generateProxyResponse(clientOs, "501");
 				return false;
 			}
-			ua = UserAgent.parseUserAgentString(decoder.getHeader("User-Agent"));
+			ua = UserAgent
+					.parseUserAgentString(decoder.getHeader("User-Agent"));
 
 			requestHeaders = decoder.getHeaders();
 			isHEADRequest = requestHeaders.isHEADRequest();
@@ -113,7 +114,9 @@ public class AnalyzerImp implements Analyzer {
 					+ requestHeaders.dumpHeaders());
 
 			// Analyze if something will be blocked
-			if (blockAnalizer.analyzeRequest(decoder, clientOs, ua.getBrowser(), ua.getOperatingSystem(), socket.getLocalAddress())) {
+			if (blockAnalizer.analyzeRequest(decoder, clientOs,
+					ua.getBrowser(), ua.getOperatingSystem(),
+					socket.getLocalAddress())) {
 				dataStorage.addBlock();
 				return false;
 			}
@@ -189,8 +192,8 @@ public class AnalyzerImp implements Analyzer {
 						resp.array().length);
 			}
 			if (totalCount == 0) {
-//				decoder.generateProxyResponse(clientOs, "500");
-//				connectionManager.releaseConnection(externalServer, false);
+				// decoder.generateProxyResponse(clientOs, "500");
+				// connectionManager.releaseConnection(externalServer, false);
 				connectionManager.cleanAll(externalServer);
 				keepConnection = false;
 				return;
@@ -201,7 +204,9 @@ public class AnalyzerImp implements Analyzer {
 
 			externalSConnection = analyzeResponseConnection();
 
-			if (blockAnalizer.analyzeResponse(decoder, clientOs, ua.getBrowser(), ua.getOperatingSystem(), socket.getLocalAddress())) {
+			if (blockAnalizer.analyzeResponse(decoder, clientOs,
+					ua.getBrowser(), ua.getOperatingSystem(),
+					socket.getLocalAddress())) {
 				dataStorage.addBlock();
 				return;
 			}
@@ -211,10 +216,14 @@ public class AnalyzerImp implements Analyzer {
 					+ " with status code "
 					+ responseHeaders.getHeader("StatusCode"));
 
-			boolean applyTransform = decoder.applyTransformations(ua.getBrowser(), ua.getOperatingSystem(), socket.getLocalAddress());
+			boolean applyTransform = decoder.applyTransformations(
+					ua.getBrowser(), ua.getOperatingSystem(),
+					socket.getLocalAddress());
 
 			RebuiltHeader rh = decoder.rebuildResponseHeaders();
-			if (!(configurator.applyRotationsFor(ua.getBrowser(), ua.getOperatingSystem(), socket.getLocalAddress()) && decoder.isImage())) {
+			if (!(configurator.applyRotationsFor(ua.getBrowser(),
+					ua.getOperatingSystem(), socket.getLocalAddress()) && decoder
+					.isImage())) {
 				clientOs.write(rh.getHeader(), 0, rh.getSize());
 			}
 
@@ -231,7 +240,8 @@ public class AnalyzerImp implements Analyzer {
 						totalCount - responseHeaders.getReadBytes());
 				decoder.applyRestrictions(extra,
 						totalCount - responseHeaders.getReadBytes(),
-						requestHeaders, ua.getBrowser(), ua.getOperatingSystem(), socket.getLocalAddress());
+						requestHeaders, ua.getBrowser(),
+						ua.getOperatingSystem(), socket.getLocalAddress());
 				if (!applyTransform) {
 					clientOs.write(extra, 0,
 							totalCount - responseHeaders.getReadBytes());
@@ -250,6 +260,7 @@ public class AnalyzerImp implements Analyzer {
 				keepReading = decoder.keepReading();
 			if (receivedMsg == -1) {
 				keepReading = false;
+				externalSConnection = false;
 			}
 			if (isHEADRequest)
 				keepReading = false;
@@ -257,21 +268,25 @@ public class AnalyzerImp implements Analyzer {
 				analyzeLog.info("Getting response from server");
 				totalCount += receivedMsg;
 				decoder.analyze(buf, receivedMsg);
-				decoder.applyRestrictions(buf, receivedMsg, requestHeaders, ua.getBrowser(), ua.getOperatingSystem(), socket.getLocalAddress());
+				decoder.applyRestrictions(buf, receivedMsg, requestHeaders,
+						ua.getBrowser(), ua.getOperatingSystem(),
+						socket.getLocalAddress());
 				if (!applyTransform) {
 					clientOs.write(buf, 0, receivedMsg);
 				}
 				keepReading = decoder.keepReading();
-				
+
 				data = true;
 			}
-			if(receivedMsg == -1) {
+			if (receivedMsg == -1) {
 				externalSConnection = false;
 			}
 			dataStorage.addProxyServerBytes(totalCount);
 			analyzeLog.info("Response completed from server");
-			
-			if (blockAnalizer.analyzeChunkedSize(decoder, clientOs, totalCount, ua.getBrowser(), ua.getOperatingSystem(), socket.getLocalAddress())) {
+
+			if (blockAnalizer.analyzeChunkedSize(decoder, clientOs, totalCount,
+					ua.getBrowser(), ua.getOperatingSystem(),
+					socket.getLocalAddress())) {
 				dataStorage.addBlock();
 				return;
 			}
@@ -284,7 +299,7 @@ public class AnalyzerImp implements Analyzer {
 					externalSConnection);
 		} catch (IOException e) {
 			connectionManager.cleanAll(externalServer);
-//			keepConnection = false;
+			// keepConnection = false;
 			throw e;
 		}
 
@@ -293,7 +308,9 @@ public class AnalyzerImp implements Analyzer {
 	private boolean applyProxyTransformations(boolean applyTransform,
 			boolean data) throws IOException {
 		if (applyTransform && data) {
-			if (configurator.applyRotationsFor(ua.getBrowser(), ua.getOperatingSystem(), socket.getLocalAddress()) && decoder.isImage()) {
+			if (configurator.applyRotationsFor(ua.getBrowser(),
+					ua.getOperatingSystem(), socket.getLocalAddress())
+					&& decoder.isImage()) {
 				analyzeLog.info("Rotating image");
 				byte[] rotated = decoder.getRotatedImage();
 				if (rotated == null) {
@@ -307,7 +324,9 @@ public class AnalyzerImp implements Analyzer {
 				clientOs.write(rotated, 0, rotated.length);
 				dataStorage.addTransformation();
 			}
-			if (configurator.applyTextTransformationFor(ua.getBrowser(), ua.getOperatingSystem(), socket.getLocalAddress()) && decoder.isText()) {
+			if (configurator.applyTextTransformationFor(ua.getBrowser(),
+					ua.getOperatingSystem(), socket.getLocalAddress())
+					&& decoder.isText()) {
 				analyzeLog.info("Transforming text/plain");
 				byte[] transformed = decoder.getTransformed();
 				clientOs.write(transformed, 0, transformed.length);
@@ -345,14 +364,14 @@ public class AnalyzerImp implements Analyzer {
 	private boolean analyzeResponseConnection() {
 		String connection = responseHeaders.getHeader("Connection");
 		String httpVersion = responseHeaders.getHeader("HTTPVersion");
-		if ((connection == null && httpVersion.contains("1.1"))
-				|| (connection != null && connection.toUpperCase().contains(
-						"KEEP-ALIVE"))) {
-			return true;
-		} else if (connection == null && httpVersion.contains("1.1")) {
+		if (connection == null)
+			return false;
+		if ((connection != null && connection.toUpperCase().contains(
+				"KEEP-ALIVE"))  && httpVersion.contains("1.1")) {
 			return true;
 		}
-		if (connection == null || connection.contains("close") ||  httpVersion.contains("1.0")) {
+		if (connection == null || connection.contains("close")
+				|| httpVersion.contains("1.0")) {
 			return false;
 		}
 		return true;
